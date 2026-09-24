@@ -44,7 +44,7 @@ struct TeamSongsView: View {
                 Text("선수 응원가가 없는 타자가 나오면 팀 응원가를 재생합니다.")
             }
 
-            Section("선수") {
+            Section {
                 ForEach(library.players(ofTeam: teamCode)) { player in
                     NavigationLink {
                         PlayerSongEditor(teamCode: teamCode, name: player.name)
@@ -63,6 +63,8 @@ struct TeamSongsView: View {
                     Button("추가", action: addPlayer)
                         .disabled(newPlayerName.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
+            } header: {
+                Text("선수")
             } footer: {
                 Text("경기를 보면 라인업의 선수들이 자동으로 추가됩니다. 이름은 중계에 나오는 이름과 같아야 합니다.")
             }
