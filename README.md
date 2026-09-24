@@ -42,6 +42,29 @@ open Homefield.xcodeproj
 cd Packages/HomefieldCore && swift test
 ```
 
+## TestFlight 배포
+
+`v1.0.0` 같은 태그를 푸시하거나 GitHub Actions 탭에서 **TestFlight** 워크플로를 직접 실행하면, 빌드해서 TestFlight에 올립니다. 빌드 번호는 워크플로 실행 번호로 자동으로 매겨집니다.
+
+처음 한 번만 준비하면 됩니다:
+
+1. [Apple Developer Program](https://developer.apple.com/programs/) 가입 (연 $99).
+2. Certificates, Identifiers & Profiles → Identifiers에서 번들 ID `com.bravekoon.homefield` 등록. App Services에서 **MusicKit** 체크.
+3. [App Store Connect](https://appstoreconnect.apple.com) → 앱 → **+** 로 같은 번들 ID의 앱 등록.
+4. App Store Connect → 사용자 및 액세스 → 통합 → **App Store Connect API** 에서 키 생성. 역할은 **Admin**이어야 합니다 (CI가 배포 인증서와 프로비저닝 프로파일을 자동으로 만들 수 있어야 해서). `.p8` 파일은 한 번만 내려받을 수 있습니다.
+5. GitHub 저장소 → Settings → Secrets and variables → Actions 에 다음을 등록:
+
+| Secret | 값 |
+| --- | --- |
+| `APP_STORE_CONNECT_KEY_ID` | API 키의 Key ID |
+| `APP_STORE_CONNECT_ISSUER_ID` | 같은 화면 위쪽의 Issuer ID |
+| `APP_STORE_CONNECT_PRIVATE_KEY` | `.p8` 파일 내용 전체 (`-----BEGIN PRIVATE KEY-----` 포함) |
+| `APPLE_TEAM_ID` | Membership 페이지의 Team ID (10자리) |
+
+업로드가 끝나고 App Store Connect에서 처리가 완료되면 (보통 10~30분) TestFlight 탭에서 **내부 테스터**에게 바로 배포할 수 있습니다. 외부 테스터는 Beta App Review 심사를 거칩니다.
+
+앱 아이콘(`Homefield/Assets.xcassets/AppIcon.appiconset/AppIcon.png`)은 임시 아이콘입니다. 1024×1024, 투명 배경 없는 PNG로 바꿔 넣으면 됩니다.
+
 ## 사용법
 
 1. **설정 → 데모 경기 사용**을 켜고 경기 탭에서 데모 경기를 열어 동작을 확인합니다.
