@@ -36,7 +36,32 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/keys"
           KEY_PATH="$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8"
-          printf '%s\n' "$ASC_PRIVATE_KEY" > "$KEY_PATH"
+          # 시크릿을 붙여 넣을 때 흔히 생기는 형식 문제(줄바꿈 손실, \n 문자열, 앞뒤 공백,
+          # base64 로 한 번 더 인코딩, BEGIN/END 줄 누락)를 정리해서 올바른 PEM 으로 저장한다
+          KEY_PATH="$KEY_PATH" python3 - <<'PY'
+          import base64, os, re
+
+          raw = os.environ["ASC_PRIVATE_KEY"].replace("\\n", "\n").replace("\r", "").strip()
+          if "BEGIN" not in raw:
+              try:
+                  decoded = base64.b64decode(re.sub(r"\s+", "", raw)).decode()
+                  if "BEGIN" in decoded:
+                      raw = decoded
+              except Exception:
+                  pass
+
+          match = re.search(r"-----BEGIN ([A-Z ]+)-----(.*?)-----END \1-----", raw, re.S)
+          label, body = (match.group(1), match.group(2)) if match else ("PRIVATE KEY", raw)
+          body = re.sub(r"\s+", "", body)
+          lines = [body[i:i + 64] for i in range(0, len(body), 64)]
+          pem = f"-----BEGIN {label}-----\n" + "\n".join(lines) + f"\n-----END {label}-----\n"
+          with open(os.environ["KEY_PATH"], "w") as f:
+              f.write(pem)
+          PY
+          if ! openssl pkey -in "$KEY_PATH" -noout 2>/dev/null; then
+            echo "::error::APP_STORE_CONNECT_PRIVATE_KEY 가 올바른 .p8 키가 아닙니다. .p8 파일 내용 전체(-----BEGIN PRIVATE KEY----- 부터 -----END PRIVATE KEY----- 까지)를 그대로 붙여 넣어 주세요."
+            exit 1
+          fi
           echo "KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
 
       - name: Generate project
