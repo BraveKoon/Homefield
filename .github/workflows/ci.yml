@@ -13,7 +13,7 @@ concurrency:
 jobs:
   core-tests:
     name: HomefieldCore tests
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
       - name: Swift version
@@ -24,9 +24,11 @@ jobs:
 
   app-build:
     name: iOS app build
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
+      - name: Xcode version
+        run: xcodebuild -version
       - name: Install XcodeGen
         run: brew install xcodegen
       - name: Generate project
