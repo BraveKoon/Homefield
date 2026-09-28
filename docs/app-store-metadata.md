@@ -90,11 +90,11 @@ TV로 야구 볼 때 타자가 나오면 등장곡과 응원가가, 홈런이 �
 
 | 항목 | 필수 | 값 |
 | --- | --- | --- |
-| 지원 URL | **필수** | 예: `https://github.com/BraveKoon/Homefield/issues` (공개 저장소일 때) 또는 GitHub Pages 페이지 |
-| 마케팅 URL | 선택 | 비워 두어도 됩니다 |
-| 개인정보 처리방침 URL | **필수** | 아래 [개인정보 처리방침](#6-개인정보-처리방침-초안)을 웹에 올린 주소 |
+| 지원 URL | **필수** | `https://bravekoon.github.io/Homefield/` |
+| 마케팅 URL | 선택 | 비워 두거나 지원 URL과 같은 주소 |
+| 개인정보 처리방침 URL | **필수** | `https://bravekoon.github.io/Homefield/privacy/` |
 
-> 저장소가 비공개라면 지원 URL과 개인정보 처리방침은 GitHub Pages, Notion 공개 페이지 등 **누구나 열 수 있는 주소**여야 합니다.
+> 두 페이지는 `docs/index.html`, `docs/privacy/index.html`에 있고 GitHub Pages로 공개됩니다. 저장소가 공개 상태이고 Pages가 켜져 있어야 열립니다.
 
 ### 저작권
 
@@ -169,12 +169,12 @@ App Store Connect → 앱 → **앱 개인정보 보호** → "데이터 수집 
 
 ## 6. 개인정보 처리방침 (초안)
 
-아래 내용을 GitHub Pages, Notion 공개 페이지 등에 올리고, 그 주소를 "개인정보 처리방침 URL"에 입력합니다.
+웹 페이지 버전은 `docs/privacy/index.html`이고 `https://bravekoon.github.io/Homefield/privacy/`로 공개됩니다. 아래는 같은 내용의 텍스트 원본입니다.
 
 ```markdown
 # 홈구장 개인정보 처리방침
 
-시행일: 2026년 10월 1일
+시행일: 2026년 9월 28일
 
 홈구장(이하 "앱")은 이용자의 개인정보를 수집하지 않습니다.
 
@@ -189,7 +189,7 @@ App Store Connect → 앱 → **앱 개인정보 보호** → "데이터 수집 
 - Apple Music: 이용자가 Apple Music 곡을 지정하면 Apple의 MusicKit을 통해 재생합니다. Apple Music 이용 정보는 Apple의 개인정보 처리방침을 따릅니다.
 
 ## 문의
-개인정보 관련 문의: (이메일 주소)
+개인정보 관련 문의: coronet.sob4n@icloud.com
 ```
 
 ---
@@ -275,7 +275,7 @@ TestFlight **내부 테스트**는 심사가 없어서 아래 문제와 상관�
 
 - [ ] TestFlight 빌드 업로드 성공 및 처리 완료
 - [ ] 이름, 부제, 프로모션 텍스트, 설명, 키워드 입력
-- [ ] 지원 URL, 개인정보 처리방침 URL을 공개 주소로 준비
+- [ ] 저장소 공개 전환 + GitHub Pages 켜기 → 지원 URL, 개인정보 처리방침 URL 열리는지 확인
 - [ ] 저작권 `2026 JIN HO JEON` 입력
 - [ ] 카테고리: 스포츠 / 엔터테인먼트
 - [ ] 연령 등급 설문 (4+)
