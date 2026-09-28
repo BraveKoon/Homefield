@@ -63,7 +63,12 @@ struct LiveGameView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editingBatter) { batter in
             NavigationStack {
-                PlayerSongEditor(teamCode: batter.teamCode, name: batter.name)
+                PlayerDetailView(
+                    teamCode: batter.teamCode,
+                    name: batter.name,
+                    today: session?.todayLine(for: batter),
+                    showsDoneButton: true
+                )
             }
         }
         .onAppear {
@@ -139,7 +144,7 @@ private struct BatterCard: View {
                     .font(.footnote)
             }
             Spacer()
-            Button("노래 지정", action: onEdit)
+            Button("선수 정보", action: onEdit)
                 .buttonStyle(.bordered)
         }
     }

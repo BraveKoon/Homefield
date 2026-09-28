@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 struct SongLibraryView: View {
     @Environment(SongLibrary.self) private var library
+    @State private var showingBatchImport = false
 
     var body: some View {
         NavigationStack {
@@ -20,6 +21,16 @@ struct SongLibraryView: View {
             .navigationTitle("등장곡 · 응원가")
             .navigationDestination(for: String.self) { code in
                 TeamSongsView(teamCode: code)
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("한 번에 가져오기", systemImage: "square.and.arrow.down.on.square") {
+                        showingBatchImport = true
+                    }
+                }
+            }
+            .sheet(isPresented: $showingBatchImport) {
+                NavigationStack { BatchImportView() }
             }
         }
     }
@@ -47,7 +58,7 @@ struct TeamSongsView: View {
             Section {
                 ForEach(library.players(ofTeam: teamCode)) { player in
                     NavigationLink {
-                        PlayerSongEditor(teamCode: teamCode, name: player.name)
+                        PlayerDetailView(teamCode: teamCode, name: player.name)
                     } label: {
                         PlayerRow(player: player)
                     }
@@ -95,44 +106,14 @@ private struct PlayerRow: View {
             }
             Text(player.name)
             Spacer()
+            if !library.profile(teamCode: player.teamCode, name: player.name).isEmpty {
+                Image(systemName: "text.book.closed")
+                    .foregroundStyle(.secondary)
+            }
             Image(systemName: "figure.walk")
                 .foregroundStyle(assignment.walkUp == nil ? Color.secondary.opacity(0.3) : Color.accentColor)
             Image(systemName: "megaphone")
                 .foregroundStyle(assignment.cheer == nil ? Color.secondary.opacity(0.3) : Color.accentColor)
-        }
-    }
-}
-
-struct PlayerSongEditor: View {
-    @Environment(SongLibrary.self) private var library
-    @Environment(\.dismiss) private var dismiss
-    let teamCode: String
-    let name: String
-
-    var body: some View {
-        let assignment = library.assignment(teamCode: teamCode, name: name)
-        List {
-            Section {
-                SongSlotRow(title: "등장곡", systemImage: "figure.walk", source: assignment.walkUp) {
-                    library.setWalkUp($0, teamCode: teamCode, name: name)
-                }
-            } footer: {
-                Text("타자가 타석에 들어서면 먼저 재생됩니다. 재생 시간은 설정에서 바꿀 수 있어요.")
-            }
-            Section {
-                SongSlotRow(title: "응원가", systemImage: "megaphone", source: assignment.cheer) {
-                    library.setCheer($0, teamCode: teamCode, name: name)
-                }
-            } footer: {
-                Text("등장곡 다음에 타석이 끝날 때까지 반복 재생됩니다.")
-            }
-        }
-        .navigationTitle("\(name) · \(library.teamName(for: teamCode))")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("완료") { dismiss() }
-            }
         }
     }
 }
