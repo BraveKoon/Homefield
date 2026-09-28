@@ -18,6 +18,8 @@ final class LiveGameSession {
     private(set) var game: GameSummary
     private(set) var currentBatter: Player?
     private(set) var log: [LogLine] = []
+    /// 이번 경기에서 선수별 타석 결과 (키: SongLibrary.key)
+    private(set) var todayLines: [String: BattingLine] = [:]
     private(set) var lastError: String?
     private(set) var isRunning = false
     /// 방송 지연 때문에 대기 중인 이벤트 묶음 수
@@ -30,6 +32,7 @@ final class LiveGameSession {
     @ObservationIgnored private var monitorTask: Task<Void, Never>?
     @ObservationIgnored private var dispatchTask: Task<Void, Never>?
     @ObservationIgnored private var queue: AsyncStream<PendingBatch>.Continuation?
+    @ObservationIgnored private let tracker = PlateAppearanceTracker()
 
     private struct PendingBatch {
         let receivedAt: Date
@@ -123,9 +126,18 @@ final class LiveGameSession {
                 append(LogLine(time: Date(), text: event.text, badge: kind.emoji, isBatter: false))
             }
         }
+        for result in tracker.process(events) {
+            let key = SongLibrary.key(teamCode: result.player.teamCode, name: result.player.name)
+            todayLines[key, default: BattingLine()].record(result.kind)
+            library.recordPlateAppearance(result.kind, for: result.player)
+        }
         for cue in settings.composer.compose(events) {
             await director.perform(cue)
         }
+    }
+
+    func todayLine(for player: Player) -> BattingLine? {
+        todayLines[SongLibrary.key(teamCode: player.teamCode, name: player.name)]
     }
 
     private func append(_ line: LogLine) {
