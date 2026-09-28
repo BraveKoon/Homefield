@@ -25,12 +25,21 @@ Homefield/                  iOS 앱 (SwiftUI, iOS 17+)
 
 ## 빌드
 
-[XcodeGen](https://github.com/yonaskolb/XcodeGen)으로 Xcode 프로젝트를 만듭니다.
+저장소에 `Homefield.xcodeproj`가 들어 있어서 바로 열면 됩니다.
+
+```sh
+open Homefield.xcodeproj
+```
+
+프로젝트 파일은 `project.yml`을 원본으로 [XcodeGen](https://github.com/yonaskolb/XcodeGen)이 만듭니다.
+
+- `Homefield/` 폴더 안에 Swift 파일을 추가·삭제하는 것은 Xcode에서 해도 괜찮습니다.
+- 빌드 설정, Info.plist 항목, 타깃 같은 **프로젝트 설정은 `project.yml`에서 바꾸세요.** Xcode 화면에서 바꾸면 다음에 다시 생성할 때 덮어써집니다.
+- `project.yml`을 바꾼 PR을 올리면 CI(**Xcode project sync**)가 프로젝트를 다시 만들어 PR 브랜치에 자동으로 커밋합니다. 직접 만들려면:
 
 ```sh
 brew install xcodegen
 xcodegen generate
-open Homefield.xcodeproj
 ```
 
 - Signing & Capabilities에서 팀을 지정하세요.
