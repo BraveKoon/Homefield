@@ -100,6 +100,22 @@ public struct Player: Identifiable, Hashable, Codable, Sendable {
     }
 }
 
+/// 제공자가 알려 주는 그 시점의 볼카운트·아웃·주자 (없으면 문자중계로 계산)
+public struct CountState: Hashable, Sendable {
+    public var balls: Int?
+    public var strikes: Int?
+    public var outs: Int?
+    /// 1루, 2루, 3루에 주자가 있는지
+    public var basesOccupied: [Bool]?
+
+    public init(balls: Int? = nil, strikes: Int? = nil, outs: Int? = nil, basesOccupied: [Bool]? = nil) {
+        self.balls = balls
+        self.strikes = strikes
+        self.outs = outs
+        self.basesOccupied = basesOccupied
+    }
+}
+
 /// 문자 중계 한 줄. 데이터 제공자와 무관한 형태.
 public struct RelayEntry: Hashable, Sendable {
     public var id: String
@@ -109,6 +125,7 @@ public struct RelayEntry: Hashable, Sendable {
     public var battingSide: TeamSide?
     public var text: String
     public var batterId: String?
+    public var state: CountState?
 
     public init(
         id: String,
@@ -116,7 +133,8 @@ public struct RelayEntry: Hashable, Sendable {
         inning: Int? = nil,
         battingSide: TeamSide? = nil,
         text: String,
-        batterId: String? = nil
+        batterId: String? = nil,
+        state: CountState? = nil
     ) {
         self.id = id
         self.sequence = sequence
@@ -124,6 +142,7 @@ public struct RelayEntry: Hashable, Sendable {
         self.battingSide = battingSide
         self.text = text
         self.batterId = batterId
+        self.state = state
     }
 }
 
@@ -132,17 +151,21 @@ public struct RelaySnapshot: Sendable {
     public var currentInning: Int?
     public var entries: [RelayEntry]
     public var lineups: [TeamSide: [Player]]
+    /// 투수 명단 (첫 번째가 선발)
+    public var pitchers: [TeamSide: [Player]]
 
     public init(
         game: GameSummary? = nil,
         currentInning: Int? = nil,
         entries: [RelayEntry],
-        lineups: [TeamSide: [Player]] = [:]
+        lineups: [TeamSide: [Player]] = [:],
+        pitchers: [TeamSide: [Player]] = [:]
     ) {
         self.game = game
         self.currentInning = currentInning
         self.entries = entries
         self.lineups = lineups
+        self.pitchers = pitchers
     }
 }
 

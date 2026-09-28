@@ -32,10 +32,10 @@ extension SongLibrary {
                 let name = file.lastPathComponent
                 if file.pathExtension.lowercased() == "json" {
                     importProfiles(from: file, into: &report)
-                } else if SongFileNameParser.isAudio(name) {
+                } else if SongFileNameParser.isAudio(name) || SongFileNameParser.isImage(name) {
                     importSong(file, claimed: &claimed, into: &report)
                 } else {
-                    report.skipped.append(.init(title: name, detail: "음악 파일(mp3, m4a 등)이나 .json 이 아닙니다"))
+                    report.skipped.append(.init(title: name, detail: "음악 파일(mp3, m4a 등), 사진(jpg, png 등), .json 이 아닙니다"))
                 }
             }
         }
@@ -58,6 +58,7 @@ extension SongLibrary {
         case .walkUp: "등장곡"
         case .cheer: "응원가"
         case .teamCheer: "팀 응원가"
+        case .photo: "사진"
         }
         let who = parsed.playerName.map { "\(team) \($0)" } ?? team
 
@@ -67,6 +68,14 @@ extension SongLibrary {
         }
 
         do {
+            if parsed.kind == .photo, let playerName = parsed.playerName {
+                let accessing = file.startAccessingSecurityScopedResource()
+                defer { if accessing { file.stopAccessingSecurityScopedResource() } }
+                let data = try Data(contentsOf: file)
+                try setPhoto(data, fileExtension: file.pathExtension.lowercased(), teamCode: parsed.teamCode, name: playerName)
+                report.assigned.append(.init(title: who, detail: label))
+                return
+            }
             let title = parsed.playerName.map { "\($0) \(label)" } ?? "\(team) \(label)"
             let source = try importFile(at: file, title: title)
             switch parsed.kind {
@@ -76,6 +85,8 @@ extension SongLibrary {
                 setCheer(source, teamCode: parsed.teamCode, name: parsed.playerName ?? "")
             case .teamCheer:
                 setTeamCheer(source, teamCode: parsed.teamCode)
+            case .photo:
+                break
             }
             report.assigned.append(.init(title: who, detail: label))
         } catch {

@@ -19,7 +19,9 @@ public enum GameDataError: LocalizedError {
 }
 
 public enum MonitorUpdate: Sendable {
-    case state(GameSummary?, lineups: [TeamSide: [Player]])
+    case state(GameSummary?, lineups: [TeamSide: [Player]], pitchers: [TeamSide: [Player]])
+    /// 새로 들어온 중계 줄 (투구 포함). 볼카운트·주자 계산용이며 같은 폴링의 .events 보다 먼저 온다.
+    case entries([RelayEntry])
     case events([DetectedEvent])
     case failure(String)
 }
@@ -56,8 +58,11 @@ public struct LiveGameMonitor: Sendable {
                         }
                         lastInning = snapshot.currentInning ?? lastInning
 
-                        continuation.yield(.state(snapshot.game, lineups: snapshot.lineups))
+                        continuation.yield(.state(snapshot.game, lineups: snapshot.lineups, pitchers: snapshot.pitchers))
                         let events = detector.process(snapshot)
+                        if !detector.lastEntries.isEmpty {
+                            continuation.yield(.entries(detector.lastEntries))
+                        }
                         if !events.isEmpty {
                             continuation.yield(.events(events))
                         }

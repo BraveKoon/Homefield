@@ -98,6 +98,7 @@ private struct PlayerRow: View {
     var body: some View {
         let assignment = library.assignment(teamCode: player.teamCode, name: player.name)
         HStack {
+            PlayerAvatar(teamCode: player.teamCode, name: player.name, size: 32)
             if let number = player.backNumber {
                 Text("#\(number)")
                     .font(.caption.monospacedDigit())

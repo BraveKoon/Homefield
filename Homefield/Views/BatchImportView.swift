@@ -35,7 +35,7 @@ struct BatchImportView: View {
         }
         .fileImporter(
             isPresented: $picking,
-            allowedContentTypes: [.folder, .audio, .json],
+            allowedContentTypes: [.folder, .audio, .image, .json],
             allowsMultipleSelection: true
         ) { result in
             switch result {
@@ -67,11 +67,12 @@ struct BatchImportView: View {
             example("SS_구자욱_등장곡.mp3", "삼성 구자욱 등장곡")
             example("SS_구자욱_응원가.m4a", "삼성 구자욱 응원가")
             example("SS_팀응원가.mp3", "삼성 팀 응원가")
+            example("SS_구자욱.jpg", "삼성 구자욱 사진 (SS_구자욱_사진.jpg 도 가능)")
             example("삼성_구자욱_등장곡.mp3", "팀은 이름으로 써도 돼요")
         } header: {
             Text("파일 이름 규칙")
         } footer: {
-            Text("팀_선수이름_등장곡 또는 응원가. 팀은 코드(LG, HT, SS, OB, LT, SK, HH, NC, KT, WO)나 이름(기아, 키움, SSG 등)으로 쓸 수 있습니다. 선수 이름은 중계에 나오는 이름과 같아야 합니다.")
+            Text("팀_선수이름_등장곡 · 응원가 · 사진. 팀은 코드(LG, HT, SS, OB, LT, SK, HH, NC, KT, WO)나 이름(기아, 키움, SSG 등)으로 쓸 수 있습니다. 선수 이름은 중계에 나오는 이름과 같아야 합니다.")
         }
 
         Section {

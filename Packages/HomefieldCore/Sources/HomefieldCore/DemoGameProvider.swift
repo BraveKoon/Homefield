@@ -24,7 +24,13 @@ public actor DemoGameProvider: GameDataProvider {
         (1, .home, "1구 파울"),
         (1, .home, "한결 : 유격수 실책으로 출루"),
         (1, .home, "2번타자 서지후"),
+        (1, .home, "1구 볼"),
+        (1, .home, "2구 볼"),
+        (1, .home, "3구 스트라이크"),
+        (1, .home, "4구 볼"),
+        (1, .home, "5구 볼"),
         (1, .home, "서지후 : 볼넷"),
+        (1, .home, "1루주자 한결 : 2루까지 진루"),
         (1, .home, "3번타자 강두원"),
         (1, .home, "1구 스트라이크"),
         (1, .home, "강두원 : 좌중간 담장 넘어가는 홈런 (비거리: 125m)"),
@@ -37,6 +43,7 @@ public actor DemoGameProvider: GameDataProvider {
         (1, .home, "유태오 : 우익수 앞 1루타"),
         (1, .home, "6번타자 장우진"),
         (1, .home, "장우진 : 3루수 앞 땅볼로 병살타"),
+        (1, .home, "1루주자 유태오 : 2루에서 포스아웃"),
         (2, .away, "투수 윤성현 : 투수 이세준 (으)로 교체"),
         (2, .away, "5번타자 한재희"),
         (2, .away, "한재희 : 몸에 맞는 볼"),
@@ -84,6 +91,10 @@ public actor DemoGameProvider: GameDataProvider {
             lineups: [
                 .away: lineup(["강한별", "오세진", "문태양", "백도윤", "한재희", "고세혁", "최용구", "남궁현", "표정우"], team: Self.away),
                 .home: lineup(["한결", "서지후", "강두원", "곽민재", "유태오", "장우진", "민경수", "도하람", "임준표"], team: Self.home),
+            ],
+            pitchers: [
+                .away: [Player(id: "VKG-배준서", name: "배준서", teamCode: Self.away.code, backNumber: "21", position: "투수")],
+                .home: [Player(id: "DRM-윤성현", name: "윤성현", teamCode: Self.home.code, backNumber: "18", position: "투수")],
             ]
         )
     }
@@ -109,9 +120,19 @@ public actor DemoGameProvider: GameDataProvider {
         )
     }
 
+    /// 타순대로 수비 위치를 붙인다
+    private static let positions = ["중견수", "2루수", "우익수", "1루수", "3루수", "좌익수", "포수", "유격수", "지명타자"]
+
     private func lineup(_ names: [String], team: Team) -> [Player] {
         names.enumerated().map { index, name in
-            Player(id: "\(team.code)-\(name)", name: name, teamCode: team.code, backNumber: String(index + 10), battingOrder: index + 1)
+            Player(
+                id: "\(team.code)-\(name)",
+                name: name,
+                teamCode: team.code,
+                backNumber: String(index + 10),
+                battingOrder: index + 1,
+                position: Self.positions[index]
+            )
         }
     }
 }

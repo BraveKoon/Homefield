@@ -1,5 +1,7 @@
 import HomefieldCore
+import PhotosUI
 import SwiftUI
+import UIKit
 
 /// 선수 정보: 기록, 등장곡·응원가, 응원 동작, 응원가 변천사, 팀 이력
 struct PlayerDetailView: View {
@@ -13,6 +15,8 @@ struct PlayerDetailView: View {
 
     @State private var editing = false
     @State private var confirmingReset = false
+    @State private var photoItem: PhotosPickerItem?
+    @State private var photoError: String?
 
     var body: some View {
         let assignment = library.assignment(teamCode: teamCode, name: name)
@@ -23,6 +27,17 @@ struct PlayerDetailView: View {
         List {
             Section {
                 HStack(spacing: 12) {
+                    PhotosPicker(selection: $photoItem, matching: .images) {
+                        PlayerAvatar(teamCode: teamCode, name: name, size: 72)
+                            .overlay(alignment: .bottomTrailing) {
+                                Image(systemName: "camera.circle.fill")
+                                    .font(.title3)
+                                    .symbolRenderingMode(.multicolor)
+                                    .background(Circle().fill(.background))
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("선수 사진 바꾸기")
                     VStack(alignment: .leading, spacing: 2) {
                         Text(name).font(.title.bold())
                         Text(library.teamName(for: teamCode))
@@ -34,6 +49,15 @@ struct PlayerDetailView: View {
                             .font(.title2.monospacedDigit().bold())
                             .foregroundStyle(.secondary)
                     }
+                }
+                if library.photoURL(teamCode: teamCode, name: name) != nil {
+                    Button("사진 지우기", role: .destructive) {
+                        try? library.setPhoto(nil, teamCode: teamCode, name: name)
+                    }
+                    .font(.footnote)
+                }
+                if let photoError {
+                    Text(photoError).font(.caption).foregroundStyle(.red)
                 }
             }
 
@@ -96,6 +120,10 @@ struct PlayerDetailView: View {
                 Button("편집") { editing = true }
             }
         }
+        .onChange(of: photoItem) { _, item in
+            guard let item else { return }
+            Task { await savePhoto(item) }
+        }
         .sheet(isPresented: $editing) {
             NavigationStack {
                 PlayerProfileEditor(teamCode: teamCode, name: name, original: profile)
@@ -105,6 +133,27 @@ struct PlayerDetailView: View {
             Button("관전 기록 지우기", role: .destructive) {
                 library.resetWatched(teamCode: teamCode, name: name)
             }
+        }
+    }
+
+    /// 고른 사진을 400px 로 줄여 JPEG 로 저장
+    private func savePhoto(_ item: PhotosPickerItem) async {
+        defer { photoItem = nil }
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self), let image = UIImage(data: data) else {
+                photoError = "사진을 읽지 못했습니다"
+                return
+            }
+            let side: CGFloat = 400
+            let scale = min(1, side / max(image.size.width, image.size.height))
+            let target = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+            let resized = UIGraphicsImageRenderer(size: target).image { _ in
+                image.draw(in: CGRect(origin: .zero, size: target))
+            }
+            try library.setPhoto(resized.jpegData(compressionQuality: 0.85), teamCode: teamCode, name: name)
+            photoError = nil
+        } catch {
+            photoError = "사진 저장 실패: \(error.localizedDescription)"
         }
     }
 
