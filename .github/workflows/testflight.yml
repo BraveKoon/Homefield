@@ -13,7 +13,7 @@ concurrency:
 jobs:
   upload:
     name: Archive & upload
-    runs-on: macos-15
+    runs-on: macos-26
     env:
       ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
@@ -23,6 +23,17 @@ jobs:
       BUILD_NUMBER: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
+
+      # App Store Connect 는 iOS 26 SDK(Xcode 26) 이상으로 빌드한 앱만 받는다
+      - name: Check Xcode
+        run: |
+          xcodebuild -version
+          sdk=$(xcrun --sdk iphoneos --show-sdk-version)
+          echo "iOS SDK $sdk"
+          if [ "${sdk%%.*}" -lt 26 ]; then
+            echo "::error::iOS SDK $sdk 로는 App Store Connect 에 올릴 수 없습니다. Xcode 26 이상이 필요합니다."
+            exit 1
+          fi
 
       - name: Check secrets
         run: |
