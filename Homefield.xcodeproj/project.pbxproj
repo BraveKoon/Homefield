@@ -8,9 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		056A69794F4A3268FF73BBAF /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 657F724A45DB4F1155FC7256 /* SettingsView.swift */; };
+		056ED8024C4DFC1BE037CE0C /* BatchImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88404A98D4781471534A305 /* BatchImportView.swift */; };
+		068AC986E43A8908EFAEB484 /* PlayerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 232CF63C1BC09B67169F1B7E /* PlayerDetailView.swift */; };
 		0856EA98D0034B2FA3D12256 /* SongLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94D0AAA6FC5A6530B326E690 /* SongLibrary.swift */; };
 		334E351CE173F6275BA8B76F /* HomefieldApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 828BE906D2D6C931808FCCE1 /* HomefieldApp.swift */; };
 		4048F3711E1BC178044FC500 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 53B22290F4B62BC14E1F4B8F /* Assets.xcassets */; };
+		4F7B7CA79348A9890A470763 /* BatchImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD941AD01ECEA4305AA4B711 /* BatchImporter.swift */; };
 		517D574762A8331BA07CF101 /* HomefieldCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8B12B7181B7BBEC38FE7A7D2 /* HomefieldCore */; };
 		B9A77CAD4C5668180555AB35 /* AudioDirector.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E9A4E4E97F1CE11E4A5AB3 /* AudioDirector.swift */; };
 		BC841BB703886D4FCA7EE890 /* LiveGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 363EE5EA2EA56C30F27C8D24 /* LiveGameView.swift */; };
@@ -24,6 +27,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		232CF63C1BC09B67169F1B7E /* PlayerDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerDetailView.swift; sourceTree = "<group>"; };
 		3633B3D940EB489FA4822CD9 /* SongLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryView.swift; sourceTree = "<group>"; };
 		363EE5EA2EA56C30F27C8D24 /* LiveGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveGameView.swift; sourceTree = "<group>"; };
 		53B22290F4B62BC14E1F4B8F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -35,11 +39,13 @@
 		94D0AAA6FC5A6530B326E690 /* SongLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibrary.swift; sourceTree = "<group>"; };
 		B08C14223DA04A9F63BDB1F2 /* MusicDeck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicDeck.swift; sourceTree = "<group>"; };
 		B47E5624AF0AAA5216B492B8 /* AppleMusicSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleMusicSearchView.swift; sourceTree = "<group>"; };
+		BD941AD01ECEA4305AA4B711 /* BatchImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchImporter.swift; sourceTree = "<group>"; };
 		C4FDA0AAE05C664BD773726A /* Homefield.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Homefield.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D053340E166A4F1A5BF84104 /* GameListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameListView.swift; sourceTree = "<group>"; };
 		D6E9A4E4E97F1CE11E4A5AB3 /* AudioDirector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDirector.swift; sourceTree = "<group>"; };
 		DDFD1363B7D6D2BC8BA3FABA /* HomefieldCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = HomefieldCore; path = Packages/HomefieldCore; sourceTree = SOURCE_ROOT; };
 		E3F4B746485ED6231E2AD3A5 /* LiveGameSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveGameSession.swift; sourceTree = "<group>"; };
+		F88404A98D4781471534A305 /* BatchImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchImportView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,8 +64,10 @@
 			isa = PBXGroup;
 			children = (
 				B47E5624AF0AAA5216B492B8 /* AppleMusicSearchView.swift */,
+				F88404A98D4781471534A305 /* BatchImportView.swift */,
 				D053340E166A4F1A5BF84104 /* GameListView.swift */,
 				363EE5EA2EA56C30F27C8D24 /* LiveGameView.swift */,
+				232CF63C1BC09B67169F1B7E /* PlayerDetailView.swift */,
 				657F724A45DB4F1155FC7256 /* SettingsView.swift */,
 				3633B3D940EB489FA4822CD9 /* SongLibraryView.swift */,
 			);
@@ -111,6 +119,7 @@
 		7D1046D38A94100DC23B320D /* Songs */ = {
 			isa = PBXGroup;
 			children = (
+				BD941AD01ECEA4305AA4B711 /* BatchImporter.swift */,
 				94D0AAA6FC5A6530B326E690 /* SongLibrary.swift */,
 			);
 			path = Songs;
@@ -223,12 +232,15 @@
 				D35C2D519E1BA99F79FE2C17 /* AppSettings.swift in Sources */,
 				EF68ED2BAAFFE0C9D04D1D94 /* AppleMusicSearchView.swift in Sources */,
 				B9A77CAD4C5668180555AB35 /* AudioDirector.swift in Sources */,
+				056ED8024C4DFC1BE037CE0C /* BatchImportView.swift in Sources */,
+				4F7B7CA79348A9890A470763 /* BatchImporter.swift in Sources */,
 				E0D19EA0CA2DEC10AE3E930E /* GameListView.swift in Sources */,
 				334E351CE173F6275BA8B76F /* HomefieldApp.swift in Sources */,
 				BE37DDC80F6FC36A1CB91F39 /* LiveGameSession.swift in Sources */,
 				BC841BB703886D4FCA7EE890 /* LiveGameView.swift in Sources */,
 				E51D8901121E5A550033057A /* MusicDeck.swift in Sources */,
 				D75897F33FE2D49FCD748E53 /* Narrator.swift in Sources */,
+				068AC986E43A8908EFAEB484 /* PlayerDetailView.swift in Sources */,
 				056A69794F4A3268FF73BBAF /* SettingsView.swift in Sources */,
 				0856EA98D0034B2FA3D12256 /* SongLibrary.swift in Sources */,
 				CBB58CE35DC6C9C513ABA28D /* SongLibraryView.swift in Sources */,
