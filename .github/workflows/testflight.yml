@@ -14,6 +14,8 @@ jobs:
   upload:
     name: Archive & upload
     runs-on: macos-26
+    permissions:
+      contents: write
     env:
       ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
@@ -125,3 +127,16 @@ jobs:
       - name: Remove API key
         if: always()
         run: rm -rf "$RUNNER_TEMP/keys"
+
+      # 업로드된 빌드마다 GitHub 릴리스(프리릴리스)를 남긴다. 변경 내역은 병합된 PR 목록으로 자동 작성.
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(sed -nE 's/^ *MARKETING_VERSION: *"?([^"]+)"?.*/\1/p' project.yml | head -1)
+          tag="build-${BUILD_NUMBER}"
+          gh release create "$tag" \
+            --target "$GITHUB_SHA" \
+            --title "홈구장 ${version} (${BUILD_NUMBER})" \
+            --generate-notes \
+            --prerelease
