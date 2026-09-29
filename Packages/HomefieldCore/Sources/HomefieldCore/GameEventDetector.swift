@@ -41,6 +41,8 @@ public final class GameEventDetector {
     private var primed = false
     private var game: GameSummary?
     private var lineups: [TeamSide: [Player]] = [:]
+    /// 마지막 process 에서 새로 본 중계 줄 (첫 호출이면 스냅샷 전체). 경기 상황 계산용.
+    public private(set) var lastEntries: [RelayEntry] = []
 
     public init() {}
 
@@ -56,8 +58,10 @@ public final class GameEventDetector {
 
         if !primed {
             primed = true
+            lastEntries = entries
             return currentBatterEvents(in: entries)
         }
+        lastEntries = fresh
         return fresh.flatMap(events(for:))
     }
 

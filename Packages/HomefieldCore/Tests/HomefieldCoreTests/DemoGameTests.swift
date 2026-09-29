@@ -13,7 +13,8 @@ final class DemoGameTests: XCTestCase {
         for await update in monitor.updates() {
             switch update {
             case .events(let events): cues += composer.compose(events)
-            case .state(let game, _): lastGame = game
+            case .state(let game, _, _): lastGame = game
+            case .entries: break
             case .failure(let message): XCTFail(message)
             }
         }

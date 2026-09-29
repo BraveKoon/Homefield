@@ -6,6 +6,7 @@ import Foundation
 /// - `SS_구자욱_등장곡.mp3` → 삼성 구자욱 등장곡
 /// - `SS_구자욱_응원가.m4a` → 삼성 구자욱 응원가
 /// - `SS_팀응원가.mp3` 또는 `SS_팀_응원가.mp3` → 삼성 팀 응원가
+/// - `SS_구자욱_사진.jpg` 또는 `SS_구자욱.jpg` → 삼성 구자욱 사진
 ///
 /// 팀은 코드(`SS`)나 이름(`삼성`, `삼성 라이온즈`)으로 쓸 수 있다.
 public struct SongFileName: Equatable, Sendable {
@@ -13,6 +14,7 @@ public struct SongFileName: Equatable, Sendable {
         case walkUp
         case cheer
         case teamCheer
+        case photo
     }
 
     public var teamCode: String
@@ -30,8 +32,14 @@ public struct SongFileName: Equatable, Sendable {
 public enum SongFileNameParser {
     public static let audioExtensions: Set<String> = ["mp3", "m4a", "aac", "wav", "aif", "aiff", "caf", "flac"]
 
+    public static let imageExtensions: Set<String> = ["jpg", "jpeg", "png", "heic", "heif", "webp"]
+
     public static func isAudio(_ fileName: String) -> Bool {
         audioExtensions.contains((fileName as NSString).pathExtension.lowercased())
+    }
+
+    public static func isImage(_ fileName: String) -> Bool {
+        imageExtensions.contains((fileName as NSString).pathExtension.lowercased())
     }
 
     public static func parse(_ fileName: String) -> SongFileName? {
@@ -40,6 +48,17 @@ public enum SongFileNameParser {
         let stem = (normalized as NSString).deletingPathExtension
         let tokens = stem.split(separator: "_").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         guard tokens.count >= 2, let teamCode = teamCode(for: tokens[0]) else { return nil }
+
+        // 사진: SS_구자욱.jpg, SS_구자욱_사진.jpg
+        if isImage(normalized) {
+            if tokens.count == 2 {
+                return SongFileName(teamCode: teamCode, playerName: tokens[1], kind: .photo)
+            }
+            if tokens.count == 3, kind(for: tokens[2]) == .photo {
+                return SongFileName(teamCode: teamCode, playerName: tokens[1], kind: .photo)
+            }
+            return nil
+        }
 
         if tokens.count == 2 {
             // SS_팀응원가, SS_응원가
@@ -50,7 +69,7 @@ public enum SongFileNameParser {
             return nil
         }
 
-        guard tokens.count == 3, let kind = kind(for: tokens[2]) else { return nil }
+        guard tokens.count == 3, let kind = kind(for: tokens[2]), kind != .photo else { return nil }
         let name = tokens[1]
         if name == "팀" || name.lowercased() == "team" {
             return kind == .cheer ? SongFileName(teamCode: teamCode, playerName: nil, kind: .teamCheer) : nil
@@ -93,9 +112,11 @@ public enum SongFileNameParser {
         let lower = token.lowercased()
         let walkUp = ["등장곡", "등장", "입장곡", "walkup", "bgm"]
         let cheer = ["응원가", "응원곡", "응원", "cheer", "chant"]
+        let photo = ["사진", "얼굴", "프로필", "photo", "face"]
         // "응원가2" 처럼 뒤에 번호가 붙어도 인식
         if walkUp.contains(where: { lower.hasPrefix($0) }) { return .walkUp }
         if cheer.contains(where: { lower.hasPrefix($0) }) { return .cheer }
+        if photo.contains(where: { lower.hasPrefix($0) }) { return .photo }
         return nil
     }
 }

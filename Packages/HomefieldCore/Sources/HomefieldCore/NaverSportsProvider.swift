@@ -158,7 +158,8 @@ public enum NaverMapping {
                     inning: inning,
                     battingSide: side,
                     text: text,
-                    batterId: option.batterRecord?.pcode?.value
+                    batterId: option.batterRecord?.pcode?.value,
+                    state: option.currentGameState?.countState
                 ))
             }
         }
@@ -171,11 +172,20 @@ public enum NaverMapping {
             lineups[.away] = away.compactMap { player(from: $0, teamCode: game?.away.code ?? "") }
         }
 
+        var pitchers: [TeamSide: [Player]] = [:]
+        if let home = data.homeLineup?.pitcher {
+            pitchers[.home] = home.compactMap { player(from: $0, teamCode: game?.home.code ?? "") }
+        }
+        if let away = data.awayLineup?.pitcher {
+            pitchers[.away] = away.compactMap { player(from: $0, teamCode: game?.away.code ?? "") }
+        }
+
         return RelaySnapshot(
             game: game,
             currentInning: data.textRelays?.compactMap { $0.inn?.value }.max(),
             entries: entries,
-            lineups: lineups
+            lineups: lineups,
+            pitchers: pitchers
         )
     }
 
@@ -246,6 +256,26 @@ struct NaverTextOption: Decodable {
     let type: LenientInt?
     let text: String?
     let batterRecord: NaverBatterRecord?
+    let currentGameState: NaverGameState?
+}
+
+/// 필드 이름은 확인되지 않았다. 없거나 다르면 nil 이 되고, 앱은 문자중계로 상태를 계산한다.
+struct NaverGameState: Decodable {
+    let ball: LenientInt?
+    let strike: LenientInt?
+    let out: LenientInt?
+    let base1: LenientString?
+    let base2: LenientString?
+    let base3: LenientString?
+
+    var countState: CountState? {
+        guard ball?.value != nil || strike?.value != nil || out?.value != nil else { return nil }
+        let bases = [base1, base2, base3].map { base -> Bool in
+            guard let value = base?.value?.trimmingCharacters(in: .whitespaces) else { return false }
+            return !value.isEmpty && value != "0"
+        }
+        return CountState(balls: ball?.value, strikes: strike?.value, outs: out?.value, basesOccupied: bases)
+    }
 }
 
 struct NaverBatterRecord: Decodable {
@@ -255,6 +285,7 @@ struct NaverBatterRecord: Decodable {
 
 struct NaverLineup: Decodable {
     let batter: [NaverLineupBatter]?
+    let pitcher: [NaverLineupBatter]?
 }
 
 struct NaverLineupBatter: Decodable {

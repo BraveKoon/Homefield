@@ -52,17 +52,22 @@ final class SongLibrary {
     private(set) var watched: [String: BattingLine] = [:]
     /// 데이터 제공자의 선수 코드 → 선수 키 (이적 감지용)
     private var providerIds: [String: String] = [:]
+    /// 선수 키 → 사진 파일 이름
+    private(set) var photos: [String: String] = [:]
 
     private let storeURL: URL
     let songsDirectory: URL
+    let photosDirectory: URL
 
     init(fileManager: FileManager = .default) {
         let support = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let documents = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
         storeURL = support.appendingPathComponent("song-library.json")
         songsDirectory = documents.appendingPathComponent("Songs", isDirectory: true)
+        photosDirectory = documents.appendingPathComponent("Photos", isDirectory: true)
         try? fileManager.createDirectory(at: support, withIntermediateDirectories: true)
         try? fileManager.createDirectory(at: songsDirectory, withIntermediateDirectories: true)
+        try? fileManager.createDirectory(at: photosDirectory, withIntermediateDirectories: true)
         load()
         for team in KBOTeams.all where teamNames[team.code] == nil {
             teamNames[team.code] = team.name
@@ -87,6 +92,28 @@ final class SongLibrary {
 
     func profile(teamCode: String, name: String) -> PlayerProfile {
         profiles[Self.key(teamCode: teamCode, name: name)] ?? PlayerProfile()
+    }
+
+    func photoURL(teamCode: String, name: String) -> URL? {
+        photos[Self.key(teamCode: teamCode, name: name)].map { photosDirectory.appendingPathComponent($0) }
+    }
+
+    /// 사진 데이터를 저장한다 (JPEG/PNG/HEIC 등 이미지 데이터). nil 이면 지운다.
+    func setPhoto(_ data: Data?, fileExtension: String = "jpg", teamCode: String, name: String) throws {
+        let key = Self.key(teamCode: teamCode, name: name)
+        if let old = photos[key] {
+            try? FileManager.default.removeItem(at: photosDirectory.appendingPathComponent(old))
+            photos[key] = nil
+        }
+        if let data {
+            let fileName = "\(UUID().uuidString).\(fileExtension)"
+            try data.write(to: photosDirectory.appendingPathComponent(fileName), options: .atomic)
+            photos[key] = fileName
+            if knownPlayers[key] == nil {
+                knownPlayers[key] = KnownPlayer(teamCode: teamCode, name: name)
+            }
+        }
+        save()
     }
 
     func watchedLine(teamCode: String, name: String) -> BattingLine {
@@ -206,6 +233,9 @@ final class SongLibrary {
         assignments[player.id] = nil
         profiles[player.id] = nil
         watched[player.id] = nil
+        if let photo = photos.removeValue(forKey: player.id) {
+            try? FileManager.default.removeItem(at: photosDirectory.appendingPathComponent(photo))
+        }
         deleteIfUnused(old?.walkUp)
         deleteIfUnused(old?.cheer)
         save()
@@ -260,6 +290,7 @@ final class SongLibrary {
         var profiles: [String: PlayerProfile]?
         var watched: [String: BattingLine]?
         var providerIds: [String: String]?
+        var photos: [String: String]?
     }
 
     private func load() {
@@ -274,6 +305,7 @@ final class SongLibrary {
         profiles = stored.profiles ?? [:]
         watched = stored.watched ?? [:]
         providerIds = stored.providerIds ?? [:]
+        photos = stored.photos ?? [:]
     }
 
     private func save() {
@@ -284,7 +316,8 @@ final class SongLibrary {
             teamNames: teamNames,
             profiles: profiles,
             watched: watched,
-            providerIds: providerIds
+            providerIds: providerIds,
+            photos: photos
         )
         guard let data = try? JSONEncoder().encode(stored) else { return }
         try? data.write(to: storeURL, options: .atomic)

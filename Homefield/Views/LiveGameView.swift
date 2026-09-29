@@ -9,11 +9,21 @@ struct LiveGameView: View {
 
     @State private var session: LiveGameSession?
     @State private var editingBatter: Player?
+    /// 펼쳐 둔 이닝 (진행 중인 이닝이 바뀌면 그 이닝만 펼친다)
+    @State private var expandedHalves: Set<String> = []
 
     var body: some View {
         List {
             if let session {
-                Section { Scoreboard(game: session.game) }
+                Section {
+                    Scoreboard(game: session.game, state: session.gameState)
+                    FieldView(
+                        state: session.gameState,
+                        fieldingTeamCode: session.gameState.fieldingSide.map { session.game.team(for: $0).code },
+                        battingTeamCode: session.gameState.battingSide.map { session.game.team(for: $0).code }
+                    )
+                    .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 12, trailing: 12))
+                }
 
                 Section("타석") {
                     if let batter = session.currentBatter {
@@ -45,19 +55,38 @@ struct LiveGameView: View {
                 }
 
                 Section("중계") {
-                    ForEach(session.log) { line in
-                        HStack(alignment: .firstTextBaseline) {
-                            Text(line.badge)
-                            Text(line.text)
-                                .fontWeight(line.isBatter ? .semibold : .regular)
-                            Spacer()
-                            Text(line.time, format: .dateTime.hour().minute().second())
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                    if session.log.isEmpty {
+                        Text("중계를 기다리는 중…").foregroundStyle(.secondary)
+                    }
+                    ForEach(session.halves) { half in
+                        DisclosureGroup(isExpanded: expansion(for: half.id)) {
+                            ForEach(half.lines) { line in
+                                RelayLineRow(line: line)
+                            }
+                        } label: {
+                            HStack {
+                                Text(half.title).font(.headline)
+                                if half.id == session.currentHalfKey {
+                                    Text("진행 중")
+                                        .font(.caption2.bold())
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.red, in: Capsule())
+                                        .foregroundStyle(.white)
+                                }
+                                Spacer()
+                                Text("\(half.lines.filter { !$0.isPitch }.count)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
             }
+        }
+        .onChange(of: session?.currentHalfKey) { _, newKey in
+            // 이닝이 끝나면 지난 이닝은 접고 새 이닝을 펼친다
+            if let newKey { expandedHalves = [newKey] }
         }
         .navigationTitle("\(game.away.name) vs \(game.home.name)")
         .navigationBarTitleDisplayMode(.inline)
@@ -82,6 +111,7 @@ struct LiveGameView: View {
             )
             self.session = session
             session.start()
+            expandedHalves = [session.currentHalfKey]
         }
         .onDisappear {
             session?.stop()
@@ -90,26 +120,68 @@ struct LiveGameView: View {
     }
 }
 
-private struct Scoreboard: View {
-    let game: GameSummary
+private extension LiveGameView {
+    func expansion(for key: String) -> Binding<Bool> {
+        Binding(
+            get: { expandedHalves.contains(key) },
+            set: { isExpanded in
+                if isExpanded { expandedHalves.insert(key) } else { expandedHalves.remove(key) }
+            }
+        )
+    }
+}
+
+private struct RelayLineRow: View {
+    let line: LiveGameSession.LogLine
 
     var body: some View {
-        HStack {
-            teamColumn(game.away, score: game.awayScore, label: "원정")
-            VStack(spacing: 4) {
-                StatusBadge(game: game)
-                if let stadium = game.stadium {
-                    Text(stadium).font(.caption2).foregroundStyle(.secondary)
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(line.badge)
+                .frame(width: 22)
+            Text(line.text)
+                .font(line.isPitch ? .footnote : .body)
+                .fontWeight(line.isBatter ? .semibold : .regular)
+                .foregroundStyle(line.isPitch ? .secondary : .primary)
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+private struct Scoreboard: View {
+    @Environment(\.teamTheme) private var theme
+    let game: GameSummary
+    let state: LiveGameState
+
+    var body: some View {
+        HStack(alignment: .center) {
+            teamColumn(game.away, score: game.awayScore, label: "원정", batting: state.battingSide == .away)
+            VStack(spacing: 6) {
+                if let title = state.halfInningTitle {
+                    Text(title).font(.headline)
+                } else {
+                    StatusBadge(game: game)
+                }
+                CountView(state: state)
+                if let pitcher = state.pitcherName {
+                    Text("투수 \(pitcher)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
-            teamColumn(game.home, score: game.homeScore, label: "홈")
+            teamColumn(game.home, score: game.homeScore, label: "홈", batting: state.battingSide == .home)
         }
         .padding(.vertical, 8)
     }
 
-    private func teamColumn(_ team: Team, score: Int?, label: String) -> some View {
+    private func teamColumn(_ team: Team, score: Int?, label: String, batting: Bool) -> some View {
         VStack(spacing: 4) {
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            HStack(spacing: 4) {
+                if batting {
+                    Image(systemName: "baseball.fill").font(.caption2).foregroundStyle(theme.primary)
+                }
+                Text(label).font(.caption2).foregroundStyle(.secondary)
+            }
             Text(team.name).font(.headline).lineLimit(1).minimumScaleFactor(0.6)
             Text(score.map(String.init) ?? "-").font(.system(size: 40, weight: .bold).monospacedDigit())
         }
@@ -125,14 +197,12 @@ private struct BatterCard: View {
     var body: some View {
         let assignment = library.assignment(for: batter)
         HStack(spacing: 12) {
-            VStack {
-                Text(batter.battingOrder.map { "\($0)번" } ?? "타자")
-                    .font(.caption.bold())
-                Text(batter.backNumber.map { "#\($0)" } ?? "")
-                    .font(.caption2)
+            VStack(spacing: 4) {
+                PlayerAvatar(teamCode: batter.teamCode, name: batter.name, size: 52)
+                Text([batter.battingOrder.map { "\($0)번" }, batter.backNumber.map { "#\($0)" }].compactMap { $0 }.joined(separator: " "))
+                    .font(.caption2.bold())
                     .foregroundStyle(.secondary)
             }
-            .frame(width: 44)
             VStack(alignment: .leading, spacing: 4) {
                 Text(batter.name).font(.title2.bold())
                 Text("\(library.teamName(for: batter.teamCode))")

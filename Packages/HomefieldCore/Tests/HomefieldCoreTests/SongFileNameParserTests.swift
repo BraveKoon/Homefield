@@ -37,6 +37,13 @@ final class SongFileNameParserTests: XCTestCase {
         XCTAssertNil(SongFileNameParser.parse("없는팀_구자욱_등장곡.mp3"))
     }
 
+    func testPhotos() {
+        XCTAssertEqual(SongFileNameParser.parse("SS_구자욱.jpg"), SongFileName(teamCode: "SS", playerName: "구자욱", kind: .photo))
+        XCTAssertEqual(SongFileNameParser.parse("SS_구자욱_사진.PNG"), SongFileName(teamCode: "SS", playerName: "구자욱", kind: .photo))
+        XCTAssertNil(SongFileNameParser.parse("SS_구자욱_등장곡.jpg"))
+        XCTAssertNil(SongFileNameParser.parse("SS_구자욱_사진.mp3"))
+    }
+
     func testIsAudio() {
         XCTAssertTrue(SongFileNameParser.isAudio("a.MP3"))
         XCTAssertFalse(SongFileNameParser.isAudio("players.json"))
