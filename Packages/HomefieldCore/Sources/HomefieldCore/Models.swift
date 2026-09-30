@@ -107,12 +107,15 @@ public struct CountState: Hashable, Sendable {
     public var outs: Int?
     /// 1루, 2루, 3루에 주자가 있는지
     public var basesOccupied: [Bool]?
+    /// 지금 던지는 투수의 선수 코드
+    public var pitcherId: String?
 
-    public init(balls: Int? = nil, strikes: Int? = nil, outs: Int? = nil, basesOccupied: [Bool]? = nil) {
+    public init(balls: Int? = nil, strikes: Int? = nil, outs: Int? = nil, basesOccupied: [Bool]? = nil, pitcherId: String? = nil) {
         self.balls = balls
         self.strikes = strikes
         self.outs = outs
         self.basesOccupied = basesOccupied
+        self.pitcherId = pitcherId
     }
 }
 
