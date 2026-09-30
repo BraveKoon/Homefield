@@ -84,6 +84,8 @@ public final class GameStateTracker {
     private let classifier = RelayTextClassifier()
     /// 병살 뒤에 나오는 주자 아웃 줄을 두 번 세지 않도록
     private var skipNextRunnerOut = false
+    /// 선수 코드 → 이름 (제공자가 알려 주는 현재 투수 코드를 이름으로 바꿀 때)
+    private var names: [String: String] = [:]
 
     private static let pitchRegex = try! NSRegularExpression(pattern: #"^\d+\s*구\s+(.+)$"#)
     private static let runnerRegex = try! NSRegularExpression(pattern: #"^([123])루주자\s+(\S+)\s*[:：]\s*(.*)$"#)
@@ -96,6 +98,9 @@ public final class GameStateTracker {
 
     /// 라인업·투수 명단으로 수비 위치를 채운다 (이미 교체로 바뀐 위치는 유지)
     public func setLineups(_ lineups: [TeamSide: [Player]], pitchers: [TeamSide: [Player]]) {
+        for player in lineups.values.flatMap({ $0 }) + pitchers.values.flatMap({ $0 }) {
+            names[player.id] = player.name
+        }
         for side in [TeamSide.home, .away] {
             var fielders = state.defense[side] ?? [:]
             for player in lineups[side] ?? [] {
@@ -267,6 +272,9 @@ public final class GameStateTracker {
         if let balls = provided.balls { state.balls = balls }
         if let strikes = provided.strikes { state.strikes = strikes }
         if let outs = provided.outs { state.outs = outs }
+        if let pitcherId = provided.pitcherId, let name = names[pitcherId], let side = state.fieldingSide {
+            state.defense[side, default: [:]][.pitcher] = name
+        }
         if let occupied = provided.basesOccupied, occupied.count == 3 {
             for index in 0..<3 {
                 if !occupied[index] {

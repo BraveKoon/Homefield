@@ -1,0 +1,19 @@
+name: Naver API check
+
+# 네이버 스포츠 응답 구조가 앱이 가정한 것과 같은지 확인 (결과는 로그에 출력)
+on:
+  pull_request:
+    paths:
+      - 'scripts/naver_api_check.py'
+      - 'Packages/HomefieldCore/Sources/HomefieldCore/NaverSportsProvider.swift'
+      - '.github/workflows/naver-api-check.yml'
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Naver API check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe endpoints
+        run: python3 scripts/naver_api_check.py

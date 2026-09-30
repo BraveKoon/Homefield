@@ -36,7 +36,8 @@ public struct NaverSportsProvider: GameDataProvider {
     public func relay(gameId: String, inning: Int?) async throws -> RelaySnapshot {
         var query: [String: String] = [:]
         if let inning { query["inning"] = String(inning) }
-        let url = makeURL("game/\(gameId)/relay", query: query)
+        // 2026-09-30 실제 응답으로 확인: /schedule/games/{id}/relay (inning 생략 시 현재 이닝). /game/{id}/relay 는 404.
+        let url = makeURL("schedule/games/\(gameId)/relay", query: query)
 
         async let relay: NaverEnvelope<NaverRelayResult> = get(url)
         let game = try? await gameSummary(id: gameId)
@@ -259,7 +260,7 @@ struct NaverTextOption: Decodable {
     let currentGameState: NaverGameState?
 }
 
-/// 필드 이름은 확인되지 않았다. 없거나 다르면 nil 이 되고, 앱은 문자중계로 상태를 계산한다.
+/// 2026-09-30 실제 응답으로 필드 이름 확인. 주자가 없으면 base 값이 "0", 있으면 선수 코드.
 struct NaverGameState: Decodable {
     let ball: LenientInt?
     let strike: LenientInt?
@@ -267,6 +268,7 @@ struct NaverGameState: Decodable {
     let base1: LenientString?
     let base2: LenientString?
     let base3: LenientString?
+    let pitcher: LenientString?
 
     var countState: CountState? {
         guard ball?.value != nil || strike?.value != nil || out?.value != nil else { return nil }
@@ -274,7 +276,8 @@ struct NaverGameState: Decodable {
             guard let value = base?.value?.trimmingCharacters(in: .whitespaces) else { return false }
             return !value.isEmpty && value != "0"
         }
-        return CountState(balls: ball?.value, strikes: strike?.value, outs: out?.value, basesOccupied: bases)
+        let pitcherId = pitcher?.value.flatMap { $0.isEmpty || $0 == "0" ? nil : $0 }
+        return CountState(balls: ball?.value, strikes: strike?.value, outs: out?.value, basesOccupied: bases, pitcherId: pitcherId)
     }
 }
 
