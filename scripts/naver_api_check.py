@@ -126,50 +126,61 @@ def main():
 
 
 def probe_players(game_id, pcode, team_code):
-    """선수 프로필(팀 이력)·1군 엔트리(등록/말소) 후보 경로를 찾는다"""
-    print(f"\n=== 선수·엔트리 후보 (pcode={pcode}, team={team_code}) ===")
-    season = dt.datetime.now(KST).year
-    candidates = [
-        f"/schedule/games/{game_id}/preview",
-        f"/schedule/games/{game_id}/record",
-        f"/statistics/categories/kbo/players/{pcode}",
-        f"/statistics/categories/kbo/seasons/{season}/players/{pcode}",
-        f"/players/{pcode}",
-        f"/players/{pcode}?categoryId=kbo",
-        f"/kbaseball/players/{pcode}",
-        f"/player/kbo/{pcode}",
-        f"/statistics/categories/kbo/teams/{team_code}/players",
-        f"/statistics/categories/kbo/seasons/{season}/teams/{team_code}/players",
-        f"/teams/{team_code}/players?categoryId=kbo",
-        f"/kbaseball/teams/{team_code}/players",
-        f"/statistics/categories/kbo/seasons/{season}/players?playerType=HITTER&teamCode={team_code}",
-        f"/statistics/categories/kbo/seasons/{season}/players?playerType=PITCHER&teamCode={team_code}",
-    ]
-    for path in candidates:
-        status, body = get(path)
-        result = (body or {}).get("result") if isinstance(body, dict) else None
-        print(f"{path}: HTTP {status}, result keys={list(result.keys()) if isinstance(result, dict) else type(result).__name__}")
-        if status == 200 and result:
-            show(f"{path} shape", shape(result, max_depth=4), 3000)
-            show(f"{path} sample", result, 2500)
+    """이닝별 점수(R/H/E)·1군 엔트리(등록/말소)·시즌 기록 경로 확인 (로그가 잘리지 않게 짧게 출력)"""
+    print("\n=== 이닝별 점수 / 엔트리 ===")
+    status, body = get(f"/schedule/games/{game_id}")
+    game = ((body or {}).get("result") or {}).get("game") or {}
+    for key, value in game.items():
+        lowered = key.lower()
+        if any(word in lowered for word in ("inning", "rheb", "hit", "error", "ball", "score")):
+            print(f"game.{key} = {json.dumps(value, ensure_ascii=False)[:300]}")
 
-    # KBO 공식 홈페이지의 1군 등록·말소 현황 (HTML)
-    for url in (
-        "https://www.koreabaseball.com/Player/Register.aspx",
-        "https://www.koreabaseball.com/Player/RegisterAll.aspx",
-    ):
-        request = urllib.request.Request(url, headers={"User-Agent": HEADERS["User-Agent"]})
-        try:
-            with urllib.request.urlopen(request, timeout=15) as response:
-                html = response.read().decode("utf-8", "replace")
-            print(f"{url}: HTTP {response.status}, {len(html)} bytes")
-            for marker in ("말소", "등록", "<table", "tNData", "hfSearchDate"):
-                index = html.find(marker)
-                print(f"  marker {marker!r} at {index}")
-                if index >= 0:
-                    print("  " + html[max(0, index - 200):index + 800].replace("\n", " ")[:1000])
-        except Exception as error:  # noqa: BLE001
-            print(f"{url}: {error}")
+    status, body = get(f"/schedule/games/{game_id}/relay")
+    relay = ((body or {}).get("result") or {}).get("textRelayData") or {}
+    print(f"relay keys: {list(relay.keys())}")
+    print(f"relay.inningScore = {json.dumps(relay.get('inningScore'), ensure_ascii=False)[:400]}")
+    for side in ("homeLineup", "awayLineup"):
+        batters = (relay.get(side) or {}).get("batter") or []
+        print(f"{side}: batters={len(batters)} hits={sum(int(b.get('hit') or 0) for b in batters)}")
+    for key, value in relay.items():
+        if any(word in key.lower() for word in ("rheb", "error", "score", "record")):
+            print(f"relay.{key} = {json.dumps(value, ensure_ascii=False)[:400]}")
+
+    season = dt.datetime.now(KST).year
+    path = f"/statistics/categories/kbo/seasons/{season}/players?playerType=HITTER&teamCode={team_code}"
+    status, body = get(path)
+    stats = (((body or {}).get("result") or {}).get("seasonPlayerStats") or [])
+    print(f"{path}: HTTP {status}, {len(stats)} players")
+    if stats:
+        sample = {k: v for k, v in stats[0].items() if k.startswith("hitter") or k in ("playerId", "playerName", "teamId", "backNumber")}
+        print(json.dumps(sample, ensure_ascii=False)[:1500])
+
+    # KBO 공식 홈페이지 1군 등록 현황 (앱의 KBORosterParser 와 같은 방식으로 읽어 본다)
+    url = "https://www.koreabaseball.com/Player/RegisterAll.aspx"
+    request = urllib.request.Request(url, headers={"User-Agent": HEADERS["User-Agent"]})
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            html = response.read().decode("utf-8", "replace")
+    except Exception as error:  # noqa: BLE001
+        print(f"{url}: {error}")
+        return
+    import re
+    table = re.search(r'<table class="tData tDays".*?</table>', html, re.S)
+    print(f"{url}: {len(html)} bytes, table found={bool(table)}")
+    if table:
+        headers = re.findall(r'<th scope="col">(.*?)</th>', table.group(0))
+        print(f"headers: {headers}")
+        for row in re.findall(r'<tr>(.*?)</tr>', table.group(0), re.S):
+            team = re.search(r'<th scope="row"[^>]*>(.*?)</th>', row, re.S)
+            if not team:
+                continue
+            cells = re.findall(r'<td>(.*?)</td>', row, re.S)
+            names = [re.findall(r'<li>(.*?)</li>', cell) for cell in cells]
+            print(f"team {team.group(1)!r}: " + ", ".join(f"{len(n)}" for n in names) + f" | 투수 예시 {names[2][:3] if len(names) > 2 else None}")
+    cancel = re.search(r'1군 말소 현황.*?</table>', html, re.S)
+    if cancel:
+        rows = re.findall(r'<td>\s*(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>', cancel.group(0), re.S)
+        print(f"말소 {len(rows)}명, 예시 {rows[:3]}")
 
 
 if __name__ == "__main__":
