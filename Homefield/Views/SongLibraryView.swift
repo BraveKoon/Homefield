@@ -164,7 +164,7 @@ struct TeamSongsView: View {
             }
 
             if let roster {
-                ForEach(roster.grouped, id: \.group) { group in
+                ForEach(roster.grouped) { group in
                     Section("\(group.group.displayName) \(group.players.count)") {
                         ForEach(group.players) { player in
                             playerLink(KnownPlayer(

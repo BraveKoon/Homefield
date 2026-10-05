@@ -48,11 +48,12 @@ final class AppSettings {
         customPhrases = Dictionary(uniqueKeysWithValues: storedPhrases.compactMap { key, value in
             PlayKind(rawValue: key).map { ($0, value) }
         })
-        favoriteTeamCode = defaults.string(forKey: Keys.favoriteTeamCode)
+        let favorite = defaults.string(forKey: Keys.favoriteTeamCode)
+        favoriteTeamCode = favorite
         songScope = defaults.string(forKey: Keys.songScope).flatMap(SongScope.init(rawValue:)) ?? .allTeams
         useDemo = defaults.object(forKey: Keys.useDemo) as? Bool ?? false
         // 예전 버전에서 이미 응원팀을 골랐다면 다시 묻지 않는다
-        hasCompletedOnboarding = defaults.object(forKey: Keys.hasCompletedOnboarding) as? Bool ?? (favoriteTeamCode != nil)
+        hasCompletedOnboarding = defaults.object(forKey: Keys.hasCompletedOnboarding) as? Bool ?? (favorite != nil)
     }
 
     var composer: NarrationComposer {

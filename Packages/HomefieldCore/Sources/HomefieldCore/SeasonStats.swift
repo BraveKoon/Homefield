@@ -45,11 +45,17 @@ public struct SeasonStats: Codable, Hashable, Sendable {
         return copy == self
     }
 
+    public struct Item: Hashable, Sendable, Identifiable {
+        public var label: String
+        public var value: String
+        public var id: String { label }
+    }
+
     /// 화면에 보여 줄 (이름, 값) 목록
-    public var displayItems: [(label: String, value: String)] {
-        var items: [(String, String)] = []
+    public var displayItems: [Item] {
+        var items: [Item] = []
         func add(_ label: String, _ value: String?) {
-            if let value { items.append((label, value)) }
+            if let value { items.append(Item(label: label, value: value)) }
         }
         switch kind {
         case .batter:

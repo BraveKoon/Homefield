@@ -346,7 +346,7 @@ private struct SeasonStatsSection: View {
         let theme = TeamTheme.forTeam(teamCode)
         Section {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 70), spacing: 10)], spacing: 10) {
-                ForEach(stats.displayItems, id: \.label) { item in
+                ForEach(stats.displayItems) { item in
                     VStack(spacing: 2) {
                         Text(item.value)
                             .font(.title3.monospacedDigit().bold())

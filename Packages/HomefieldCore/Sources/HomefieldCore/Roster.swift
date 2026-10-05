@@ -50,13 +50,19 @@ public struct TeamRoster: Codable, Hashable, Sendable {
         players.contains { $0.name == name }
     }
 
+    public struct Section: Hashable, Sendable, Identifiable {
+        public var group: Group
+        public var players: [Player]
+        public var id: Group { group }
+    }
+
     /// 투수, 포수, 내야수, 외야수 순으로 묶는다
-    public var grouped: [(group: Group, players: [Player])] {
-        Group.allCases.compactMap { group in
+    public var grouped: [Section] {
+        Group.allCases.compactMap { group -> Section? in
             let members = players
                 .filter { Group(position: $0.position) == group }
                 .sorted { ($0.backNumber.flatMap(Int.init) ?? 999, $0.name) < ($1.backNumber.flatMap(Int.init) ?? 999, $1.name) }
-            return members.isEmpty ? nil : (group, members)
+            return members.isEmpty ? nil : Section(group: group, players: members)
         }
     }
 
