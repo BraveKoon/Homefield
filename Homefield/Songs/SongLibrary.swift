@@ -61,6 +61,8 @@ final class SongLibrary {
     private(set) var rostersUpdatedAt: Date?
     private(set) var isRefreshingRosters = false
     private(set) var rosterError: String?
+    /// 선수 코드 → KBO 공식 경력 (팀 이력)
+    private(set) var careers: [String: KBOPlayerCareer] = [:]
 
     private let storeURL: URL
     let songsDirectory: URL
@@ -120,6 +122,28 @@ final class SongLibrary {
                 knownPlayers[key] = KnownPlayer(teamCode: teamCode, name: name)
             }
         }
+        save()
+    }
+
+    /// 선수 키 → 데이터 제공자의 선수 코드 (네이버·KBO 공통)
+    func providerID(teamCode: String, name: String) -> String? {
+        let key = Self.key(teamCode: teamCode, name: name)
+        return providerIds.first { $0.value == key }?.key
+    }
+
+    func career(teamCode: String, name: String) -> KBOPlayerCareer? {
+        providerID(teamCode: teamCode, name: name).flatMap { careers[$0] }
+    }
+
+    /// KBO 공식 기록에서 연도별 소속 팀을 받는다 (7일에 한 번)
+    func loadCareer(teamCode: String, name: String) async {
+        guard let id = providerID(teamCode: teamCode, name: name) else { return }
+        if let cached = careers[id], Date().timeIntervalSince(cached.fetchedAt) < 7 * 24 * 60 * 60 { return }
+        let rosterPlayer = rosters[teamCode]?.players.first(where: { $0.id == id })
+        let isPitcher = officialStats[id]?.kind == .pitcher
+            || TeamRoster.Group(position: rosterPlayer?.position) == .pitcher
+        guard let career = try? await KBOPlayerService().career(playerId: id, isPitcher: isPitcher) else { return }
+        careers[id] = career
         save()
     }
 
@@ -374,6 +398,7 @@ final class SongLibrary {
         var officialStats: [String: SeasonStats]?
         var rosters: [String: TeamRoster]?
         var rostersUpdatedAt: Date?
+        var careers: [String: KBOPlayerCareer]?
     }
 
     private func load() {
@@ -392,6 +417,7 @@ final class SongLibrary {
         officialStats = stored.officialStats ?? [:]
         rosters = stored.rosters ?? [:]
         rostersUpdatedAt = stored.rostersUpdatedAt
+        careers = stored.careers ?? [:]
         // 예전 버전에서 쌓인 데모 팀 선수는 직접 넣은 정보가 없으면 정리
         for (key, player) in knownPlayers where !Self.isKBOTeam(player.teamCode) && !hasUserData(player) {
             knownPlayers[key] = nil
@@ -413,7 +439,8 @@ final class SongLibrary {
             photos: photos,
             officialStats: officialStats,
             rosters: rosters,
-            rostersUpdatedAt: rostersUpdatedAt
+            rostersUpdatedAt: rostersUpdatedAt,
+            careers: careers
         )
         guard let data = try? JSONEncoder().encode(stored) else { return }
         try? data.write(to: storeURL, options: .atomic)

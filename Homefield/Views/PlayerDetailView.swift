@@ -76,13 +76,7 @@ struct PlayerDetailView: View {
                 }
             }
 
-            Section {
-                timeline(profile.teamHistory, empty: "거쳐 온 팀을 기록해 두세요.")
-            } header: {
-                Text("팀 이력")
-            } footer: {
-                Text("중계 데이터에서 같은 선수가 다른 팀으로 나오면 이적으로 자동 기록됩니다.")
-            }
+            teamHistorySection(profile: profile)
 
             if let memo = profile.memo, !memo.isEmpty {
                 Section("메모") { Text(memo) }
@@ -102,6 +96,7 @@ struct PlayerDetailView: View {
                 Button("편집") { editing = true }
             }
         }
+        .task { await library.loadCareer(teamCode: teamCode, name: name) }
         .onChange(of: photoItem) { _, item in
             guard let item else { return }
             Task { await savePhoto(item) }
@@ -175,6 +170,32 @@ struct PlayerDetailView: View {
                 .accessibilityLabel(line.results.suffix(20).map(\.displayName).joined(separator: ", "))
         }
         .padding(.vertical, 2)
+    }
+
+    /// KBO 공식 기록의 연도별 소속 팀. 없으면 중계에서 감지한 이적·직접 넣은 이력.
+    @ViewBuilder
+    private func teamHistorySection(profile: PlayerProfile) -> some View {
+        let career = library.career(teamCode: teamCode, name: name)
+        let official = career?.teamHistory ?? []
+        Section {
+            if official.isEmpty {
+                timeline(profile.teamHistory, empty: "KBO 공식 기록을 불러오는 중이거나 아직 1군 기록이 없어요.")
+            } else {
+                timeline(official, empty: "")
+            }
+            if let line = career?.career, !line.isEmpty {
+                Label(line, systemImage: "graduationcap")
+                    .font(.callout)
+            }
+        } header: {
+            Text("팀 이력")
+        } footer: {
+            if let career, !official.isEmpty {
+                Text("KBO 공식 기록(연도별 1군 기록) 기준 · \(career.fetchedAt.formatted(date: .abbreviated, time: .omitted)) 확인")
+            } else {
+                Text("KBO 공식 기록에서 자동으로 가져옵니다.")
+            }
+        }
     }
 
     @ViewBuilder
