@@ -2,7 +2,7 @@ import HomefieldCore
 import SwiftUI
 import UIKit
 
-/// 선수 사진 (없으면 이름 첫 글자)
+/// 선수 사진: 직접 넣은 사진 → 네이버 스포츠 선수 사진 → 이름 첫 글자
 struct PlayerAvatar: View {
     @Environment(SongLibrary.self) private var library
     let teamCode: String
@@ -18,12 +18,15 @@ struct PlayerAvatar: View {
                     .resizable()
                     .scaledToFill()
             } else {
-                ZStack {
-                    theme.gradient
-                    Text(String(name.prefix(1)))
-                        .font(.system(size: size * 0.42, weight: .bold))
-                        .foregroundStyle(.white)
+                RemoteImage(url: library.providerID(teamCode: teamCode, name: name).flatMap(SportsImageURL.player)) {
+                    ZStack {
+                        theme.gradient
+                        Text(String(name.prefix(1)))
+                            .font(.system(size: size * 0.42, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
                 }
+                .background(theme.primary.opacity(0.15))
             }
         }
         .frame(width: size, height: size)
