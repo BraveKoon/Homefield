@@ -50,6 +50,21 @@ public struct NaverSportsProvider: GameDataProvider {
         return envelope.result?.game.map(NaverMapping.summary(from:))
     }
 
+    /// 팀 선수들의 시즌 기록 (타자·투수). 2026-10-05 실제 응답으로 확인한 경로·필드.
+    public func teamSeasonStats(teamCode: String, season: Int) async throws -> [SeasonStats] {
+        var stats: [SeasonStats] = []
+        for type in ["HITTER", "PITCHER"] {
+            let url = makeURL("statistics/categories/kbo/seasons/\(season)/players", query: [
+                "playerType": type,
+                "teamCode": teamCode,
+                "pageSize": "100",
+            ])
+            let envelope: NaverEnvelope<NaverSeasonStatsResult> = try await get(url)
+            stats += NaverMapping.seasonStats(from: envelope.result, kind: type == "HITTER" ? .batter : .pitcher)
+        }
+        return stats
+    }
+
     private func makeURL(_ path: String, query: [String: String]) -> URL {
         var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
         if !query.isEmpty {
@@ -98,6 +113,40 @@ public enum NaverMapping {
     public static func parseGames(_ data: Data) throws -> [GameSummary] {
         let envelope = try JSONDecoder().decode(NaverEnvelope<NaverScheduleResult>.self, from: data)
         return (envelope.result?.games ?? []).map(summary(from:))
+    }
+
+    public static func parseTeamSeasonStats(_ data: Data, kind: SeasonStats.Kind) throws -> [SeasonStats] {
+        let envelope = try JSONDecoder().decode(NaverEnvelope<NaverSeasonStatsResult>.self, from: data)
+        return seasonStats(from: envelope.result, kind: kind)
+    }
+
+    static func seasonStats(from result: NaverSeasonStatsResult?, kind: SeasonStats.Kind) -> [SeasonStats] {
+        (result?.seasonPlayerStats ?? []).compactMap { row in
+            guard let id = row.playerId?.value, !id.isEmpty else { return nil }
+            var stats = SeasonStats(playerId: id, kind: kind)
+            switch kind {
+            case .batter:
+                stats.games = row.hitterGameCount?.value
+                stats.average = row.hitterHra?.value
+                stats.atBats = row.hitterAb?.value
+                stats.hits = row.hitterHit?.value
+                stats.homeRuns = row.hitterHr?.value
+                stats.rbi = row.hitterRbi?.value
+                stats.onBase = row.hitterObp?.value
+                stats.strikeouts = row.hitterKk?.value
+                stats.walks = row.hitterBb?.value
+            case .pitcher:
+                stats.games = row.pitcherGameCount?.value
+                stats.era = row.pitcherEra?.value
+                stats.wins = row.pitcherWin?.value
+                stats.losses = row.pitcherLose?.value
+                stats.saves = row.pitcherSave?.value
+                stats.innings = row.pitcherInning?.value
+                stats.strikeouts = row.pitcherKk?.value
+                stats.walks = row.pitcherBb?.value
+            }
+            return stats
+        }
     }
 
     public static func parseRelay(_ data: Data, game: GameSummary?) throws -> RelaySnapshot {
@@ -193,10 +242,19 @@ public enum NaverMapping {
 
         var pitchers: [TeamSide: [Player]] = [:]
         if let home = data.homeLineup?.pitcher {
-            pitchers[.home] = home.compactMap { player(from: $0, teamCode: game?.home.code ?? "") }
+            pitchers[.home] = home.compactMap { player(from: $0, teamCode: game?.home.code ?? "", fallbackPosition: "투수") }
         }
         if let away = data.awayLineup?.pitcher {
-            pitchers[.away] = away.compactMap { player(from: $0, teamCode: game?.away.code ?? "") }
+            pitchers[.away] = away.compactMap { player(from: $0, teamCode: game?.away.code ?? "", fallbackPosition: "투수") }
+        }
+
+        var benches: [TeamSide: [Player]] = [:]
+        for (side, entry) in [(TeamSide.home, data.homeEntry), (.away, data.awayEntry)] {
+            guard let entry else { continue }
+            let code = game?.team(for: side).code ?? ""
+            let players = (entry.pitcher ?? []).compactMap { player(from: $0, teamCode: code, fallbackPosition: "투수") }
+                + (entry.batter ?? []).compactMap { player(from: $0, teamCode: code) }
+            if !players.isEmpty { benches[side] = players }
         }
 
         return RelaySnapshot(
@@ -204,7 +262,8 @@ public enum NaverMapping {
             currentInning: data.textRelays?.compactMap { $0.inn?.value }.max(),
             entries: entries,
             lineups: lineups,
-            pitchers: pitchers
+            pitchers: pitchers,
+            benches: benches
         )
     }
 
@@ -249,15 +308,17 @@ public enum NaverMapping {
         return value
     }
 
-    static func player(from batter: NaverLineupBatter, teamCode: String) -> Player? {
+    static func player(from batter: NaverLineupBatter, teamCode: String, fallbackPosition: String? = nil) -> Player? {
         guard let name = batter.name, !name.isEmpty else { return nil }
+        // 라인업의 pos 는 숫자(9), 엔트리의 pos 는 "유격수" 같은 글자
+        let textPosition = batter.pos?.value.flatMap { Int($0) == nil && !$0.isEmpty ? $0 : nil }
         return Player(
             id: batter.pcode?.value ?? "\(teamCode)-\(name)",
             name: name,
             teamCode: teamCode,
             backNumber: batter.backnum?.value,
             battingOrder: batter.batOrder?.value,
-            position: batter.posName
+            position: batter.posName ?? textPosition ?? fallbackPosition
         )
     }
 }
@@ -297,6 +358,33 @@ struct NaverGame: Decodable {
     let awayTeamRheb: [LenientInt]?
 }
 
+struct NaverSeasonStatsResult: Decodable {
+    let seasonPlayerStats: [NaverSeasonPlayerStats]?
+}
+
+struct NaverSeasonPlayerStats: Decodable {
+    let playerId: LenientString?
+    let playerName: String?
+    let backNumber: LenientString?
+    let hitterGameCount: LenientInt?
+    let hitterHra: LenientDouble?
+    let hitterAb: LenientInt?
+    let hitterHit: LenientInt?
+    let hitterHr: LenientInt?
+    let hitterRbi: LenientInt?
+    let hitterObp: LenientDouble?
+    let hitterKk: LenientInt?
+    let hitterBb: LenientInt?
+    let pitcherGameCount: LenientInt?
+    let pitcherEra: LenientDouble?
+    let pitcherWin: LenientInt?
+    let pitcherLose: LenientInt?
+    let pitcherSave: LenientInt?
+    let pitcherInning: LenientString?
+    let pitcherKk: LenientInt?
+    let pitcherBb: LenientInt?
+}
+
 struct NaverRelayResult: Decodable {
     let textRelayData: NaverTextRelayData?
 }
@@ -305,6 +393,9 @@ struct NaverTextRelayData: Decodable {
     let textRelays: [NaverTextRelay]?
     let homeLineup: NaverLineup?
     let awayLineup: NaverLineup?
+    /// 그날 엔트리 (2026-09-30 실제 응답: batter 목록에 name, pcode, pos("유격수"), hittype)
+    let homeEntry: NaverLineup?
+    let awayEntry: NaverLineup?
 }
 
 struct NaverTextRelay: Decodable {
@@ -393,6 +484,7 @@ struct NaverLineupBatter: Decodable {
     let batOrder: LenientInt?
     let backnum: LenientString?
     let posName: String?
+    let pos: LenientString?
 }
 
 /// 숫자가 문자열로 오기도 하고 숫자로 오기도 하는 필드용

@@ -201,19 +201,23 @@ public struct RelaySnapshot: Sendable {
     public var lineups: [TeamSide: [Player]]
     /// 투수 명단 (첫 번째가 선발)
     public var pitchers: [TeamSide: [Player]]
+    /// 라인업에 없는 그날 엔트리 선수 (벤치·불펜)
+    public var benches: [TeamSide: [Player]]
 
     public init(
         game: GameSummary? = nil,
         currentInning: Int? = nil,
         entries: [RelayEntry],
         lineups: [TeamSide: [Player]] = [:],
-        pitchers: [TeamSide: [Player]] = [:]
+        pitchers: [TeamSide: [Player]] = [:],
+        benches: [TeamSide: [Player]] = [:]
     ) {
         self.game = game
         self.currentInning = currentInning
         self.entries = entries
         self.lineups = lineups
         self.pitchers = pitchers
+        self.benches = benches
     }
 }
 

@@ -20,8 +20,9 @@ public struct SeasonStats: Codable, Hashable, Sendable {
     public var rbi: Int?
     public var onBase: Double?
 
-    // 투수
     public var games: Int?
+
+    // 투수
     public var era: Double?
     public var wins: Int?
     public var losses: Int?
@@ -53,11 +54,14 @@ public struct SeasonStats: Codable, Hashable, Sendable {
         switch kind {
         case .batter:
             add("타율", average.map(Self.rate))
+            add("경기", games.map(String.init))
             add("타수", atBats.map(String.init))
             add("안타", hits.map(String.init))
             add("홈런", homeRuns.map(String.init))
             add("타점", rbi.map(String.init))
             add("출루율", onBase.map(Self.rate))
+            add("볼넷", walks.map(String.init))
+            add("삼진", strikeouts.map(String.init))
         case .pitcher:
             add("평균자책", era.map { String(format: "%.2f", $0) })
             add("경기", games.map(String.init))

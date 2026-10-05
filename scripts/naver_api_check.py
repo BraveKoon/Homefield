@@ -142,11 +142,20 @@ def probe_players(game_id, pcode, team_code):
     for side in ("homeLineup", "awayLineup"):
         batters = (relay.get(side) or {}).get("batter") or []
         print(f"{side}: batters={len(batters)} hits={sum(int(b.get('hit') or 0) for b in batters)}")
+    for side in ("homeEntry", "awayEntry"):
+        entry = relay.get(side) or {}
+        print(f"{side}: " + ", ".join(f"{k}={len(v) if isinstance(v, list) else type(v).__name__}" for k, v in entry.items()))
+        for key, value in entry.items():
+            if isinstance(value, list) and value:
+                print(f"  {side}.{key}[0] = {json.dumps(value[0], ensure_ascii=False)[:300]}")
     for key, value in relay.items():
         if any(word in key.lower() for word in ("rheb", "error", "score", "record")):
             print(f"relay.{key} = {json.dumps(value, ensure_ascii=False)[:400]}")
 
     season = dt.datetime.now(KST).year
+    path = f"/statistics/categories/kbo/seasons/{season}/players?pageSize=100&playerType=PITCHER&teamCode={team_code}"
+    status, body = get(path)
+    print(f"{path}: HTTP {status}, {len(((body or {}).get('result') or {}).get('seasonPlayerStats') or [])} players")
     path = f"/statistics/categories/kbo/seasons/{season}/players?playerType=HITTER&teamCode={team_code}"
     status, body = get(path)
     stats = (((body or {}).get("result") or {}).get("seasonPlayerStats") or [])
