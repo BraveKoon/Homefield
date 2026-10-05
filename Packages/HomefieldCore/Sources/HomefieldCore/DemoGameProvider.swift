@@ -102,8 +102,27 @@ public actor DemoGameProvider: GameDataProvider {
     private func summary() -> GameSummary {
         let classifier = RelayTextClassifier()
         var score: [TeamSide: Int] = [.home: 0, .away: 0]
-        for line in script.prefix(revealed) where classifier.classify(line.text).contains(.run) {
-            score[line.side, default: 0] += 1
+        var lines: [TeamSide: LineScore.Line] = [.home: LineScore.Line(), .away: LineScore.Line()]
+        let hitKinds: Set<PlayKind> = [.single, .double, .triple, .homeRun]
+        for line in script.prefix(revealed) {
+            let kinds = classifier.classify(line.text)
+            var current = lines[line.side] ?? LineScore.Line()
+            while current.innings.count < line.inning { current.innings.append(0) }
+            if kinds.contains(.run) {
+                score[line.side, default: 0] += 1
+                current.innings[line.inning - 1] = (current.innings[line.inning - 1] ?? 0) + 1
+            }
+            if kinds.contains(where: hitKinds.contains) { current.hits = (current.hits ?? 0) + 1 }
+            lines[line.side] = current
+            // 실책은 수비 팀 기록
+            if kinds.contains(.error) {
+                lines[line.side.opposite, default: LineScore.Line()].errors = (lines[line.side.opposite]?.errors ?? 0) + 1
+            }
+        }
+        for side in [TeamSide.home, .away] {
+            lines[side]?.runs = score[side]
+            if lines[side]?.hits == nil { lines[side]?.hits = 0 }
+            if lines[side]?.errors == nil { lines[side]?.errors = 0 }
         }
         let last = script.prefix(revealed).last
         let finished = revealed >= script.count
@@ -116,7 +135,8 @@ public actor DemoGameProvider: GameDataProvider {
             status: finished ? .finished : .live,
             statusText: finished ? "데모 종료" : last.map { "\($0.inning)회\($0.side == .away ? "초" : "말")" } ?? "1회초",
             startTime: Date(),
-            stadium: "홈구장 (데모)"
+            stadium: "홈구장 (데모)",
+            lineScore: LineScore(away: lines[.away] ?? LineScore.Line(), home: lines[.home] ?? LineScore.Line())
         )
     }
 

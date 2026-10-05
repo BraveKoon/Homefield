@@ -95,4 +95,23 @@ final class PlateAppearanceTrackerTests: XCTestCase {
         XCTAssertTrue(tracker.process([DetectedEvent(id: "b", kind: .batterUp(batter), text: "")]).isEmpty)
         XCTAssertEqual(tracker.process([play(.strikeout, "강두원")]).map(\.kind), [.strikeout])
     }
+
+    func testTemplateRoundTrip() throws {
+        var filled = PlayerProfile()
+        filled.moves = ["박수 두 번"]
+        filled.teamHistory = [TimelineEntry(period: "2020~", text: "삼성")]
+        let data = try PlayerProfilesFile.template([
+            (teamCode: "SS", name: "구자욱", profile: filled),
+            (teamCode: "LG", name: "오스틴", profile: PlayerProfile()),
+        ])
+        let text = String(decoding: data, as: UTF8.self)
+        XCTAssertTrue(text.contains("\"cheerHistory\" : ["))
+        XCTAssertFalse(text.contains("\"id\""))
+
+        let decoded = try PlayerProfilesFile.decode(data)
+        XCTAssertEqual(decoded.players.map(\.name), ["구자욱", "오스틴"])
+        XCTAssertEqual(decoded.players[0].profile.moves, ["박수 두 번"])
+        XCTAssertEqual(decoded.players[0].profile.teamHistory.first?.period, "2020~")
+        XCTAssertTrue(decoded.players[1].profile.isEmpty)
+    }
 }

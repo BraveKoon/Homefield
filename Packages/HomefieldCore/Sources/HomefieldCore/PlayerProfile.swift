@@ -117,4 +117,34 @@ public struct PlayerProfilesFile: Decodable, Sendable {
     public static func decode(_ data: Data) throws -> PlayerProfilesFile {
         try JSONDecoder().decode(PlayerProfilesFile.self, from: data)
     }
+
+    /// 채워 넣을 수 있게 선수 목록으로 만든 JSON (이미 있는 정보는 그대로, 빈 항목은 빈 칸)
+    public static func template(_ players: [(teamCode: String, name: String, profile: PlayerProfile)]) throws -> Data {
+        struct Row: Encodable {
+            let team: String
+            let name: String
+            let moves: [String]
+            let chant: String
+            let cheerHistory: [TimelineEntry]
+            let teamHistory: [TimelineEntry]
+            let memo: String
+        }
+        struct File: Encodable {
+            let players: [Row]
+        }
+        let rows = players.map { player in
+            Row(
+                team: player.teamCode,
+                name: player.name,
+                moves: player.profile.moves,
+                chant: player.profile.chant ?? "",
+                cheerHistory: player.profile.cheerHistory,
+                teamHistory: player.profile.teamHistory,
+                memo: player.profile.memo ?? ""
+            )
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        return try encoder.encode(File(players: rows))
+    }
 }

@@ -102,6 +102,85 @@ final class NaverMappingTests: XCTestCase {
         XCTAssertEqual(snapshot.entries[0].state?.pitcherId, "56011")
     }
 
+    /// 2026-09-30 실제 응답의 currentPlayersInfo (월간·통산 등 다른 묶음은 생략)
+    func testSeasonStatsFromCurrentPlayersInfo() throws {
+        let json = """
+        {"code":200,"success":true,"result":{"textRelayData":{
+          "textRelays":[{"no":75,"inn":7,"homeOrAway":"1","textOptions":[
+            {"seqno":419,"text":"1번타자 박정우","type":8,
+             "currentGameState":{"pitcher":"56011","batter":"67609","strike":"0","ball":"0","out":"2"},
+             "currentPlayersInfo":{
+               "away":{"playerType":"pitcher",
+                 "monthlyStats":{"gameCount":11,"era":12.27,"inn":"7.1"},
+                 "currentSeasonStats":{"bb":26,"kk":67,"gameCount":70,"s":0,"era":6.04,"w":1,"inn":"69.1","inn2":"69 1/3",
+                                       "l":2,"er":47,"ab":0,"hit":0,"hra":0.0,"rbi":0,"hr":0,"whip":0.0,"obp":0.0}},
+               "home":{"playerType":"batter",
+                 "currentSeasonStats":{"bb":0,"kk":0,"gameCount":0,"s":0,"era":0.0,"w":0,"inn":null,"inn2":null,
+                                       "l":0,"er":0,"ab":100,"hit":30,"hra":0.3,"rbi":15,"hr":0,"whip":0.0,"obp":0.421}}}},
+            {"seqno":420,"text":"1구 스트라이크","type":1}
+          ]}]
+        }}}
+        """
+        let snapshot = try NaverMapping.parseRelay(Data(json.utf8), game: nil)
+        let stats = snapshot.entries[0].seasonStats
+        XCTAssertEqual(stats.count, 2)
+        XCTAssertTrue(snapshot.entries[1].seasonStats.isEmpty)
+
+        let pitcher = try XCTUnwrap(stats.first { $0.kind == .pitcher })
+        XCTAssertEqual(pitcher.playerId, "56011")
+        XCTAssertEqual(pitcher.era, 6.04)
+        XCTAssertEqual(pitcher.games, 70)
+        XCTAssertEqual(pitcher.wins, 1)
+        XCTAssertEqual(pitcher.losses, 2)
+        XCTAssertEqual(pitcher.innings, "69 1/3")
+        XCTAssertEqual(pitcher.strikeouts, 67)
+
+        let batter = try XCTUnwrap(stats.first { $0.kind == .batter })
+        XCTAssertEqual(batter.playerId, "67609")
+        XCTAssertEqual(batter.atBats, 100)
+        XCTAssertEqual(batter.hits, 30)
+        XCTAssertEqual(batter.rbi, 15)
+        XCTAssertEqual(batter.displayItems.first?.value, ".300")
+        XCTAssertEqual(batter.displayItems.last?.value, ".421")
+        XCTAssertTrue(batter.sameNumbers(as: { var copy = batter; copy.updatedAt = .distantPast; return copy }()))
+    }
+
+    /// 2026-10-05 KIA vs LG 실제 경기 요약에서 이닝별 점수 부분
+    func testLineScore() throws {
+        let json = """
+        {"code":200,"success":true,"result":{"games":[
+          {"gameId":"20261005HTLG02026","homeTeamCode":"LG","awayTeamCode":"HT","homeTeamScore":4,"awayTeamScore":6,
+           "statusCode":"RESULT","currentInning":"9회말",
+           "homeTeamScoreByInning":["4","0","0","0","0","0","0","0","0"],
+           "awayTeamScoreByInning":["0","0","0","2","0","1","0","0","3"],
+           "homeTeamRheb":[4,7,1,4],"awayTeamRheb":[6,10,0,3]}
+        ]}}
+        """
+        let game = try XCTUnwrap(NaverMapping.parseGames(Data(json.utf8)).first)
+        let score = try XCTUnwrap(game.lineScore)
+        XCTAssertEqual(score.inningCount, 9)
+        XCTAssertEqual(score.away.innings, [0, 0, 0, 2, 0, 1, 0, 0, 3])
+        XCTAssertEqual(score.home.innings.first, 4)
+        XCTAssertEqual(score.away.runs, 6)
+        XCTAssertEqual(score.away.hits, 10)
+        XCTAssertEqual(score.home.errors, 1)
+        XCTAssertEqual(score.home.walks, 4)
+    }
+
+    func testLineScoreInProgressAndMissing() throws {
+        let json = """
+        {"result":{"games":[
+          {"gameId":"a","homeTeamScoreByInning":["1","-",""],"awayTeamScoreByInning":["0","2"]},
+          {"gameId":"b"}
+        ]}}
+        """
+        let games = try NaverMapping.parseGames(Data(json.utf8))
+        XCTAssertEqual(games[0].lineScore?.home.innings, [1, nil, nil])
+        XCTAssertEqual(games[0].lineScore?.inningCount, 9)
+        XCTAssertNil(games[0].lineScore?.away.runs)
+        XCTAssertNil(games[1].lineScore)
+    }
+
     func testEndedStatus() {
         XCTAssertEqual(NaverMapping.status(code: "ENDED", cancelled: false), .finished)
         XCTAssertEqual(NaverMapping.status(code: "STARTED", cancelled: false), .live)

@@ -46,5 +46,11 @@ struct RootView: View {
         .tint(theme.primary)
         .environment(\.teamTheme, theme)
         .animation(.default, value: settings.favoriteTeamCode)
+        .fullScreenCover(isPresented: Binding(
+            get: { !settings.hasCompletedOnboarding },
+            set: { if !$0 { settings.hasCompletedOnboarding = true } }
+        )) {
+            OnboardingView()
+        }
     }
 }

@@ -11,10 +11,24 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("응원팀", selection: $settings.favoriteTeamCode) {
-                        Text("없음").tag(String?.none)
-                        ForEach(library.teamCodes, id: \.self) { code in
-                            Text(library.teamName(for: code)).tag(Optional(code))
+                    NavigationLink {
+                        ScrollView {
+                            TeamPickerGrid(selection: $settings.favoriteTeamCode)
+                                .padding(16)
+                            Button("응원팀 없음") { settings.favoriteTeamCode = nil }
+                                .padding(.bottom, 24)
+                        }
+                        .background { ThemedBackground() }
+                        .navigationTitle("응원팀")
+                    } label: {
+                        HStack {
+                            if let code = settings.favoriteTeamCode {
+                                TeamBadge(code: code, size: 32)
+                            }
+                            Text("응원팀")
+                            Spacer()
+                            Text(settings.favoriteTeamCode.map(library.teamName(for:)) ?? "없음")
+                                .foregroundStyle(.secondary)
                         }
                     }
                     Picker("노래 재생", selection: $settings.songScope) {
@@ -67,6 +81,7 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            .themedBackground()
             .navigationTitle("설정")
         }
     }

@@ -17,6 +17,18 @@ struct LiveGameView: View {
             if let session {
                 Section {
                     Scoreboard(game: session.game, state: session.gameState)
+                        .listRowInsets(EdgeInsets())
+                        .animation(.snappy, value: session.game.homeScore)
+                        .animation(.snappy, value: session.game.awayScore)
+                    if let lineScore = session.game.lineScore {
+                        LineScoreView(
+                            game: session.game,
+                            lineScore: lineScore,
+                            currentInning: session.gameState.inning,
+                            battingSide: session.gameState.battingSide
+                        )
+                        .padding(.vertical, 4)
+                    }
                     FieldView(
                         state: session.gameState,
                         fieldingTeamCode: session.gameState.fieldingSide.map { session.game.team(for: $0).code },
@@ -84,6 +96,7 @@ struct LiveGameView: View {
                 }
             }
         }
+        .themedBackground()
         .onChange(of: session?.currentHalfKey) { _, newKey in
             // 이닝이 끝나면 지난 이닝은 접고 새 이닝을 펼친다
             if let newKey { expandedHalves = [newKey] }
@@ -148,7 +161,6 @@ private struct RelayLineRow: View {
 }
 
 private struct Scoreboard: View {
-    @Environment(\.teamTheme) private var theme
     let game: GameSummary
     let state: LiveGameState
 
@@ -165,25 +177,41 @@ private struct Scoreboard: View {
                 if let pitcher = state.pitcherName {
                     Text("투수 \(pitcher)")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.8))
                         .lineLimit(1)
                 }
             }
             teamColumn(game.home, score: game.homeScore, label: "홈", batting: state.battingSide == .home)
         }
-        .padding(.vertical, 8)
+        .foregroundStyle(.white)
+        .padding(.vertical, 14)
+        .padding(.horizontal, 8)
+        .background {
+            ZStack {
+                LinearGradient(
+                    colors: [TeamTheme.forTeam(game.away.code).primary, TeamTheme.forTeam(game.home.code).primary],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                Color.black.opacity(0.35)
+            }
+        }
+        .environment(\.colorScheme, .dark)
     }
 
     private func teamColumn(_ team: Team, score: Int?, label: String, batting: Bool) -> some View {
         VStack(spacing: 4) {
+            TeamBadge(code: team.code, size: 40)
             HStack(spacing: 4) {
                 if batting {
-                    Image(systemName: "baseball.fill").font(.caption2).foregroundStyle(theme.primary)
+                    Image(systemName: "baseball.fill").font(.caption2).foregroundStyle(.yellow)
                 }
-                Text(label).font(.caption2).foregroundStyle(.secondary)
+                Text(label).font(.caption2).foregroundStyle(.white.opacity(0.75))
             }
-            Text(team.name).font(.headline).lineLimit(1).minimumScaleFactor(0.6)
-            Text(score.map(String.init) ?? "-").font(.system(size: 40, weight: .bold).monospacedDigit())
+            Text(team.name).font(.subheadline.bold()).lineLimit(1).minimumScaleFactor(0.6)
+            Text(score.map(String.init) ?? "-")
+                .font(.system(size: 44, weight: .heavy, design: .rounded).monospacedDigit())
+                .contentTransition(.numericText())
         }
         .frame(maxWidth: .infinity)
     }

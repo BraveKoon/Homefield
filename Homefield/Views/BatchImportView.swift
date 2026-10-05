@@ -1,3 +1,4 @@
+import HomefieldCore
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -19,6 +20,7 @@ struct BatchImportView: View {
                 guideSections
             }
         }
+        .themedBackground()
         .navigationTitle("한 번에 가져오기")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -89,6 +91,8 @@ struct BatchImportView: View {
         } footer: {
             Text("같은 폴더에 .json 파일을 넣으면 응원 동작, 응원 구호, 응원가 변천사, 팀 이력도 함께 가져옵니다.")
         }
+
+        ProfileTemplateSection()
 
         Section {
             Text("가져온 음악은 이 기기 안에만 저장되고 다른 곳으로 보내지 않습니다. 직접 가진 음원만 개인 용도로 사용해 주세요.")
@@ -176,4 +180,60 @@ struct BatchImportView: View {
       ]
     }
     """
+}
+
+/// 1군 명단으로 선수 정보 JSON 양식을 만들어 공유한다 (채워서 다시 가져오기)
+private struct ProfileTemplateSection: View {
+    @Environment(SongLibrary.self) private var library
+    @Environment(AppSettings.self) private var settings
+    @State private var teamCode: String?
+    @State private var fileURL: URL?
+    @State private var error: String?
+
+    var body: some View {
+        Section {
+            Picker("팀", selection: $teamCode) {
+                ForEach(library.teamCodes, id: \.self) { code in
+                    Text(library.teamName(for: code)).tag(Optional(code))
+                }
+            }
+            Button("양식 만들기", systemImage: "doc.badge.plus", action: makeTemplate)
+                .disabled(teamCode == nil)
+            if let fileURL {
+                ShareLink(item: fileURL) {
+                    Label("\(fileURL.lastPathComponent) 공유·저장", systemImage: "square.and.arrow.up")
+                }
+            }
+            if let error {
+                Text(error).font(.footnote).foregroundStyle(.red)
+            }
+        } header: {
+            Text("선수 정보 양식")
+        } footer: {
+            Text("팀의 1군 선수 이름이 채워진 JSON 파일을 만듭니다. 응원 동작·구호·응원가 변천사·팀 이력을 채워서 '폴더 또는 파일 선택'으로 다시 가져오면 한꺼번에 들어갑니다. 이미 입력한 내용은 양식에 그대로 들어 있습니다.")
+        }
+        .onAppear {
+            if teamCode == nil { teamCode = settings.favoriteTeamCode ?? library.teamCodes.first }
+        }
+        .onChange(of: teamCode) { _, _ in fileURL = nil }
+    }
+
+    private func makeTemplate() {
+        guard let teamCode else { return }
+        let names = library.rosters[teamCode]?.grouped.flatMap { $0.players.map(\.name) }
+            ?? library.players(ofTeam: teamCode).map(\.name)
+        let rows = names.map { name in
+            (teamCode: teamCode, name: name, profile: library.profile(teamCode: teamCode, name: name))
+        }
+        do {
+            let data = try PlayerProfilesFile.template(rows)
+            let url = FileManager.default.temporaryDirectory
+                .appendingPathComponent("\(TeamTheme.shortName(for: teamCode))_선수정보.json")
+            try data.write(to: url, options: .atomic)
+            fileURL = url
+            error = names.isEmpty ? "이 팀 선수 명단이 아직 없어요. 응원가 탭에서 당겨서 1군 명단을 받아 주세요." : nil
+        } catch {
+            self.error = "양식을 만들지 못했습니다: \(error.localizedDescription)"
+        }
+    }
 }

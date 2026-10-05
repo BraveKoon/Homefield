@@ -37,5 +37,12 @@ final class DemoGameTests: XCTestCase {
         XCTAssertEqual(lastGame?.status, .finished)
         XCTAssertEqual(lastGame?.homeScore, 3)
         XCTAssertEqual(lastGame?.awayScore, 1)
+        // 이닝별 점수 합 = 총점, 실책은 수비 팀에
+        let line = try XCTUnwrap(lastGame?.lineScore)
+        XCTAssertEqual(line.home.runs, 3)
+        XCTAssertEqual(line.home.innings.compactMap { $0 }.reduce(0, +), 3)
+        XCTAssertEqual(line.away.innings.compactMap { $0 }.reduce(0, +), 1)
+        XCTAssertGreaterThan((line.home.errors ?? 0) + (line.away.errors ?? 0), 0)
+        XCTAssertGreaterThan(line.home.hits ?? 0, 0)
     }
 }

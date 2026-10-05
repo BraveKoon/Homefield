@@ -54,6 +54,13 @@ final class SongLibrary {
     private var providerIds: [String: String] = [:]
     /// 선수 키 → 사진 파일 이름
     private(set) var photos: [String: String] = [:]
+    /// 제공자 선수 코드 → 시즌 공식 기록 (중계에서 받은 최신 값)
+    private(set) var officialStats: [String: SeasonStats] = [:]
+    /// 팀 코드 → 1군 엔트리 (팀마다 가장 최근 경기 기준)
+    private(set) var rosters: [String: TeamRoster] = [:]
+    private(set) var rostersUpdatedAt: Date?
+    private(set) var isRefreshingRosters = false
+    private(set) var rosterError: String?
 
     private let storeURL: URL
     let songsDirectory: URL
@@ -116,6 +123,24 @@ final class SongLibrary {
         save()
     }
 
+    /// 선수의 시즌 공식 기록 (중계에서 한 번이라도 받은 적이 있으면)
+    func seasonStats(teamCode: String, name: String) -> SeasonStats? {
+        let key = Self.key(teamCode: teamCode, name: name)
+        return providerIds.lazy
+            .filter { $0.value == key }
+            .compactMap { self.officialStats[$0.key] }
+            .max { $0.updatedAt < $1.updatedAt }
+    }
+
+    func record(seasonStats stats: [SeasonStats]) {
+        var changed = false
+        for item in stats where officialStats[item.playerId].map({ !$0.sameNumbers(as: item) }) ?? true {
+            officialStats[item.playerId] = item
+            changed = true
+        }
+        if changed { save() }
+    }
+
     func watchedLine(teamCode: String, name: String) -> BattingLine {
         watched[Self.key(teamCode: teamCode, name: name)] ?? BattingLine()
     }
@@ -130,9 +155,62 @@ final class SongLibrary {
             .sorted { $0.name < $1.name }
     }
 
+    /// KBO 10개 구단만 (데모 팀 제외)
     var teamCodes: [String] {
-        Set(teamNames.keys).union(knownPlayers.values.map(\.teamCode))
-            .sorted { teamName(for: $0) < teamName(for: $1) }
+        KBOTeams.all.map(\.code).sorted { teamName(for: $0) < teamName(for: $1) }
+    }
+
+    nonisolated static func isKBOTeam(_ code: String) -> Bool {
+        KBOTeams.all.contains { $0.code == code }
+    }
+
+    /// 곡·사진·응원 정보 중 하나라도 직접 넣은 선수
+    func hasUserData(_ player: KnownPlayer) -> Bool {
+        let assignment = assignments[player.id]
+        return assignment?.walkUp != nil || assignment?.cheer != nil
+            || !(profiles[player.id]?.isEmpty ?? true) || photos[player.id] != nil
+    }
+
+    /// 1군 엔트리 밖이지만 직접 넣은 정보가 있는 선수 (2군·말소·이적 등)
+    func offRosterPlayers(ofTeam code: String) -> [KnownPlayer] {
+        let roster = rosters[code]
+        return players(ofTeam: code).filter { player in
+            !(roster?.contains(name: player.name) ?? false) && (roster == nil || hasUserData(player))
+        }
+    }
+
+    // MARK: 1군 엔트리
+
+    /// 각 팀 최근 경기 엔트리로 1군 명단을 새로 받고, 팀별 시즌 기록도 함께 받는다
+    func refreshRosters(force: Bool = false) async {
+        if isRefreshingRosters { return }
+        if !force, let rostersUpdatedAt, Date().timeIntervalSince(rostersUpdatedAt) < 3 * 60 * 60 { return }
+        isRefreshingRosters = true
+        defer { isRefreshingRosters = false }
+
+        let provider = NaverSportsProvider()
+        let collected = await RosterCollector(provider: provider).collect()
+        guard !collected.isEmpty else {
+            rosterError = "1군 명단을 받지 못했습니다. 네트워크를 확인해 주세요."
+            return
+        }
+        rosterError = nil
+        for (code, roster) in collected {
+            rosters[code] = roster
+            register(players: roster.players)
+        }
+        rostersUpdatedAt = Date()
+        save()
+
+        let season = Calendar(identifier: .gregorian).component(.year, from: Date())
+        await withTaskGroup(of: [SeasonStats].self) { group in
+            for code in collected.keys {
+                group.addTask { (try? await provider.teamSeasonStats(teamCode: code, season: season)) ?? [] }
+            }
+            for await stats in group {
+                record(seasonStats: stats)
+            }
+        }
     }
 
     // MARK: 변경
@@ -175,15 +253,20 @@ final class SongLibrary {
     }
 
     func register(team: Team) {
-        guard teamNames[team.code] != team.name, !team.code.isEmpty else { return }
+        guard Self.isKBOTeam(team.code), teamNames[team.code] != team.name else { return }
         teamNames[team.code] = team.name
         save()
     }
 
     func register(players: [Player]) {
         var changed = false
-        for player in players where !player.teamCode.isEmpty {
-            let known = KnownPlayer(teamCode: player.teamCode, name: player.name, backNumber: player.backNumber)
+        for player in players where Self.isKBOTeam(player.teamCode) {
+            let id = Self.key(teamCode: player.teamCode, name: player.name)
+            let known = KnownPlayer(
+                teamCode: player.teamCode,
+                name: player.name,
+                backNumber: player.backNumber ?? knownPlayers[id]?.backNumber
+            )
             if knownPlayers[known.id] != known {
                 knownPlayers[known.id] = known
                 changed = true
@@ -291,6 +374,9 @@ final class SongLibrary {
         var watched: [String: BattingLine]?
         var providerIds: [String: String]?
         var photos: [String: String]?
+        var officialStats: [String: SeasonStats]?
+        var rosters: [String: TeamRoster]?
+        var rostersUpdatedAt: Date?
     }
 
     private func load() {
@@ -306,6 +392,16 @@ final class SongLibrary {
         watched = stored.watched ?? [:]
         providerIds = stored.providerIds ?? [:]
         photos = stored.photos ?? [:]
+        officialStats = stored.officialStats ?? [:]
+        rosters = stored.rosters ?? [:]
+        rostersUpdatedAt = stored.rostersUpdatedAt
+        // 예전 버전에서 쌓인 데모 팀 선수는 직접 넣은 정보가 없으면 정리
+        for (key, player) in knownPlayers where !Self.isKBOTeam(player.teamCode) && !hasUserData(player) {
+            knownPlayers[key] = nil
+        }
+        for code in teamNames.keys where !Self.isKBOTeam(code) {
+            teamNames[code] = nil
+        }
     }
 
     private func save() {
@@ -317,7 +413,10 @@ final class SongLibrary {
             profiles: profiles,
             watched: watched,
             providerIds: providerIds,
-            photos: photos
+            photos: photos,
+            officialStats: officialStats,
+            rosters: rosters,
+            rostersUpdatedAt: rostersUpdatedAt
         )
         guard let data = try? JSONEncoder().encode(stored) else { return }
         try? data.write(to: storeURL, options: .atomic)

@@ -30,6 +30,8 @@ final class AppSettings {
     var favoriteTeamCode: String? { didSet { save() } }
     var songScope: SongScope { didSet { save() } }
     var useDemo: Bool { didSet { save() } }
+    /// 첫 실행 응원팀 선택을 마쳤는지
+    var hasCompletedOnboarding: Bool { didSet { save() } }
 
     private let defaults: UserDefaults
 
@@ -46,9 +48,12 @@ final class AppSettings {
         customPhrases = Dictionary(uniqueKeysWithValues: storedPhrases.compactMap { key, value in
             PlayKind(rawValue: key).map { ($0, value) }
         })
-        favoriteTeamCode = defaults.string(forKey: Keys.favoriteTeamCode)
+        let favorite = defaults.string(forKey: Keys.favoriteTeamCode)
+        favoriteTeamCode = favorite
         songScope = defaults.string(forKey: Keys.songScope).flatMap(SongScope.init(rawValue:)) ?? .allTeams
         useDemo = defaults.object(forKey: Keys.useDemo) as? Bool ?? false
+        // 예전 버전에서 이미 응원팀을 골랐다면 다시 묻지 않는다
+        hasCompletedOnboarding = defaults.object(forKey: Keys.hasCompletedOnboarding) as? Bool ?? (favorite != nil)
     }
 
     var composer: NarrationComposer {
@@ -77,6 +82,7 @@ final class AppSettings {
         defaults.set(favoriteTeamCode, forKey: Keys.favoriteTeamCode)
         defaults.set(songScope.rawValue, forKey: Keys.songScope)
         defaults.set(useDemo, forKey: Keys.useDemo)
+        defaults.set(hasCompletedOnboarding, forKey: Keys.hasCompletedOnboarding)
     }
 
     private enum Keys {
@@ -90,5 +96,6 @@ final class AppSettings {
         static let favoriteTeamCode = "favoriteTeamCode"
         static let songScope = "songScope"
         static let useDemo = "useDemo"
+        static let hasCompletedOnboarding = "hasCompletedOnboarding"
     }
 }

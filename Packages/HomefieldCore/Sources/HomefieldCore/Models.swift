@@ -46,6 +46,8 @@ public struct GameSummary: Identifiable, Hashable, Codable, Sendable {
     public var statusText: String?
     public var startTime: Date?
     public var stadium: String?
+    /// 이닝별 점수와 R·H·E (제공자가 줄 때만)
+    public var lineScore: LineScore?
 
     public init(
         id: String,
@@ -56,7 +58,8 @@ public struct GameSummary: Identifiable, Hashable, Codable, Sendable {
         status: GameStatus,
         statusText: String? = nil,
         startTime: Date? = nil,
-        stadium: String? = nil
+        stadium: String? = nil,
+        lineScore: LineScore? = nil
     ) {
         self.id = id
         self.home = home
@@ -67,9 +70,47 @@ public struct GameSummary: Identifiable, Hashable, Codable, Sendable {
         self.statusText = statusText
         self.startTime = startTime
         self.stadium = stadium
+        self.lineScore = lineScore
     }
 
     public func team(for side: TeamSide) -> Team {
+        side == .home ? home : away
+    }
+}
+
+/// 이닝별 점수판: 이닝마다 점수, 그리고 R(득점)·H(안타)·E(실책)·B(볼넷)
+public struct LineScore: Hashable, Codable, Sendable {
+    public struct Line: Hashable, Codable, Sendable {
+        /// 1회부터. 아직 안 한 이닝은 nil
+        public var innings: [Int?]
+        public var runs: Int?
+        public var hits: Int?
+        public var errors: Int?
+        public var walks: Int?
+
+        public init(innings: [Int?] = [], runs: Int? = nil, hits: Int? = nil, errors: Int? = nil, walks: Int? = nil) {
+            self.innings = innings
+            self.runs = runs
+            self.hits = hits
+            self.errors = errors
+            self.walks = walks
+        }
+    }
+
+    public var away: Line
+    public var home: Line
+
+    public init(away: Line, home: Line) {
+        self.away = away
+        self.home = home
+    }
+
+    /// 보여 줄 이닝 수 (정규 9회, 연장이면 더)
+    public var inningCount: Int {
+        max(9, away.innings.count, home.innings.count)
+    }
+
+    public func line(for side: TeamSide) -> Line {
         side == .home ? home : away
     }
 }
@@ -129,6 +170,8 @@ public struct RelayEntry: Hashable, Sendable {
     public var text: String
     public var batterId: String?
     public var state: CountState?
+    /// 이 줄에 함께 온 타자·투수의 시즌 기록
+    public var seasonStats: [SeasonStats]
 
     public init(
         id: String,
@@ -137,7 +180,8 @@ public struct RelayEntry: Hashable, Sendable {
         battingSide: TeamSide? = nil,
         text: String,
         batterId: String? = nil,
-        state: CountState? = nil
+        state: CountState? = nil,
+        seasonStats: [SeasonStats] = []
     ) {
         self.id = id
         self.sequence = sequence
@@ -146,6 +190,7 @@ public struct RelayEntry: Hashable, Sendable {
         self.text = text
         self.batterId = batterId
         self.state = state
+        self.seasonStats = seasonStats
     }
 }
 
@@ -156,19 +201,23 @@ public struct RelaySnapshot: Sendable {
     public var lineups: [TeamSide: [Player]]
     /// 투수 명단 (첫 번째가 선발)
     public var pitchers: [TeamSide: [Player]]
+    /// 라인업에 없는 그날 엔트리 선수 (벤치·불펜)
+    public var benches: [TeamSide: [Player]]
 
     public init(
         game: GameSummary? = nil,
         currentInning: Int? = nil,
         entries: [RelayEntry],
         lineups: [TeamSide: [Player]] = [:],
-        pitchers: [TeamSide: [Player]] = [:]
+        pitchers: [TeamSide: [Player]] = [:],
+        benches: [TeamSide: [Player]] = [:]
     ) {
         self.game = game
         self.currentInning = currentInning
         self.entries = entries
         self.lineups = lineups
         self.pitchers = pitchers
+        self.benches = benches
     }
 }
 
