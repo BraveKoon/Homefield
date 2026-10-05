@@ -94,25 +94,43 @@ struct GameListView: View {
     }
 }
 
-/// 날짜 줄: 좌우로 넘겨 날짜를 고르고, 아래 화살표를 누르면 달력이 나온다
+/// 날짜 줄: 일요일~토요일 한 주씩 보여 주고 좌우로 넘기면 한 주씩 이동한다. 아래 화살표를 누르면 달력.
 private struct DayStrip: View {
     @Environment(\.teamTheme) private var theme
     @Binding var date: Date
     @State private var showingCalendar = false
-    /// 줄의 가운데 날짜 (달력에서 먼 날짜를 고르면 그 날짜 기준으로 다시 만든다)
-    @State private var anchor = Calendar.current.startOfDay(for: Date())
+    /// 보이는 주의 일요일
+    @State private var visibleWeek: Date?
+    /// 주 목록의 가운데 주 (달력에서 먼 날짜를 고르면 그 주 기준으로 다시 만든다)
+    @State private var anchorWeek = DayStrip.weekStart(of: Date())
 
-    private let range = -60...60
+    private static let weekRange = -26...26
+
+    /// 일요일 시작 달력
+    private static let calendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = Locale(identifier: "ko_KR")
+        calendar.timeZone = .current
+        calendar.firstWeekday = 1
+        return calendar
+    }()
+
+    static func weekStart(of date: Date) -> Date {
+        calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? calendar.startOfDay(for: date)
+    }
+
+    private var weeks: [Date] {
+        Self.weekRange.compactMap { Self.calendar.date(byAdding: .weekOfYear, value: $0, to: anchorWeek) }
+    }
 
     var body: some View {
-        let calendar = Calendar.current
-        let selected = calendar.startOfDay(for: date)
+        let selected = Self.calendar.startOfDay(for: date)
         VStack(alignment: .leading, spacing: 8) {
             Button {
                 showingCalendar = true
             } label: {
                 HStack(spacing: 4) {
-                    Text(selected.formatted(.dateTime.year().month(.wide)))
+                    Text((visibleWeek ?? selected).formatted(.dateTime.year().month(.wide)))
                         .font(.title3.bold())
                     Image(systemName: "chevron.down.circle.fill")
                         .font(.title3)
@@ -123,37 +141,44 @@ private struct DayStrip: View {
             .buttonStyle(.plain)
             .accessibilityLabel("달력에서 날짜 고르기")
 
-            ScrollViewReader { proxy in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(range, id: \.self) { offset in
-                            let day = calendar.date(byAdding: .day, value: offset, to: anchor) ?? anchor
-                            dayButton(day, selected: calendar.isDate(day, inSameDayAs: selected))
-                                .id(day)
-                        }
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 0) {
+                    ForEach(weeks, id: \.self) { week in
+                        weekRow(week, selected: selected)
+                            .containerRelativeFrame(.horizontal)
+                            .id(week)
                     }
-                    .padding(.horizontal, 2)
                 }
-                .onAppear {
-                    proxy.scrollTo(selected, anchor: .center)
-                }
-                .onChange(of: selected) { _, newValue in
-                    let distance = calendar.dateComponents([.day], from: anchor, to: newValue).day ?? 0
-                    if !range.contains(distance) {
-                        anchor = newValue
-                    }
-                    withAnimation(.snappy) { proxy.scrollTo(newValue, anchor: .center) }
-                }
-                .onChange(of: anchor) { _, _ in
-                    proxy.scrollTo(selected, anchor: .center)
-                }
+                .scrollTargetLayout()
             }
-            .frame(height: 58)
+            .scrollTargetBehavior(.paging)
+            .scrollPosition(id: $visibleWeek)
+            .frame(height: 62)
+        }
+        .onAppear {
+            visibleWeek = Self.weekStart(of: date)
+        }
+        .onChange(of: date) { _, newValue in
+            showingCalendar = false
+            let week = Self.weekStart(of: newValue)
+            if !weeks.contains(week) { anchorWeek = week }
+            if visibleWeek != week {
+                withAnimation(.snappy) { visibleWeek = week }
+            }
+        }
+        .onChange(of: visibleWeek) { _, newWeek in
+            // 다른 주로 넘기면 그 주의 같은 요일을 고른다
+            guard let newWeek, Self.weekStart(of: date) != newWeek else { return }
+            let weekday = Self.calendar.component(.weekday, from: date)
+            if let day = Self.calendar.date(byAdding: .day, value: weekday - 1, to: newWeek) {
+                date = day
+            }
         }
         .sheet(isPresented: $showingCalendar) {
             NavigationStack {
                 DatePicker("날짜", selection: $date, displayedComponents: .date)
                     .datePickerStyle(.graphical)
+                    .environment(\.calendar, Self.calendar)
                     .tint(theme.primary)
                     .padding()
                     .navigationTitle("날짜 선택")
@@ -170,28 +195,46 @@ private struct DayStrip: View {
             }
             .presentationDetents([.medium, .large])
         }
-        .onChange(of: date) { _, _ in
-            // 달력에서 날짜를 누르면 바로 닫는다
-            showingCalendar = false
-        }
     }
 
-    private func dayButton(_ day: Date, selected: Bool) -> some View {
-        let isToday = Calendar.current.isDateInToday(day)
+    /// 일~토 7칸
+    private func weekRow(_ week: Date, selected: Date) -> some View {
+        HStack(spacing: 6) {
+            ForEach(0..<7, id: \.self) { offset in
+                let day = Self.calendar.date(byAdding: .day, value: offset, to: week) ?? week
+                dayButton(day, weekdayIndex: offset, selected: Self.calendar.isDate(day, inSameDayAs: selected))
+            }
+        }
+        .padding(.horizontal, 1)
+    }
+
+    private static let weekdaySymbols = ["일", "월", "화", "수", "목", "금", "토"]
+
+    private func dayButton(_ day: Date, weekdayIndex: Int, selected: Bool) -> some View {
+        let isToday = Self.calendar.isDateInToday(day)
+        let weekendColor: Color = weekdayIndex == 0 ? .red : (weekdayIndex == 6 ? .blue : .primary)
         return Button {
             withAnimation(.snappy) { date = day }
         } label: {
             VStack(spacing: 2) {
-                Text(isToday ? "오늘" : day.formatted(.dateTime.weekday(.abbreviated)))
+                Text(isToday ? "오늘" : Self.weekdaySymbols[weekdayIndex])
                     .font(.caption2.bold())
+                    .foregroundStyle(selected ? .white : (isToday ? theme.primary : weekendColor))
                 Text(day.formatted(.dateTime.day()))
                     .font(.headline.monospacedDigit())
+                    .foregroundStyle(selected ? .white : weekendColor)
             }
-            .frame(width: 50, height: 54)
-            .foregroundStyle(selected ? .white : (isToday ? theme.primary : .primary))
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
             .background {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(selected ? AnyShapeStyle(theme.gradient) : AnyShapeStyle(.regularMaterial))
+            }
+            .overlay {
+                if isToday && !selected {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(theme.primary.opacity(0.6), lineWidth: 1.5)
+                }
             }
         }
         .buttonStyle(.plain)
