@@ -14,6 +14,7 @@
 		11BE5F7E7BE9056945D8EEEC /* AttendanceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE468CA38FAC31882F4A4341 /* AttendanceStore.swift */; };
 		334E351CE173F6275BA8B76F /* HomefieldApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 828BE906D2D6C931808FCCE1 /* HomefieldApp.swift */; };
 		4048F3711E1BC178044FC500 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 53B22290F4B62BC14E1F4B8F /* Assets.xcassets */; };
+		4406423AD173EEA7D5CAF1CA /* ThemeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4F2F4EDD449239E513D52AF /* ThemeViews.swift */; };
 		4F7B7CA79348A9890A470763 /* BatchImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD941AD01ECEA4305AA4B711 /* BatchImporter.swift */; };
 		517D574762A8331BA07CF101 /* HomefieldCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8B12B7181B7BBEC38FE7A7D2 /* HomefieldCore */; };
 		6D50328E89BF0FE7B7A737A3 /* GameStateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25D1558C74EF0BFA73DF59A /* GameStateViews.swift */; };
@@ -46,6 +47,7 @@
 		B25D1558C74EF0BFA73DF59A /* GameStateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameStateViews.swift; sourceTree = "<group>"; };
 		B47E5624AF0AAA5216B492B8 /* AppleMusicSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleMusicSearchView.swift; sourceTree = "<group>"; };
 		BD941AD01ECEA4305AA4B711 /* BatchImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchImporter.swift; sourceTree = "<group>"; };
+		C4F2F4EDD449239E513D52AF /* ThemeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeViews.swift; sourceTree = "<group>"; };
 		C4FDA0AAE05C664BD773726A /* Homefield.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Homefield.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D053340E166A4F1A5BF84104 /* GameListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameListView.swift; sourceTree = "<group>"; };
 		D6E9A4E4E97F1CE11E4A5AB3 /* AudioDirector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDirector.swift; sourceTree = "<group>"; };
@@ -79,6 +81,7 @@
 				232CF63C1BC09B67169F1B7E /* PlayerDetailView.swift */,
 				657F724A45DB4F1155FC7256 /* SettingsView.swift */,
 				3633B3D940EB489FA4822CD9 /* SongLibraryView.swift */,
+				C4F2F4EDD449239E513D52AF /* ThemeViews.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -268,6 +271,7 @@
 				0856EA98D0034B2FA3D12256 /* SongLibrary.swift in Sources */,
 				CBB58CE35DC6C9C513ABA28D /* SongLibraryView.swift in Sources */,
 				895C9E53A2259A9C1AE0238C /* TeamTheme.swift in Sources */,
+				4406423AD173EEA7D5CAF1CA /* ThemeViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
