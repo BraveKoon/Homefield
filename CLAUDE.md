@@ -6,7 +6,7 @@
 - CI(`HomefieldCore tests`, `iOS app build`, `Xcode project sync`)가 모두 통과하면 **확인을 묻지 말고 바로 병합**한다.
 - 앱 코드가 바뀐 PR을 병합하면 **`main`에서 TestFlight 워크플로(`testflight.yml`)를 실행**하고 결과를 확인한다. 실패하면 로그를 보고 고친다.
 - TestFlight 업로드가 성공하면 워크플로가 `build-<번호>` GitHub 프리릴리스를 자동으로 만든다.
-- 버전 릴리스(예: v1.1)는 `project.yml`의 `MARKETING_VERSION`을 올려 병합한 뒤 `main`에 `v1.1` 태그를 만들어 TestFlight 워크플로를 실행한다. 이때는 `v1.1` 정식 릴리스가 만들어진다.
+- 버전 릴리스(예: v1.1)는 `project.yml`의 `MARKETING_VERSION`을 올려 병합한 뒤 `main`에서 TestFlight 워크플로를 `release_tag: v1.1` 입력으로 실행한다(태그 푸시는 세션 프록시가 막는다). 워크플로가 `v1.1` 태그와 정식 릴리스를 만든다.
 - 문서만 바뀐 PR(README, docs/)은 병합만 하고 TestFlight는 돌리지 않아도 된다.
 - App Store 심사 제출은 자동으로 하지 않는다. 네이버 비공식 API 사용 문제(`docs/app-store-metadata.md`의 심사 위험 요소)가 정리되기 전까지는 저장소 주인이 직접 결정한다.
 
