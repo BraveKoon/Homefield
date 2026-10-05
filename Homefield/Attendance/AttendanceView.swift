@@ -79,6 +79,7 @@ struct AttendanceView: View {
                     }
                 }
             }
+            .themedBackground()
             .navigationTitle("직관")
             .sheet(isPresented: $showingTiers) {
                 NavigationStack { TierGuideView(count: attendance.count) }
