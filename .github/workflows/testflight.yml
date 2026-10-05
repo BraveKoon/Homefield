@@ -5,6 +5,11 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: '정식 릴리스 태그 (예: v1.1). 비우면 build-N 프리릴리스'
+        required: false
+        default: ''
 
 concurrency:
   group: testflight
@@ -132,13 +137,18 @@ jobs:
       - name: GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           version=$(sed -nE 's/^ *MARKETING_VERSION: *"?([^"]+)"?.*/\1/p' project.yml | head -1)
+          release_tag="$INPUT_RELEASE_TAG"
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            # 버전 태그(v1.1 등)로 실행하면 정식 릴리스
-            gh release create "$GITHUB_REF_NAME" \
-              --verify-tag \
-              --title "홈구장 ${GITHUB_REF_NAME} (빌드 ${BUILD_NUMBER})" \
+            release_tag="$GITHUB_REF_NAME"
+          fi
+          if [[ -n "$release_tag" ]]; then
+            # 버전 릴리스: 태그가 없으면 이 커밋에 만든다 (v1.1 등)
+            gh release create "$release_tag" \
+              --target "$GITHUB_SHA" \
+              --title "홈구장 ${release_tag} (빌드 ${BUILD_NUMBER})" \
               --generate-notes \
               --latest
           else
