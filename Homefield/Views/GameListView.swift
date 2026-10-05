@@ -57,12 +57,6 @@ struct GameListView: View {
             .navigationDestination(for: GameSummary.self) { game in
                 LiveGameView(game: game)
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    DatePicker("날짜", selection: $date, displayedComponents: .date)
-                        .labelsHidden()
-                }
-            }
             .refreshable { await load() }
             .task(id: LoadKey(date: Calendar.current.startOfDay(for: date), demo: settings.useDemo)) {
                 await load()
@@ -100,38 +94,107 @@ struct GameListView: View {
     }
 }
 
-/// 어제·오늘·내일을 바로 고르는 날짜 줄
+/// 날짜 줄: 좌우로 넘겨 날짜를 고르고, 아래 화살표를 누르면 달력이 나온다
 private struct DayStrip: View {
     @Environment(\.teamTheme) private var theme
     @Binding var date: Date
+    @State private var showingCalendar = false
+    /// 줄의 가운데 날짜 (달력에서 먼 날짜를 고르면 그 날짜 기준으로 다시 만든다)
+    @State private var anchor = Calendar.current.startOfDay(for: Date())
+
+    private let range = -60...60
 
     var body: some View {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        HStack(spacing: 8) {
-            ForEach(-2...2, id: \.self) { offset in
-                let day = calendar.date(byAdding: .day, value: offset, to: today) ?? today
-                let selected = calendar.isDate(day, inSameDayAs: date)
-                Button {
-                    withAnimation(.snappy) { date = day }
-                } label: {
-                    VStack(spacing: 2) {
-                        Text(offset == 0 ? "오늘" : day.formatted(.dateTime.weekday(.abbreviated)))
-                            .font(.caption2.bold())
-                        Text(day.formatted(.dateTime.day()))
-                            .font(.headline.monospacedDigit())
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .foregroundStyle(selected ? .white : .primary)
-                    .background {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(selected ? AnyShapeStyle(theme.gradient) : AnyShapeStyle(.regularMaterial))
-                    }
+        let selected = calendar.startOfDay(for: date)
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                showingCalendar = true
+            } label: {
+                HStack(spacing: 4) {
+                    Text(selected.formatted(.dateTime.year().month(.wide)))
+                        .font(.title3.bold())
+                    Image(systemName: "chevron.down.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(theme.primary)
                 }
-                .buttonStyle(.plain)
+                .foregroundStyle(.primary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("달력에서 날짜 고르기")
+
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(range, id: \.self) { offset in
+                            let day = calendar.date(byAdding: .day, value: offset, to: anchor) ?? anchor
+                            dayButton(day, selected: calendar.isDate(day, inSameDayAs: selected))
+                                .id(day)
+                        }
+                    }
+                    .padding(.horizontal, 2)
+                }
+                .onAppear {
+                    proxy.scrollTo(selected, anchor: .center)
+                }
+                .onChange(of: selected) { _, newValue in
+                    let distance = calendar.dateComponents([.day], from: anchor, to: newValue).day ?? 0
+                    if !range.contains(distance) {
+                        anchor = newValue
+                    }
+                    withAnimation(.snappy) { proxy.scrollTo(newValue, anchor: .center) }
+                }
+                .onChange(of: anchor) { _, _ in
+                    proxy.scrollTo(selected, anchor: .center)
+                }
+            }
+            .frame(height: 58)
+        }
+        .sheet(isPresented: $showingCalendar) {
+            NavigationStack {
+                DatePicker("날짜", selection: $date, displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .tint(theme.primary)
+                    .padding()
+                    .navigationTitle("날짜 선택")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("오늘") { date = Date() }
+                        }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("완료") { showingCalendar = false }
+                        }
+                    }
+                Spacer()
+            }
+            .presentationDetents([.medium, .large])
+        }
+        .onChange(of: date) { _, _ in
+            // 달력에서 날짜를 누르면 바로 닫는다
+            showingCalendar = false
+        }
+    }
+
+    private func dayButton(_ day: Date, selected: Bool) -> some View {
+        let isToday = Calendar.current.isDateInToday(day)
+        return Button {
+            withAnimation(.snappy) { date = day }
+        } label: {
+            VStack(spacing: 2) {
+                Text(isToday ? "오늘" : day.formatted(.dateTime.weekday(.abbreviated)))
+                    .font(.caption2.bold())
+                Text(day.formatted(.dateTime.day()))
+                    .font(.headline.monospacedDigit())
+            }
+            .frame(width: 50, height: 54)
+            .foregroundStyle(selected ? .white : (isToday ? theme.primary : .primary))
+            .background {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(selected ? AnyShapeStyle(theme.gradient) : AnyShapeStyle(.regularMaterial))
             }
         }
+        .buttonStyle(.plain)
     }
 }
 
