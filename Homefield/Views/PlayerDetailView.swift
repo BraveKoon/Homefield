@@ -61,6 +61,10 @@ struct PlayerDetailView: View {
                 }
             }
 
+            if let stats = library.seasonStats(teamCode: teamCode, name: name) {
+                SeasonStatsSection(stats: stats, teamCode: teamCode)
+            }
+
             recordSection(today: today, watched: watched)
 
             Section("등장곡 · 응원가") {
@@ -108,6 +112,8 @@ struct PlayerDetailView: View {
                 Section("메모") { Text(memo) }
             }
         }
+        .themedBackground()
+        .environment(\.teamTheme, TeamTheme.forTeam(teamCode))
         .navigationTitle(name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -171,7 +177,7 @@ struct PlayerDetailView: View {
                     .font(.footnote)
             }
         } header: {
-            Text("기록")
+            Text("관전 기록")
         } footer: {
             Text("이 앱으로 본 경기에서 집계한 기록입니다. 시즌 공식 기록과 다를 수 있습니다.")
         }
@@ -328,5 +334,38 @@ struct PlayerProfileEditor: View {
             memo: clean(memo).isEmpty ? nil : clean(memo)
         )
         library.setProfile(profile, teamCode: teamCode, name: name)
+    }
+}
+
+/// 네이버 중계에 함께 오는 이번 시즌 공식 기록
+private struct SeasonStatsSection: View {
+    let stats: SeasonStats
+    let teamCode: String
+
+    var body: some View {
+        let theme = TeamTheme.forTeam(teamCode)
+        Section {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 70), spacing: 10)], spacing: 10) {
+                ForEach(stats.displayItems, id: \.label) { item in
+                    VStack(spacing: 2) {
+                        Text(item.value)
+                            .font(.title3.monospacedDigit().bold())
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                        Text(item.label)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(theme.primary.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+            }
+            .padding(.vertical, 4)
+        } header: {
+            Text("\(Calendar.current.component(.year, from: stats.updatedAt)) 시즌 공식 기록 (\(stats.kind == .batter ? "타자" : "투수"))")
+        } footer: {
+            Text("네이버 스포츠 문자중계 기준 · \(stats.updatedAt.formatted(date: .abbreviated, time: .shortened)) 업데이트")
+        }
     }
 }

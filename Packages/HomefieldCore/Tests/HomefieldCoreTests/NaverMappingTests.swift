@@ -145,6 +145,42 @@ final class NaverMappingTests: XCTestCase {
         XCTAssertTrue(batter.sameNumbers(as: { var copy = batter; copy.updatedAt = .distantPast; return copy }()))
     }
 
+    /// 2026-10-05 KIA vs LG 실제 경기 요약에서 이닝별 점수 부분
+    func testLineScore() throws {
+        let json = """
+        {"code":200,"success":true,"result":{"games":[
+          {"gameId":"20261005HTLG02026","homeTeamCode":"LG","awayTeamCode":"HT","homeTeamScore":4,"awayTeamScore":6,
+           "statusCode":"RESULT","currentInning":"9회말",
+           "homeTeamScoreByInning":["4","0","0","0","0","0","0","0","0"],
+           "awayTeamScoreByInning":["0","0","0","2","0","1","0","0","3"],
+           "homeTeamRheb":[4,7,1,4],"awayTeamRheb":[6,10,0,3]}
+        ]}}
+        """
+        let game = try XCTUnwrap(NaverMapping.parseGames(Data(json.utf8)).first)
+        let score = try XCTUnwrap(game.lineScore)
+        XCTAssertEqual(score.inningCount, 9)
+        XCTAssertEqual(score.away.innings, [0, 0, 0, 2, 0, 1, 0, 0, 3])
+        XCTAssertEqual(score.home.innings.first, 4)
+        XCTAssertEqual(score.away.runs, 6)
+        XCTAssertEqual(score.away.hits, 10)
+        XCTAssertEqual(score.home.errors, 1)
+        XCTAssertEqual(score.home.walks, 4)
+    }
+
+    func testLineScoreInProgressAndMissing() throws {
+        let json = """
+        {"result":{"games":[
+          {"gameId":"a","homeTeamScoreByInning":["1","-",""],"awayTeamScoreByInning":["0","2"]},
+          {"gameId":"b"}
+        ]}}
+        """
+        let games = try NaverMapping.parseGames(Data(json.utf8))
+        XCTAssertEqual(games[0].lineScore?.home.innings, [1, nil, nil])
+        XCTAssertEqual(games[0].lineScore?.inningCount, 9)
+        XCTAssertNil(games[0].lineScore?.away.runs)
+        XCTAssertNil(games[1].lineScore)
+    }
+
     func testEndedStatus() {
         XCTAssertEqual(NaverMapping.status(code: "ENDED", cancelled: false), .finished)
         XCTAssertEqual(NaverMapping.status(code: "STARTED", cancelled: false), .live)

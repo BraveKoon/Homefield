@@ -117,8 +117,25 @@ public enum NaverMapping {
             status: status(code: game.statusCode, cancelled: game.cancel ?? false),
             statusText: game.statusInfo,
             startTime: game.gameDateTime.flatMap(dateTimeFormatter.date(from:)),
-            stadium: game.stadium
+            stadium: game.stadium,
+            lineScore: lineScore(from: game)
         )
+    }
+
+    /// 2026-10-05 실제 응답으로 확인: homeTeamScoreByInning ["4","0",...], homeTeamRheb [R, H, E, B]
+    static func lineScore(from game: NaverGame) -> LineScore? {
+        func line(_ innings: [LenientString]?, _ rheb: [LenientInt]?) -> LineScore.Line {
+            let scores = (innings ?? []).map { item -> Int? in
+                item.value.flatMap { Int($0.trimmingCharacters(in: .whitespaces)) }
+            }
+            let totals = (rheb ?? []).map(\.value)
+            func total(_ index: Int) -> Int? { index < totals.count ? totals[index] : nil }
+            return LineScore.Line(innings: scores, runs: total(0), hits: total(1), errors: total(2), walks: total(3))
+        }
+        let away = line(game.awayTeamScoreByInning, game.awayTeamRheb)
+        let home = line(game.homeTeamScoreByInning, game.homeTeamRheb)
+        if away.innings.isEmpty && home.innings.isEmpty && away.runs == nil && home.runs == nil { return nil }
+        return LineScore(away: away, home: home)
     }
 
     static func status(code: String?, cancelled: Bool) -> GameStatus {
@@ -274,6 +291,10 @@ struct NaverGame: Decodable {
     let statusCode: String?
     let statusInfo: String?
     let cancel: Bool?
+    let homeTeamScoreByInning: [LenientString]?
+    let awayTeamScoreByInning: [LenientString]?
+    let homeTeamRheb: [LenientInt]?
+    let awayTeamRheb: [LenientInt]?
 }
 
 struct NaverRelayResult: Decodable {

@@ -27,6 +27,16 @@ struct TeamTheme {
         "DRM": TeamTheme(primary: Color(hex: 0x1F6F4A), secondary: Color(hex: 0x0E2A1C)),
     ]
 
+    /// 배지에 넣을 짧은 팀 이름
+    static func shortName(for code: String) -> String {
+        shortNames[code] ?? String(code.prefix(3))
+    }
+
+    private static let shortNames: [String: String] = [
+        "LG": "LG", "HT": "KIA", "SS": "삼성", "OB": "두산", "LT": "롯데",
+        "SK": "SSG", "HH": "한화", "NC": "NC", "KT": "KT", "WO": "키움",
+    ]
+
     /// 짙은 배경에서 쓸 그라데이션
     var gradient: LinearGradient {
         LinearGradient(colors: [primary, secondary], startPoint: .topLeading, endPoint: .bottomTrailing)

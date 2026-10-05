@@ -54,6 +54,8 @@ final class SongLibrary {
     private var providerIds: [String: String] = [:]
     /// 선수 키 → 사진 파일 이름
     private(set) var photos: [String: String] = [:]
+    /// 제공자 선수 코드 → 시즌 공식 기록 (중계에서 받은 최신 값)
+    private(set) var officialStats: [String: SeasonStats] = [:]
 
     private let storeURL: URL
     let songsDirectory: URL
@@ -114,6 +116,24 @@ final class SongLibrary {
             }
         }
         save()
+    }
+
+    /// 선수의 시즌 공식 기록 (중계에서 한 번이라도 받은 적이 있으면)
+    func seasonStats(teamCode: String, name: String) -> SeasonStats? {
+        let key = Self.key(teamCode: teamCode, name: name)
+        return providerIds.lazy
+            .filter { $0.value == key }
+            .compactMap { self.officialStats[$0.key] }
+            .max { $0.updatedAt < $1.updatedAt }
+    }
+
+    func record(seasonStats stats: [SeasonStats]) {
+        var changed = false
+        for item in stats where officialStats[item.playerId].map({ !$0.sameNumbers(as: item) }) ?? true {
+            officialStats[item.playerId] = item
+            changed = true
+        }
+        if changed { save() }
     }
 
     func watchedLine(teamCode: String, name: String) -> BattingLine {
@@ -291,6 +311,7 @@ final class SongLibrary {
         var watched: [String: BattingLine]?
         var providerIds: [String: String]?
         var photos: [String: String]?
+        var officialStats: [String: SeasonStats]?
     }
 
     private func load() {
@@ -306,6 +327,7 @@ final class SongLibrary {
         watched = stored.watched ?? [:]
         providerIds = stored.providerIds ?? [:]
         photos = stored.photos ?? [:]
+        officialStats = stored.officialStats ?? [:]
     }
 
     private func save() {
@@ -317,7 +339,8 @@ final class SongLibrary {
             profiles: profiles,
             watched: watched,
             providerIds: providerIds,
-            photos: photos
+            photos: photos,
+            officialStats: officialStats
         )
         guard let data = try? JSONEncoder().encode(stored) else { return }
         try? data.write(to: storeURL, options: .atomic)

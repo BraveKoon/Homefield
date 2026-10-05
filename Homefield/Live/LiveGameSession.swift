@@ -146,6 +146,7 @@ final class LiveGameSession {
     private func apply(_ entries: [RelayEntry]) {
         stateTracker.apply(entries)
         gameState = stateTracker.state
+        library.record(seasonStats: entries.flatMap(\.seasonStats))
         let now = Date()
         for entry in entries.sorted(by: { $0.sequence < $1.sequence }) where !log.contains(where: { $0.id == entry.id }) {
             append(logLine(for: entry, at: now))

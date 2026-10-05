@@ -200,3 +200,91 @@ struct FieldView: View {
         return parts.joined(separator: ", ")
     }
 }
+
+/// 이닝별 스코어: 1~12회 점수, R(점수)·H(안타)·E(에러)
+struct LineScoreView: View {
+    @Environment(\.teamTheme) private var theme
+    let game: GameSummary
+    let lineScore: LineScore
+    /// 진행 중인 이닝 (강조)
+    var currentInning: Int?
+    var battingSide: TeamSide?
+
+    private let cellWidth: CGFloat = 22
+
+    var body: some View {
+        let innings = max(12, lineScore.inningCount)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("이닝별 스코어").font(.subheadline.bold()).foregroundStyle(.secondary)
+                Spacer()
+                Text("R 점수 · H 안타 · E 에러").font(.caption2).foregroundStyle(.secondary)
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                Grid(horizontalSpacing: 4, verticalSpacing: 8) {
+                    GridRow {
+                        Color.clear.frame(width: 40, height: 1)
+                        ForEach(1...innings, id: \.self) { inning in
+                            Text("\(inning)")
+                                .foregroundStyle(inning == currentInning ? theme.primary : .secondary)
+                                .frame(width: cellWidth)
+                        }
+                        Divider().frame(height: 14)
+                        header("R")
+                        header("H")
+                        header("E")
+                    }
+                    .font(.caption.monospacedDigit())
+                    Divider().gridCellUnsizedAxes(.horizontal)
+                    row(.away, innings: innings)
+                    row(.home, innings: innings)
+                }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private func header(_ text: String) -> some View {
+        Text(text).bold().frame(width: 26)
+    }
+
+    private func row(_ side: TeamSide, innings: Int) -> some View {
+        let line = lineScore.line(for: side)
+        let team = game.team(for: side)
+        return GridRow {
+            Text(TeamTheme.shortName(for: team.code))
+                .font(.subheadline.bold())
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(width: 40, alignment: .leading)
+            ForEach(0..<innings, id: \.self) { index in
+                let value = index < line.innings.count ? line.innings[index] : nil
+                let live = index + 1 == currentInning && side == battingSide
+                Text(value.map(String.init) ?? "-")
+                    .font(.callout.monospacedDigit())
+                    .fontWeight(live ? .bold : .regular)
+                    .foregroundStyle(live ? theme.primary : (value == nil ? .secondary : .primary))
+                    .frame(width: cellWidth)
+            }
+            Divider().frame(height: 18)
+            total(line.runs, bold: true)
+            total(line.hits)
+            total(line.errors)
+        }
+    }
+
+    private func total(_ value: Int?, bold: Bool = false) -> some View {
+        Text(value.map(String.init) ?? "-")
+            .font(.callout.monospacedDigit())
+            .fontWeight(bold ? .heavy : .semibold)
+            .frame(width: 26)
+    }
+
+    private var accessibilityText: String {
+        [TeamSide.away, .home].map { side in
+            let line = lineScore.line(for: side)
+            return "\(game.team(for: side).name) \(line.runs ?? 0)점 \(line.hits ?? 0)안타 \(line.errors ?? 0)실책"
+        }.joined(separator: ", ")
+    }
+}
