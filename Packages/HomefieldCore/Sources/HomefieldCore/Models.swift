@@ -129,6 +129,8 @@ public struct RelayEntry: Hashable, Sendable {
     public var text: String
     public var batterId: String?
     public var state: CountState?
+    /// 이 줄에 함께 온 타자·투수의 시즌 기록
+    public var seasonStats: [SeasonStats]
 
     public init(
         id: String,
@@ -137,7 +139,8 @@ public struct RelayEntry: Hashable, Sendable {
         battingSide: TeamSide? = nil,
         text: String,
         batterId: String? = nil,
-        state: CountState? = nil
+        state: CountState? = nil,
+        seasonStats: [SeasonStats] = []
     ) {
         self.id = id
         self.sequence = sequence
@@ -146,6 +149,7 @@ public struct RelayEntry: Hashable, Sendable {
         self.text = text
         self.batterId = batterId
         self.state = state
+        self.seasonStats = seasonStats
     }
 }
 

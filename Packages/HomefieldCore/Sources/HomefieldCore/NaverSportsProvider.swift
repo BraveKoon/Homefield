@@ -160,7 +160,8 @@ public enum NaverMapping {
                     battingSide: side,
                     text: text,
                     batterId: option.batterRecord?.pcode?.value,
-                    state: option.currentGameState?.countState
+                    state: option.currentGameState?.countState,
+                    seasonStats: seasonStats(of: option)
                 ))
             }
         }
@@ -188,6 +189,47 @@ public enum NaverMapping {
             lineups: lineups,
             pitchers: pitchers
         )
+    }
+
+    /// currentPlayersInfo 의 타자·투수 시즌 기록. 선수 코드는 currentGameState 의 batter/pitcher.
+    static func seasonStats(of option: NaverTextOption) -> [SeasonStats] {
+        guard let info = option.currentPlayersInfo else { return [] }
+        return [info.away, info.home].compactMap { player -> SeasonStats? in
+            guard let player, let stats = player.currentSeasonStats else { return nil }
+            switch player.playerType?.lowercased() {
+            case "batter":
+                guard let id = validId(option.currentGameState?.batter?.value) else { return nil }
+                var result = SeasonStats(playerId: id, kind: .batter)
+                result.average = stats.hra?.value
+                result.atBats = stats.ab?.value
+                result.hits = stats.hit?.value
+                result.homeRuns = stats.hr?.value
+                result.rbi = stats.rbi?.value
+                result.onBase = stats.obp?.value
+                guard (result.atBats ?? 0) > 0 else { return nil }
+                return result
+            case "pitcher":
+                guard let id = validId(option.currentGameState?.pitcher?.value) else { return nil }
+                var result = SeasonStats(playerId: id, kind: .pitcher)
+                result.games = stats.gameCount?.value
+                result.era = stats.era?.value
+                result.wins = stats.w?.value
+                result.losses = stats.l?.value
+                result.saves = stats.s?.value
+                result.innings = stats.inn2?.value ?? stats.inn?.value
+                result.strikeouts = stats.kk?.value
+                result.walks = stats.bb?.value
+                guard (result.games ?? 0) > 0 else { return nil }
+                return result
+            default:
+                return nil
+            }
+        }
+    }
+
+    private static func validId(_ value: String?) -> String? {
+        guard let value = value?.trimmingCharacters(in: .whitespaces), !value.isEmpty, value != "0" else { return nil }
+        return value
     }
 
     static func player(from batter: NaverLineupBatter, teamCode: String) -> Player? {
@@ -258,6 +300,38 @@ struct NaverTextOption: Decodable {
     let text: String?
     let batterRecord: NaverBatterRecord?
     let currentGameState: NaverGameState?
+    let currentPlayersInfo: NaverPlayersInfo?
+}
+
+/// 2026-09-30 실제 응답으로 확인. 지금 타자·투수의 기록이 홈/원정으로 나뉘어 온다.
+struct NaverPlayersInfo: Decodable {
+    let away: NaverPlayerInfo?
+    let home: NaverPlayerInfo?
+}
+
+struct NaverPlayerInfo: Decodable {
+    let playerType: String?
+    let currentSeasonStats: NaverPlayerStats?
+}
+
+struct NaverPlayerStats: Decodable {
+    // 타자
+    let ab: LenientInt?
+    let hit: LenientInt?
+    let hra: LenientDouble?
+    let hr: LenientInt?
+    let rbi: LenientInt?
+    let obp: LenientDouble?
+    // 투수
+    let gameCount: LenientInt?
+    let era: LenientDouble?
+    let w: LenientInt?
+    let l: LenientInt?
+    let s: LenientInt?
+    let inn: LenientString?
+    let inn2: LenientString?
+    let kk: LenientInt?
+    let bb: LenientInt?
 }
 
 /// 2026-09-30 실제 응답으로 필드 이름 확인. 주자가 없으면 base 값이 "0", 있으면 선수 코드.
@@ -269,6 +343,7 @@ struct NaverGameState: Decodable {
     let base2: LenientString?
     let base3: LenientString?
     let pitcher: LenientString?
+    let batter: LenientString?
 
     var countState: CountState? {
         guard ball?.value != nil || strike?.value != nil || out?.value != nil else { return nil }
@@ -326,6 +401,21 @@ struct LenientString: Decodable {
             value = string
         } else if let int = try? container.decode(Int.self) {
             value = String(int)
+        } else {
+            value = nil
+        }
+    }
+}
+
+struct LenientDouble: Decodable {
+    let value: Double?
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let double = try? container.decode(Double.self) {
+            value = double
+        } else if let string = try? container.decode(String.self) {
+            value = Double(string.trimmingCharacters(in: .whitespaces))
         } else {
             value = nil
         }

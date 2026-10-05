@@ -118,7 +118,58 @@ def main():
     for key in relay:
         if key not in ("textRelays", "homeLineup", "awayLineup"):
             show(f"textRelayData.{key}", relay[key], 1500)
+
+    batters = (relay.get("homeLineup") or {}).get("batter") or []
+    pcode = str(batters[0].get("pcode")) if batters else None
+    probe_players(game_id, pcode, game.get("homeTeamCode"))
     return 0
+
+
+def probe_players(game_id, pcode, team_code):
+    """선수 프로필(팀 이력)·1군 엔트리(등록/말소) 후보 경로를 찾는다"""
+    print(f"\n=== 선수·엔트리 후보 (pcode={pcode}, team={team_code}) ===")
+    season = dt.datetime.now(KST).year
+    candidates = [
+        f"/schedule/games/{game_id}/preview",
+        f"/schedule/games/{game_id}/record",
+        f"/statistics/categories/kbo/players/{pcode}",
+        f"/statistics/categories/kbo/seasons/{season}/players/{pcode}",
+        f"/players/{pcode}",
+        f"/players/{pcode}?categoryId=kbo",
+        f"/kbaseball/players/{pcode}",
+        f"/player/kbo/{pcode}",
+        f"/statistics/categories/kbo/teams/{team_code}/players",
+        f"/statistics/categories/kbo/seasons/{season}/teams/{team_code}/players",
+        f"/teams/{team_code}/players?categoryId=kbo",
+        f"/kbaseball/teams/{team_code}/players",
+        f"/statistics/categories/kbo/seasons/{season}/players?playerType=HITTER&teamCode={team_code}",
+        f"/statistics/categories/kbo/seasons/{season}/players?playerType=PITCHER&teamCode={team_code}",
+    ]
+    for path in candidates:
+        status, body = get(path)
+        result = (body or {}).get("result") if isinstance(body, dict) else None
+        print(f"{path}: HTTP {status}, result keys={list(result.keys()) if isinstance(result, dict) else type(result).__name__}")
+        if status == 200 and result:
+            show(f"{path} shape", shape(result, max_depth=4), 3000)
+            show(f"{path} sample", result, 2500)
+
+    # KBO 공식 홈페이지의 1군 등록·말소 현황 (HTML)
+    for url in (
+        "https://www.koreabaseball.com/Player/Register.aspx",
+        "https://www.koreabaseball.com/Player/RegisterAll.aspx",
+    ):
+        request = urllib.request.Request(url, headers={"User-Agent": HEADERS["User-Agent"]})
+        try:
+            with urllib.request.urlopen(request, timeout=15) as response:
+                html = response.read().decode("utf-8", "replace")
+            print(f"{url}: HTTP {response.status}, {len(html)} bytes")
+            for marker in ("말소", "등록", "<table", "tNData", "hfSearchDate"):
+                index = html.find(marker)
+                print(f"  marker {marker!r} at {index}")
+                if index >= 0:
+                    print("  " + html[max(0, index - 200):index + 800].replace("\n", " ")[:1000])
+        except Exception as error:  # noqa: BLE001
+            print(f"{url}: {error}")
 
 
 if __name__ == "__main__":
