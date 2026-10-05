@@ -82,7 +82,7 @@ jobs:
           fi
           echo "KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
 
-      # 러너마다 새 개발 인증서가 만들어져 계정 한도에 걸리지 않도록 CI 가 만든 것만 지운다
+      # 예전 실행에서 CI 가 만든 개발 인증서가 남아 있으면 지운다 (지금은 아카이브에서 인증서를 만들지 않는다)
       - name: Clean up CI certificates
         run: |
           python3 -m pip install --quiet --break-system-packages pyjwt cryptography || python3 -m pip install --quiet pyjwt cryptography
@@ -93,6 +93,8 @@ jobs:
           brew install xcodegen
           xcodegen generate
 
+      # 서명 없이 아카이브하고 내보낼 때 Apple 클라우드 배포 인증서로 서명한다.
+      # (아카이브에서 자동 서명을 쓰면 러너마다 개발 인증서가 새로 만들어지고, 지울 때마다 "인증서 취소" 메일이 온다)
       - name: Archive
         run: |
           set -o pipefail
@@ -102,12 +104,8 @@ jobs:
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/Homefield.xcarchive" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$KEY_PATH" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             DEVELOPMENT_TEAM="$TEAM_ID" \
-            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGNING_ALLOWED=NO \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
 
       - name: Upload to TestFlight
@@ -126,14 +124,33 @@ jobs:
           </plist>
           PLIST
           set -o pipefail
-          xcodebuild -exportArchive \
-            -archivePath "$RUNNER_TEMP/Homefield.xcarchive" \
-            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
-            -exportPath "$RUNNER_TEMP/export" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$KEY_PATH" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          auth=(-allowProvisioningUpdates
+                -authenticationKeyPath "$KEY_PATH"
+                -authenticationKeyID "$ASC_KEY_ID"
+                -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          export_archive() {
+            xcodebuild -exportArchive \
+              -archivePath "$RUNNER_TEMP/Homefield.xcarchive" \
+              -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+              -exportPath "$RUNNER_TEMP/export" \
+              "${auth[@]}"
+          }
+          if ! export_archive; then
+            # 서명 없는 아카이브를 내보내지 못하면 예전 방식(자동 서명 아카이브)으로 한 번 더
+            echo "::warning::서명 없는 아카이브 내보내기 실패, 자동 서명으로 다시 아카이브합니다"
+            rm -rf "$RUNNER_TEMP/Homefield.xcarchive" "$RUNNER_TEMP/export"
+            xcodebuild archive \
+              -project Homefield.xcodeproj \
+              -scheme Homefield \
+              -configuration Release \
+              -destination 'generic/platform=iOS' \
+              -archivePath "$RUNNER_TEMP/Homefield.xcarchive" \
+              "${auth[@]}" \
+              DEVELOPMENT_TEAM="$TEAM_ID" \
+              CODE_SIGN_STYLE=Automatic \
+              CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
+            export_archive
+          fi
 
       - name: Clean up CI certificates (after)
         if: always() && env.KEY_PATH != ''
