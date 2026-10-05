@@ -105,9 +105,12 @@ public struct LineScore: Hashable, Codable, Sendable {
         self.home = home
     }
 
-    /// 보여 줄 이닝 수 (정규 9회, 연장이면 더)
+    /// 보여 줄 이닝 수: 정규 9회, 연장에 들어가 점수가 기록된 이닝까지 ("-"·빈 칸으로 채운 뒷이닝은 세지 않는다)
     public var inningCount: Int {
-        max(9, away.innings.count, home.innings.count)
+        func played(_ line: Line) -> Int {
+            (line.innings.lastIndex { $0 != nil } ?? -1) + 1
+        }
+        return max(9, played(away), played(home))
     }
 
     public func line(for side: TeamSide) -> Line {

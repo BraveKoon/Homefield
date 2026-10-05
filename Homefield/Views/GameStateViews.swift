@@ -119,6 +119,16 @@ struct FieldView: View {
             }
         }
         .aspectRatio(1.1, contentMode: .fit)
+        .overlay(alignment: .bottomTrailing) {
+            // 오른쪽 아래 볼카운트 상자
+            CountView(state: state)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .foregroundStyle(.white)
+                .environment(\.colorScheme, .dark)
+                .padding(8)
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
     }
@@ -204,7 +214,8 @@ struct FieldView: View {
     }
 }
 
-/// 이닝별 스코어: 1~12회 점수, R(점수)·H(안타)·E(에러)
+/// 이닝별 스코어: 9회까지(연장에 들어가면 그 이닝까지) 점수와 R(점수)·H(안타)·E(에러).
+/// 옆으로 넘기지 않고 이닝이 늘어나면 글자를 줄여 한 화면에 맞춘다.
 struct LineScoreView: View {
     @Environment(\.teamTheme) private var theme
     let game: GameSummary
@@ -213,75 +224,67 @@ struct LineScoreView: View {
     var currentInning: Int?
     var battingSide: TeamSide?
 
-    private let cellWidth: CGFloat = 22
-
     var body: some View {
-        let innings = max(12, lineScore.inningCount)
+        let innings = max(lineScore.inningCount, min(currentInning ?? 0, 15))
+        // 이닝이 많을수록 글자를 줄인다 (9회 기준 1.0)
+        let scale = min(1, 9.0 / Double(innings) + 0.08)
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("이닝별 스코어").font(.subheadline.bold()).foregroundStyle(.secondary)
                 Spacer()
                 Text("R 점수 · H 안타 · E 에러").font(.caption2).foregroundStyle(.secondary)
             }
-            ScrollView(.horizontal, showsIndicators: false) {
-                Grid(horizontalSpacing: 4, verticalSpacing: 8) {
-                    GridRow {
-                        Color.clear.frame(width: 40, height: 1)
-                        ForEach(1...innings, id: \.self) { inning in
-                            Text("\(inning)")
-                                .foregroundStyle(inning == currentInning ? theme.primary : .secondary)
-                                .frame(width: cellWidth)
-                        }
-                        Divider().frame(height: 14)
-                        header("R")
-                        header("H")
-                        header("E")
+            Grid(horizontalSpacing: 2, verticalSpacing: 8) {
+                GridRow {
+                    Color.clear.frame(width: 34, height: 1)
+                    ForEach(1...innings, id: \.self) { inning in
+                        cell("\(inning)", size: 12 * scale)
+                            .foregroundStyle(inning == currentInning ? theme.primary : .secondary)
                     }
-                    .font(.caption.monospacedDigit())
-                    Divider().gridCellUnsizedAxes(.horizontal)
-                    row(.away, innings: innings)
-                    row(.home, innings: innings)
+                    Divider().frame(height: 14)
+                    cell("R", size: 12 * scale, weight: .bold)
+                    cell("H", size: 12 * scale, weight: .bold)
+                    cell("E", size: 12 * scale, weight: .bold)
                 }
+                Divider().gridCellUnsizedAxes(.horizontal)
+                row(.away, innings: innings, scale: scale)
+                row(.home, innings: innings, scale: scale)
             }
         }
+        .animation(.snappy, value: innings)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
     }
 
-    private func header(_ text: String) -> some View {
-        Text(text).bold().frame(width: 26)
+    /// 칸 너비는 남는 공간을 나눠 갖고, 그래도 좁으면 글자가 줄어든다
+    private func cell(_ text: String, size: Double, weight: Font.Weight = .regular) -> some View {
+        Text(text)
+            .font(.system(size: size, weight: weight).monospacedDigit())
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
+            .frame(maxWidth: .infinity)
     }
 
-    private func row(_ side: TeamSide, innings: Int) -> some View {
+    private func row(_ side: TeamSide, innings: Int, scale: Double) -> some View {
         let line = lineScore.line(for: side)
         let team = game.team(for: side)
         return GridRow {
             Text(TeamTheme.shortName(for: team.code))
                 .font(.subheadline.bold())
                 .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .frame(width: 40, alignment: .leading)
+                .minimumScaleFactor(0.5)
+                .frame(width: 34, alignment: .leading)
             ForEach(0..<innings, id: \.self) { index in
                 let value = index < line.innings.count ? line.innings[index] : nil
                 let live = index + 1 == currentInning && side == battingSide
-                Text(value.map(String.init) ?? "-")
-                    .font(.callout.monospacedDigit())
-                    .fontWeight(live ? .bold : .regular)
+                cell(value.map(String.init) ?? "-", size: 15 * scale, weight: live ? .bold : .regular)
                     .foregroundStyle(live ? theme.primary : (value == nil ? .secondary : .primary))
-                    .frame(width: cellWidth)
             }
             Divider().frame(height: 18)
-            total(line.runs, bold: true)
-            total(line.hits)
-            total(line.errors)
+            cell(line.runs.map(String.init) ?? "-", size: 15 * scale, weight: .heavy)
+            cell(line.hits.map(String.init) ?? "-", size: 15 * scale, weight: .semibold)
+            cell(line.errors.map(String.init) ?? "-", size: 15 * scale, weight: .semibold)
         }
-    }
-
-    private func total(_ value: Int?, bold: Bool = false) -> some View {
-        Text(value.map(String.init) ?? "-")
-            .font(.callout.monospacedDigit())
-            .fontWeight(bold ? .heavy : .semibold)
-            .frame(width: 26)
     }
 
     private var accessibilityText: String {

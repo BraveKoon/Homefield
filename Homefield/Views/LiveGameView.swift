@@ -168,10 +168,8 @@ private struct Scoreboard: View {
         HStack(alignment: .center) {
             teamColumn(game.away, score: game.awayScore, label: "원정", batting: state.battingSide == .away)
             VStack(spacing: 6) {
-                if let title = state.halfInningTitle {
-                    Text(title).font(.headline)
-                } else {
-                    StatusBadge(game: game)
+                if let title = state.halfInningTitle ?? game.statusText {
+                    Text(title).font(.headline).lineLimit(1).minimumScaleFactor(0.7)
                 }
                 CountView(state: state)
                 if let pitcher = state.pitcherName {
@@ -180,6 +178,11 @@ private struct Scoreboard: View {
                         .foregroundStyle(.white.opacity(0.8))
                         .lineLimit(1)
                 }
+                Text(game.status.displayName)
+                    .font(.caption2.bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(statusColor.opacity(0.85), in: Capsule())
             }
             teamColumn(game.home, score: game.homeScore, label: "홈", batting: state.battingSide == .home)
         }
@@ -197,6 +200,14 @@ private struct Scoreboard: View {
             }
         }
         .environment(\.colorScheme, .dark)
+    }
+
+    private var statusColor: Color {
+        switch game.status {
+        case .live: .red
+        case .finished: .black
+        default: .gray
+        }
     }
 
     private func teamColumn(_ team: Team, score: Int?, label: String, batting: Bool) -> some View {
