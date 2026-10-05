@@ -230,8 +230,39 @@ def probe_kbo_player(player_ids):
                 print(f"  marker {marker!r}: {html.find(marker)}")
 
 
+def probe_images():
+    """팀 로고·선수 사진 URL (네이버 응답의 teamImageUrl, playerImageUrl, homeTeamEmblemUrl 형식)"""
+    print("\n=== 이미지 URL ===")
+    urls = [f"https://sports-phinf.pstatic.net/team/kbo/default/{code}.png" for code in ("LG", "HT", "SS", "OB", "LT", "SK", "HH", "NC", "KT", "WO")]
+    urls += [
+        "https://sports-phinf.pstatic.net/team/kbo/default/LG.png?type=f92_88",
+        "https://sports-phinf.pstatic.net/player/kbo/default/61101.png",
+        "https://sports-phinf.pstatic.net/player/kbo/default/53123.png",
+        "https://sports-phinf.pstatic.net/player/kbo/default/67609.png",
+        "https://sports-phinf.pstatic.net/player/kbo/default/99999999.png",
+    ]
+    for url in urls:
+        request = urllib.request.Request(url, headers={"User-Agent": HEADERS["User-Agent"], "Referer": HEADERS["Referer"]})
+        try:
+            with urllib.request.urlopen(request, timeout=15) as response:
+                body = response.read()
+                print(f"{url}: HTTP {response.status} {response.headers.get('Content-Type')} {len(body)} bytes magic={body[:4]!r}")
+        except urllib.error.HTTPError as error:
+            print(f"{url}: HTTP {error.code}")
+        except Exception as error:  # noqa: BLE001
+            print(f"{url}: {error}")
+    # Referer 없이도 되는지
+    request = urllib.request.Request(urls[0], headers={"User-Agent": "Homefield"})
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            print(f"no referer: HTTP {response.status}")
+    except Exception as error:  # noqa: BLE001
+        print(f"no referer: {error}")
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "kbo-player":
+        probe_images()
         # 오스틴(LG 타자), 임찬규(LG 투수), 박정우(KIA 타자), 대니엘(KT 투수)
         probe_kbo_player([("53123", "Hitter"), ("61101", "Pitcher"), ("67609", "Hitter"), ("56002", "Pitcher")])
         sys.exit(0)

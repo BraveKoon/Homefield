@@ -46,7 +46,7 @@ final class SongLibrary {
     private(set) var teamCheers: [String: SongSource] = [:]
     private(set) var knownPlayers: [String: KnownPlayer] = [:]
     private(set) var teamNames: [String: String] = [:]
-    /// 응원 동작, 응원가 변천사, 팀 이력 등
+    /// 팀 이력, 메모
     private(set) var profiles: [String: PlayerProfile] = [:]
     /// 이 앱으로 본 경기에서 쌓인 타석 기록
     private(set) var watched: [String: BattingLine] = [:]
@@ -300,9 +300,6 @@ final class SongLibrary {
             profile.teamHistory = old.teamHistory.isEmpty
                 ? [TimelineEntry(period: "~\(year)", text: teamName(for: previous.teamCode))]
                 : old.teamHistory
-        }
-        if profile.cheerHistory.isEmpty {
-            profile.cheerHistory = old.cheerHistory
         }
         if profile.teamHistory.last?.text.contains(newTeam) != true {
             profile.teamHistory.append(TimelineEntry(period: "\(year)~", text: "\(newTeam) (이적)"))

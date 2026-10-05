@@ -135,10 +135,8 @@ extension SongLibrary {
 
     private static func profileSummary(_ profile: PlayerProfile) -> String {
         var parts: [String] = []
-        if !profile.moves.isEmpty { parts.append("응원 동작 \(profile.moves.count)단계") }
-        if !profile.cheerHistory.isEmpty { parts.append("변천사 \(profile.cheerHistory.count)개") }
         if !profile.teamHistory.isEmpty { parts.append("팀 이력 \(profile.teamHistory.count)개") }
-        if !(profile.chant ?? "").isEmpty { parts.append("구호") }
+        if !(profile.memo ?? "").isEmpty { parts.append("메모") }
         return parts.isEmpty ? "추가된 정보 없음" : parts.joined(separator: " · ")
     }
 
