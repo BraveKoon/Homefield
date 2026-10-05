@@ -181,6 +181,21 @@ final class NaverMappingTests: XCTestCase {
         XCTAssertNil(games[1].lineScore)
     }
 
+    /// 연장 칸이 미리 "-" 로 채워져 와도 9회까지만, 연장에 들어가면 그 이닝까지
+    func testInningCountGrowsOnlyForExtraInnings() {
+        let empty = Array(repeating: Int?.none, count: 3)
+        let regular = LineScore(
+            away: .init(innings: [0, 0, 0, 1, 0, 0, 0, 0, 0] + empty),
+            home: .init(innings: [0, 0, 0, 0, 0, 0, 0, 0, 1] + empty)
+        )
+        XCTAssertEqual(regular.inningCount, 9)
+        let extra = LineScore(
+            away: .init(innings: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2, nil]),
+            home: .init(innings: [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, nil, nil])
+        )
+        XCTAssertEqual(extra.inningCount, 11)
+    }
+
     func testEndedStatus() {
         XCTAssertEqual(NaverMapping.status(code: "ENDED", cancelled: false), .finished)
         XCTAssertEqual(NaverMapping.status(code: "STARTED", cancelled: false), .live)
