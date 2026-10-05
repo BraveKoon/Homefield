@@ -82,6 +82,12 @@ jobs:
           fi
           echo "KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
 
+      # 러너마다 새 개발 인증서가 만들어져 계정 한도에 걸리지 않도록 CI 가 만든 것만 지운다
+      - name: Clean up CI certificates
+        run: |
+          python3 -m pip install --quiet --break-system-packages pyjwt cryptography || python3 -m pip install --quiet pyjwt cryptography
+          python3 scripts/asc_cleanup_certs.py
+
       - name: Generate project
         run: |
           brew install xcodegen
@@ -128,6 +134,10 @@ jobs:
             -authenticationKeyPath "$KEY_PATH" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Clean up CI certificates (after)
+        if: always() && env.KEY_PATH != ''
+        run: python3 scripts/asc_cleanup_certs.py || true
 
       - name: Remove API key
         if: always()
