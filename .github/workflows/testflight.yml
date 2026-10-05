@@ -128,15 +128,23 @@ jobs:
         if: always()
         run: rm -rf "$RUNNER_TEMP/keys"
 
-      # 업로드된 빌드마다 GitHub 릴리스(프리릴리스)를 남긴다. 변경 내역은 병합된 PR 목록으로 자동 작성.
+      # 업로드된 빌드마다 GitHub 릴리스를 남긴다. v* 태그면 정식 릴리스, 직접 실행이면 build-N 프리릴리스. 변경 내역은 병합된 PR 목록으로 자동 작성.
       - name: GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           version=$(sed -nE 's/^ *MARKETING_VERSION: *"?([^"]+)"?.*/\1/p' project.yml | head -1)
-          tag="build-${BUILD_NUMBER}"
-          gh release create "$tag" \
-            --target "$GITHUB_SHA" \
-            --title "홈구장 ${version} (${BUILD_NUMBER})" \
-            --generate-notes \
-            --prerelease
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            # 버전 태그(v1.1 등)로 실행하면 정식 릴리스
+            gh release create "$GITHUB_REF_NAME" \
+              --verify-tag \
+              --title "홈구장 ${GITHUB_REF_NAME} (빌드 ${BUILD_NUMBER})" \
+              --generate-notes \
+              --latest
+          else
+            gh release create "build-${BUILD_NUMBER}" \
+              --target "$GITHUB_SHA" \
+              --title "홈구장 ${version} (${BUILD_NUMBER})" \
+              --generate-notes \
+              --prerelease
+          fi

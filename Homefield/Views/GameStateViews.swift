@@ -79,7 +79,7 @@ struct FieldView: View {
         .third: CGPoint(x: 0.21, y: 0.60),
         .first: CGPoint(x: 0.79, y: 0.60),
         .pitcher: CGPoint(x: 0.50, y: 0.60),
-        .catcher: CGPoint(x: 0.50, y: 0.95),
+        .catcher: CGPoint(x: 0.50, y: 0.90),
     ]
 
     /// 1루, 2루, 3루, 홈
@@ -104,7 +104,7 @@ struct FieldView: View {
                 ForEach(0..<3, id: \.self) { index in
                     if let runner = state.bases[index] {
                         runnerChip(runner)
-                            .position(x: Self.bases[index].x * size.width, y: Self.bases[index].y * size.height - 16)
+                            .position(x: Self.bases[index].x * size.width, y: Self.bases[index].y * size.height - 24)
                     }
                 }
                 if let batter = state.batterName {
@@ -181,17 +181,25 @@ struct FieldView: View {
         }
     }
 
+    /// 수비수: 얼굴 사진 + 이름 (투수는 조금 크게)
     private func fielderChip(name: String, position: FieldPosition) -> some View {
-        VStack(spacing: 2) {
-            if position == .pitcher, let fieldingTeamCode {
-                PlayerAvatar(teamCode: fieldingTeamCode, name: name, size: 26)
+        VStack(spacing: 1) {
+            if let fieldingTeamCode {
+                PlayerAvatar(teamCode: fieldingTeamCode, name: name, size: position == .pitcher ? 30 : 26)
             }
             nameTag(name, background: .black.opacity(0.55), foreground: .white)
         }
     }
 
+    /// 주자: 얼굴 사진 + 노란 이름표 (이름을 모르면 이름표만)
     private func runnerChip(_ name: String) -> some View {
-        nameTag(name, background: .yellow, foreground: .black)
+        VStack(spacing: 1) {
+            if let battingTeamCode, name != "주자" {
+                PlayerAvatar(teamCode: battingTeamCode, name: name, size: 24)
+                    .overlay(Circle().stroke(.yellow, lineWidth: 2))
+            }
+            nameTag(name, background: .yellow, foreground: .black)
+        }
     }
 
     private func nameTag(_ text: String, background: Color, foreground: Color) -> some View {
