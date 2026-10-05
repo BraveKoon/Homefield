@@ -168,6 +168,15 @@ def probe_players(game_id, pcode, team_code):
     table = re.search(r'<table class="tData tDays".*?</table>', html, re.S)
     print(f"{url}: {len(html)} bytes, table found={bool(table)}")
     if table:
+        body = table.group(0)
+        row_count = body.count('<th scope="row"')
+        tr_count = len(re.findall(r"<tr[^>]*>", body))
+        print(f"row headers: {row_count}, tr tags: {tr_count}")
+        second = [m.start() for m in re.finditer(r'<th scope="row"', body)]
+        if len(second) > 1:
+            print("row2 raw: " + re.sub(r"\s+", " ", body[second[1] - 300:second[1] + 600]))
+        else:
+            print("row1 tail raw: " + re.sub(r"\s+", " ", body[-900:]))
         headers = re.findall(r'<th scope="col">(.*?)</th>', table.group(0))
         print(f"headers: {headers}")
         for row in re.findall(r'<tr>(.*?)</tr>', table.group(0), re.S):
