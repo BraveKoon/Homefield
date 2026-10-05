@@ -129,8 +129,6 @@ struct TeamSongsView: View {
     @Environment(SongLibrary.self) private var library
     let teamCode: String
 
-    @State private var newPlayerName = ""
-
     var body: some View {
         let roster = library.rosters[teamCode]
         List {
@@ -196,14 +194,8 @@ struct TeamSongsView: View {
             }
 
             Section {
-                HStack {
-                    TextField("선수 이름 직접 추가", text: $newPlayerName)
-                        .onSubmit(addPlayer)
-                    Button("추가", action: addPlayer)
-                        .disabled(newPlayerName.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
             } footer: {
-                Text("1군 명단은 각 팀의 가장 최근 경기 엔트리로 자동으로 바뀝니다. 이름은 중계에 나오는 이름과 같아야 합니다.")
+                Text("1군 명단은 각 팀의 가장 최근 경기 엔트리로 자동으로 바뀝니다. 당겨서 새로고침할 수 있어요.")
             }
         }
         .themedBackground()
@@ -223,13 +215,6 @@ struct TeamSongsView: View {
 
     private func rosterDateText(_ roster: TeamRoster) -> String {
         (roster.gameDate ?? roster.updatedAt).formatted(.dateTime.month().day())
-    }
-
-    private func addPlayer() {
-        let name = newPlayerName.trimmingCharacters(in: .whitespaces)
-        guard !name.isEmpty else { return }
-        library.register(players: [Player(id: "\(teamCode)-\(name)", name: name, teamCode: teamCode)])
-        newPlayerName = ""
     }
 }
 

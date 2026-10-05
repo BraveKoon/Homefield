@@ -70,23 +70,29 @@ extension View {
     }
 }
 
-/// 팀 색 동그라미 + 짧은 팀 이름 (로고 대신)
+/// 팀 로고 (네이버 스포츠 이미지). 받기 전이나 없으면 팀 색 동그라미 + 짧은 팀 이름.
 struct TeamBadge: View {
     let code: String
     var size: CGFloat = 44
 
     var body: some View {
         let theme = TeamTheme.forTeam(code)
-        ZStack {
-            Circle().fill(theme.gradient)
-            Text(TeamTheme.shortName(for: code))
-                .font(.system(size: size * (TeamTheme.shortName(for: code).count > 2 ? 0.26 : 0.32), weight: .heavy))
-                .foregroundStyle(.white)
-                .minimumScaleFactor(0.5)
-                .padding(size * 0.08)
+        let isKBO = KBOTeams.name(for: code) != nil
+        RemoteImage(url: isKBO ? SportsImageURL.teamLogo(code) : nil, contentMode: .fit) {
+            ZStack {
+                Circle().fill(theme.gradient)
+                Text(TeamTheme.shortName(for: code))
+                    .font(.system(size: size * (TeamTheme.shortName(for: code).count > 2 ? 0.26 : 0.32), weight: .heavy))
+                    .foregroundStyle(.white)
+                    .minimumScaleFactor(0.5)
+                    .padding(size * 0.08)
+            }
         }
+        .padding(isKBO ? size * 0.14 : 0)
         .frame(width: size, height: size)
-        .overlay(Circle().stroke(.white.opacity(0.7), lineWidth: size > 36 ? 2 : 1))
+        .background(Circle().fill(.white))
+        .clipShape(Circle())
+        .overlay(Circle().stroke(theme.primary.opacity(0.35), lineWidth: size > 36 ? 1.5 : 1))
         .shadow(color: theme.primary.opacity(0.35), radius: size * 0.12, y: size * 0.05)
         .accessibilityHidden(true)
     }

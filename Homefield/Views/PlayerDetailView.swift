@@ -3,7 +3,7 @@ import PhotosUI
 import SwiftUI
 import UIKit
 
-/// 선수 정보: 기록, 등장곡·응원가, 응원 동작, 응원가 변천사, 팀 이력
+/// 선수 정보: 기록, 등장곡·응원가, 팀 이력
 struct PlayerDetailView: View {
     @Environment(SongLibrary.self) private var library
     @Environment(\.dismiss) private var dismiss
@@ -76,37 +76,7 @@ struct PlayerDetailView: View {
                 }
             }
 
-            Section("응원 동작") {
-                if profile.moves.isEmpty {
-                    emptyRow("응원가에 맞춰 하는 동작을 순서대로 적어 두세요.")
-                } else {
-                    ForEach(Array(profile.moves.enumerated()), id: \.offset) { index, move in
-                        HStack(alignment: .firstTextBaseline, spacing: 12) {
-                            Text("\(index + 1)")
-                                .font(.callout.monospacedDigit().bold())
-                                .foregroundStyle(.white)
-                                .frame(width: 26, height: 26)
-                                .background(Color.accentColor, in: Circle())
-                            Text(move)
-                        }
-                    }
-                }
-                if let chant = profile.chant, !chant.isEmpty {
-                    Label(chant, systemImage: "quote.bubble")
-                }
-            }
-
-            Section("응원가 변천사") {
-                timeline(profile.cheerHistory, empty: "응원가가 언제 어떻게 바뀌었는지 기록해 두세요.")
-            }
-
-            Section {
-                timeline(profile.teamHistory, empty: "거쳐 온 팀을 기록해 두세요.")
-            } header: {
-                Text("팀 이력")
-            } footer: {
-                Text("중계 데이터에서 같은 선수가 다른 팀으로 나오면 이적으로 자동 기록됩니다.")
-            }
+            teamHistorySection(profile: profile)
 
             if let memo = profile.memo, !memo.isEmpty {
                 Section("메모") { Text(memo) }
@@ -126,6 +96,7 @@ struct PlayerDetailView: View {
                 Button("편집") { editing = true }
             }
         }
+        .task { await library.loadCareer(teamCode: teamCode, name: name) }
         .onChange(of: photoItem) { _, item in
             guard let item else { return }
             Task { await savePhoto(item) }
@@ -201,6 +172,32 @@ struct PlayerDetailView: View {
         .padding(.vertical, 2)
     }
 
+    /// KBO 공식 기록의 연도별 소속 팀. 없으면 중계에서 감지한 이적·직접 넣은 이력.
+    @ViewBuilder
+    private func teamHistorySection(profile: PlayerProfile) -> some View {
+        let career = library.career(teamCode: teamCode, name: name)
+        let official = career?.teamHistory ?? []
+        Section {
+            if official.isEmpty {
+                timeline(profile.teamHistory, empty: "KBO 공식 기록을 불러오는 중이거나 아직 1군 기록이 없어요.")
+            } else {
+                timeline(official, empty: "")
+            }
+            if let line = career?.career, !line.isEmpty {
+                Label(line, systemImage: "graduationcap")
+                    .font(.callout)
+            }
+        } header: {
+            Text("팀 이력")
+        } footer: {
+            if let career, !official.isEmpty {
+                Text("KBO 공식 기록(연도별 1군 기록) 기준 · \(career.fetchedAt.formatted(date: .abbreviated, time: .omitted)) 확인")
+            } else {
+                Text("KBO 공식 기록에서 자동으로 가져옵니다.")
+            }
+        }
+    }
+
     @ViewBuilder
     private func timeline(_ entries: [TimelineEntry], empty: String) -> some View {
         if entries.isEmpty {
@@ -231,47 +228,18 @@ struct PlayerProfileEditor: View {
     let teamCode: String
     let name: String
 
-    private struct Line: Identifiable {
-        let id = UUID()
-        var text: String
-    }
-
-    @State private var moves: [Line]
-    @State private var chant: String
-    @State private var cheerHistory: [TimelineEntry]
     @State private var teamHistory: [TimelineEntry]
     @State private var memo: String
 
     init(teamCode: String, name: String, original: PlayerProfile) {
         self.teamCode = teamCode
         self.name = name
-        _moves = State(initialValue: original.moves.map { Line(text: $0) })
-        _chant = State(initialValue: original.chant ?? "")
-        _cheerHistory = State(initialValue: original.cheerHistory)
         _teamHistory = State(initialValue: original.teamHistory)
         _memo = State(initialValue: original.memo ?? "")
     }
 
     var body: some View {
         Form {
-            Section {
-                ForEach($moves) { $move in
-                    TextField("동작 설명", text: $move.text, axis: .vertical)
-                }
-                .onDelete { moves.remove(atOffsets: $0) }
-                .onMove { moves.move(fromOffsets: $0, toOffset: $1) }
-                Button("동작 추가", systemImage: "plus") { moves.append(Line(text: "")) }
-            } header: {
-                Text("응원 동작 (순서대로)")
-            } footer: {
-                Text("예: 양손 들고 박수 두 번 → 오른손 앞으로 뻗으며 \"안타!\"")
-            }
-
-            Section("응원 구호") {
-                TextField("예: 구자욱 안타!", text: $chant, axis: .vertical)
-            }
-
-            timelineSection("응원가 변천사", entries: $cheerHistory, periodHint: "2019", textHint: "어떤 응원가였는지")
             timelineSection("팀 이력", entries: $teamHistory, periodHint: "2012–2019", textHint: "팀 이름")
 
             Section("메모") {
@@ -327,9 +295,6 @@ struct PlayerProfileEditor: View {
                 .filter { !$0.period.isEmpty || !$0.text.isEmpty }
         }
         let profile = PlayerProfile(
-            moves: moves.map { clean($0.text) }.filter { !$0.isEmpty },
-            chant: clean(chant).isEmpty ? nil : clean(chant),
-            cheerHistory: cleanTimeline(cheerHistory),
             teamHistory: cleanTimeline(teamHistory),
             memo: clean(memo).isEmpty ? nil : clean(memo)
         )

@@ -201,5 +201,69 @@ def probe_players(game_id, pcode, team_code):
         print(f"말소 {len(rows)}명, 예시 {rows[:3]}")
 
 
+def probe_kbo_player(player_ids):
+    """KBO 공식 선수 기록 페이지의 연도별 팀 (팀 이력용). 네이버 선수 코드와 KBO playerId 가 같은지도 본다."""
+    import re
+    print("\n=== KBO 선수 연도별 기록 ===")
+    for player_id, kind in player_ids:
+        for page in ("Total.aspx", "Basic.aspx"):
+            url = f"https://www.koreabaseball.com/Record/Player/{kind}Detail/{page}?playerId={player_id}"
+            request = urllib.request.Request(url, headers={"User-Agent": HEADERS["User-Agent"]})
+            try:
+                with urllib.request.urlopen(request, timeout=15) as response:
+                    html = response.read().decode("utf-8", "replace")
+            except Exception as error:  # noqa: BLE001
+                print(f"{url}: {error}")
+                continue
+            name = re.search(r'id="cphContents_cphContents_cphContents_playerProfile_lblName"[^>]*>(.*?)<', html)
+            career = re.search(r'id="cphContents_cphContents_cphContents_playerProfile_lblCareer"[^>]*>(.*?)<', html)
+            print(f"{url}: {len(html)} bytes, name={name.group(1) if name else None}, career={career.group(1) if career else None}")
+            for table in re.findall(r"<table[^>]*>.*?</table>", html, re.S)[:3]:
+                headers = [re.sub(r"<[^>]+>", "", h).strip() for h in re.findall(r"<th[^>]*>(.*?)</th>", table, re.S)]
+                rows = []
+                for row in re.findall(r"<tr[^>]*>(.*?)</tr>", table, re.S):
+                    cells = [re.sub(r"<[^>]+>", "", c).strip() for c in re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)]
+                    if cells:
+                        rows.append(cells[:4])
+                print(f"  table headers={headers[:8]} rows={len(rows)} first={rows[:3]} last={rows[-2:]}")
+            for marker in ("lblCareer", "연도별", "Total", "팀명"):
+                print(f"  marker {marker!r}: {html.find(marker)}")
+
+
+def probe_images():
+    """팀 로고·선수 사진 URL (네이버 응답의 teamImageUrl, playerImageUrl, homeTeamEmblemUrl 형식)"""
+    print("\n=== 이미지 URL ===")
+    urls = [f"https://sports-phinf.pstatic.net/team/kbo/default/{code}.png" for code in ("LG", "HT", "SS", "OB", "LT", "SK", "HH", "NC", "KT", "WO")]
+    urls += [
+        "https://sports-phinf.pstatic.net/team/kbo/default/LG.png?type=f92_88",
+        "https://sports-phinf.pstatic.net/player/kbo/default/61101.png",
+        "https://sports-phinf.pstatic.net/player/kbo/default/53123.png",
+        "https://sports-phinf.pstatic.net/player/kbo/default/67609.png",
+        "https://sports-phinf.pstatic.net/player/kbo/default/99999999.png",
+    ]
+    for url in urls:
+        request = urllib.request.Request(url, headers={"User-Agent": HEADERS["User-Agent"], "Referer": HEADERS["Referer"]})
+        try:
+            with urllib.request.urlopen(request, timeout=15) as response:
+                body = response.read()
+                print(f"{url}: HTTP {response.status} {response.headers.get('Content-Type')} {len(body)} bytes magic={body[:4]!r}")
+        except urllib.error.HTTPError as error:
+            print(f"{url}: HTTP {error.code}")
+        except Exception as error:  # noqa: BLE001
+            print(f"{url}: {error}")
+    # Referer 없이도 되는지
+    request = urllib.request.Request(urls[0], headers={"User-Agent": "Homefield"})
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            print(f"no referer: HTTP {response.status}")
+    except Exception as error:  # noqa: BLE001
+        print(f"no referer: {error}")
+
+
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "kbo-player":
+        probe_images()
+        # 오스틴(LG 타자), 임찬규(LG 투수), 박정우(KIA 타자), 대니엘(KT 투수)
+        probe_kbo_player([("53123", "Hitter"), ("61101", "Pitcher"), ("67609", "Hitter"), ("56002", "Pitcher")])
+        sys.exit(0)
     sys.exit(main())

@@ -18,54 +18,34 @@ public struct TimelineEntry: Codable, Hashable, Sendable, Identifiable {
     }
 }
 
-/// 사용자가 입력하거나 JSON 으로 가져오는 선수 정보
+/// 선수 정보: 팀 이력과 메모 (팀 이력은 KBO 공식 기록에서 채우고, JSON 으로도 가져올 수 있다)
 public struct PlayerProfile: Codable, Hashable, Sendable {
-    /// 응원 동작(율동) 순서
-    public var moves: [String]
-    /// 응원 구호 (가사 전체가 아닌 짧은 구호 권장)
-    public var chant: String?
-    /// 응원가 변천사
-    public var cheerHistory: [TimelineEntry]
     /// 팀 이력
     public var teamHistory: [TimelineEntry]
     public var memo: String?
 
-    public init(
-        moves: [String] = [],
-        chant: String? = nil,
-        cheerHistory: [TimelineEntry] = [],
-        teamHistory: [TimelineEntry] = [],
-        memo: String? = nil
-    ) {
-        self.moves = moves
-        self.chant = chant
-        self.cheerHistory = cheerHistory
+    public init(teamHistory: [TimelineEntry] = [], memo: String? = nil) {
         self.teamHistory = teamHistory
         self.memo = memo
     }
 
     public var isEmpty: Bool {
-        moves.isEmpty && (chant ?? "").isEmpty && cheerHistory.isEmpty && teamHistory.isEmpty && (memo ?? "").isEmpty
+        teamHistory.isEmpty && (memo ?? "").isEmpty
     }
 
     /// 다른 프로필에서 비어 있지 않은 항목만 덮어쓴다
     public mutating func merge(_ other: PlayerProfile) {
-        if !other.moves.isEmpty { moves = other.moves }
-        if let chant = other.chant, !chant.isEmpty { self.chant = chant }
-        if !other.cheerHistory.isEmpty { cheerHistory = other.cheerHistory }
         if !other.teamHistory.isEmpty { teamHistory = other.teamHistory }
         if let memo = other.memo, !memo.isEmpty { self.memo = memo }
     }
 
     private enum CodingKeys: String, CodingKey {
-        case moves, chant, cheerHistory, teamHistory, memo
+        case teamHistory, memo
     }
 
+    /// 예전 버전에 저장된 응원 동작·응원가 변천사 항목은 무시한다
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        moves = try container.decodeIfPresent([String].self, forKey: .moves) ?? []
-        chant = try container.decodeIfPresent(String.self, forKey: .chant)
-        cheerHistory = try container.decodeIfPresent([TimelineEntry].self, forKey: .cheerHistory) ?? []
         teamHistory = try container.decodeIfPresent([TimelineEntry].self, forKey: .teamHistory) ?? []
         memo = try container.decodeIfPresent(String.self, forKey: .memo)
     }
@@ -79,9 +59,6 @@ public struct PlayerProfile: Codable, Hashable, Sendable {
 ///     {
 ///       "team": "SS",
 ///       "name": "구자욱",
-///       "moves": ["양손 들고 박수 두 번", "오른손 앞으로 뻗기"],
-///       "chant": "구자욱 안타!",
-///       "cheerHistory": [{ "period": "2015", "text": "첫 응원가" }],
 ///       "teamHistory": [{ "period": "2012–", "text": "삼성 라이온즈" }],
 ///       "memo": ""
 ///     }
@@ -116,35 +93,5 @@ public struct PlayerProfilesFile: Decodable, Sendable {
 
     public static func decode(_ data: Data) throws -> PlayerProfilesFile {
         try JSONDecoder().decode(PlayerProfilesFile.self, from: data)
-    }
-
-    /// 채워 넣을 수 있게 선수 목록으로 만든 JSON (이미 있는 정보는 그대로, 빈 항목은 빈 칸)
-    public static func template(_ players: [(teamCode: String, name: String, profile: PlayerProfile)]) throws -> Data {
-        struct Row: Encodable {
-            let team: String
-            let name: String
-            let moves: [String]
-            let chant: String
-            let cheerHistory: [TimelineEntry]
-            let teamHistory: [TimelineEntry]
-            let memo: String
-        }
-        struct File: Encodable {
-            let players: [Row]
-        }
-        let rows = players.map { player in
-            Row(
-                team: player.teamCode,
-                name: player.name,
-                moves: player.profile.moves,
-                chant: player.profile.chant ?? "",
-                cheerHistory: player.profile.cheerHistory,
-                teamHistory: player.profile.teamHistory,
-                memo: player.profile.memo ?? ""
-            )
-        }
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        return try encoder.encode(File(players: rows))
     }
 }

@@ -17,3 +17,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Probe endpoints
         run: python3 scripts/naver_api_check.py
+      - name: Probe KBO player pages
+        run: python3 scripts/naver_api_check.py kbo-player

@@ -12,6 +12,7 @@
 		068AC986E43A8908EFAEB484 /* PlayerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 232CF63C1BC09B67169F1B7E /* PlayerDetailView.swift */; };
 		0856EA98D0034B2FA3D12256 /* SongLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94D0AAA6FC5A6530B326E690 /* SongLibrary.swift */; };
 		11BE5F7E7BE9056945D8EEEC /* AttendanceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE468CA38FAC31882F4A4341 /* AttendanceStore.swift */; };
+		30EE2CF0EC8C0169EF2B8053 /* RemoteImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC827045E0DC50DC290D9CF7 /* RemoteImage.swift */; };
 		334E351CE173F6275BA8B76F /* HomefieldApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 828BE906D2D6C931808FCCE1 /* HomefieldApp.swift */; };
 		4048F3711E1BC178044FC500 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 53B22290F4B62BC14E1F4B8F /* Assets.xcassets */; };
 		4406423AD173EEA7D5CAF1CA /* ThemeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4F2F4EDD449239E513D52AF /* ThemeViews.swift */; };
@@ -52,6 +53,7 @@
 		D053340E166A4F1A5BF84104 /* GameListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameListView.swift; sourceTree = "<group>"; };
 		D6E9A4E4E97F1CE11E4A5AB3 /* AudioDirector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDirector.swift; sourceTree = "<group>"; };
 		DA8E8C565C22FFB05BD9315F /* TeamTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamTheme.swift; sourceTree = "<group>"; };
+		DC827045E0DC50DC290D9CF7 /* RemoteImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteImage.swift; sourceTree = "<group>"; };
 		DDFD1363B7D6D2BC8BA3FABA /* HomefieldCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = HomefieldCore; path = Packages/HomefieldCore; sourceTree = SOURCE_ROOT; };
 		E3F4B746485ED6231E2AD3A5 /* LiveGameSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveGameSession.swift; sourceTree = "<group>"; };
 		EE468CA38FAC31882F4A4341 /* AttendanceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceStore.swift; sourceTree = "<group>"; };
@@ -79,6 +81,7 @@
 				B25D1558C74EF0BFA73DF59A /* GameStateViews.swift */,
 				363EE5EA2EA56C30F27C8D24 /* LiveGameView.swift */,
 				232CF63C1BC09B67169F1B7E /* PlayerDetailView.swift */,
+				DC827045E0DC50DC290D9CF7 /* RemoteImage.swift */,
 				657F724A45DB4F1155FC7256 /* SettingsView.swift */,
 				3633B3D940EB489FA4822CD9 /* SongLibraryView.swift */,
 				C4F2F4EDD449239E513D52AF /* ThemeViews.swift */,
@@ -267,6 +270,7 @@
 				E51D8901121E5A550033057A /* MusicDeck.swift in Sources */,
 				D75897F33FE2D49FCD748E53 /* Narrator.swift in Sources */,
 				068AC986E43A8908EFAEB484 /* PlayerDetailView.swift in Sources */,
+				30EE2CF0EC8C0169EF2B8053 /* RemoteImage.swift in Sources */,
 				056A69794F4A3268FF73BBAF /* SettingsView.swift in Sources */,
 				0856EA98D0034B2FA3D12256 /* SongLibrary.swift in Sources */,
 				CBB58CE35DC6C9C513ABA28D /* SongLibraryView.swift in Sources */,
