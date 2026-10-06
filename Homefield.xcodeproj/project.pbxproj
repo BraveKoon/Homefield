@@ -11,36 +11,75 @@
 		056ED8024C4DFC1BE037CE0C /* BatchImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88404A98D4781471534A305 /* BatchImportView.swift */; };
 		068AC986E43A8908EFAEB484 /* PlayerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 232CF63C1BC09B67169F1B7E /* PlayerDetailView.swift */; };
 		0856EA98D0034B2FA3D12256 /* SongLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94D0AAA6FC5A6530B326E690 /* SongLibrary.swift */; };
+		0CBD853FECEB5E90B9C0FE2A /* GameActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71ED6E976FC3894E112BE678 /* GameActivityAttributes.swift */; };
 		11BE5F7E7BE9056945D8EEEC /* AttendanceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE468CA38FAC31882F4A4341 /* AttendanceStore.swift */; };
+		1589301489600F6A353D43DF /* TeamTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 531513B24FF5100A973F43B7 /* TeamTheme.swift */; };
 		30EE2CF0EC8C0169EF2B8053 /* RemoteImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC827045E0DC50DC290D9CF7 /* RemoteImage.swift */; };
 		334E351CE173F6275BA8B76F /* HomefieldApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 828BE906D2D6C931808FCCE1 /* HomefieldApp.swift */; };
+		35087BF99F96EA5DB236BDB1 /* GameLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED08E6D405D1B8D62B3679AD /* GameLiveActivity.swift */; };
 		4048F3711E1BC178044FC500 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 53B22290F4B62BC14E1F4B8F /* Assets.xcassets */; };
 		4406423AD173EEA7D5CAF1CA /* ThemeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4F2F4EDD449239E513D52AF /* ThemeViews.swift */; };
 		4F7B7CA79348A9890A470763 /* BatchImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD941AD01ECEA4305AA4B711 /* BatchImporter.swift */; };
 		517D574762A8331BA07CF101 /* HomefieldCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8B12B7181B7BBEC38FE7A7D2 /* HomefieldCore */; };
+		5F4911FDEB0D180EED04B16B /* BackgroundKeeper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 589CB875B741E4A30913A615 /* BackgroundKeeper.swift */; };
+		651BA9A3EA05060F52EE3B0D /* LiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E37C5FC5A71A8187A0A2B61 /* LiveActivityController.swift */; };
 		6D50328E89BF0FE7B7A737A3 /* GameStateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25D1558C74EF0BFA73DF59A /* GameStateViews.swift */; };
-		895C9E53A2259A9C1AE0238C /* TeamTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA8E8C565C22FFB05BD9315F /* TeamTheme.swift */; };
 		B9A77CAD4C5668180555AB35 /* AudioDirector.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E9A4E4E97F1CE11E4A5AB3 /* AudioDirector.swift */; };
 		BC841BB703886D4FCA7EE890 /* LiveGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 363EE5EA2EA56C30F27C8D24 /* LiveGameView.swift */; };
 		BE37DDC80F6FC36A1CB91F39 /* LiveGameSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3F4B746485ED6231E2AD3A5 /* LiveGameSession.swift */; };
+		BE57184B15ACDCEEE1AA8FB0 /* HomefieldWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7CE8E9B7CEE01B9474A2D458 /* HomefieldWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CBB58CE35DC6C9C513ABA28D /* SongLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3633B3D940EB489FA4822CD9 /* SongLibraryView.swift */; };
 		D35C2D519E1BA99F79FE2C17 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E2C891CE7A8324FF9E81B9 /* AppSettings.swift */; };
 		D75897F33FE2D49FCD748E53 /* Narrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 817BCD2DAF8E8E08AD7547D8 /* Narrator.swift */; };
 		E0D19EA0CA2DEC10AE3E930E /* GameListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D053340E166A4F1A5BF84104 /* GameListView.swift */; };
 		E51D8901121E5A550033057A /* MusicDeck.swift in Sources */ = {isa = PBXBuildFile; fileRef = B08C14223DA04A9F63BDB1F2 /* MusicDeck.swift */; };
 		E95DD2DE66C84E9125705FE3 /* AttendanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04E7BBF698CE61F7416A0B9C /* AttendanceView.swift */; };
+		E9ED0AFAF619313EB3667F97 /* HomefieldWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC5E31A9860CD61006645D3 /* HomefieldWidgetsBundle.swift */; };
 		EF68ED2BAAFFE0C9D04D1D94 /* AppleMusicSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B47E5624AF0AAA5216B492B8 /* AppleMusicSearchView.swift */; };
+		F18C553088DA5E2EAE670CC8 /* TeamTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 531513B24FF5100A973F43B7 /* TeamTheme.swift */; };
+		F22C6655DFC59A787AC233D5 /* GameActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71ED6E976FC3894E112BE678 /* GameActivityAttributes.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		7F6A19E84013C9705F31548D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ACE4CF250B9F75F33B4119FC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 363B5823AB06A82F871D6B61;
+			remoteInfo = HomefieldWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FF19028B98DFB262CE4C867B /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BE57184B15ACDCEEE1AA8FB0 /* HomefieldWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		04E7BBF698CE61F7416A0B9C /* AttendanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceView.swift; sourceTree = "<group>"; };
 		232CF63C1BC09B67169F1B7E /* PlayerDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerDetailView.swift; sourceTree = "<group>"; };
 		3633B3D940EB489FA4822CD9 /* SongLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryView.swift; sourceTree = "<group>"; };
 		363EE5EA2EA56C30F27C8D24 /* LiveGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveGameView.swift; sourceTree = "<group>"; };
+		531513B24FF5100A973F43B7 /* TeamTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamTheme.swift; sourceTree = "<group>"; };
 		53B22290F4B62BC14E1F4B8F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		56E2C891CE7A8324FF9E81B9 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		577415853449EF7CBAF369FF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		589CB875B741E4A30913A615 /* BackgroundKeeper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundKeeper.swift; sourceTree = "<group>"; };
 		657F724A45DB4F1155FC7256 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		6EC5E31A9860CD61006645D3 /* HomefieldWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomefieldWidgetsBundle.swift; sourceTree = "<group>"; };
+		71ED6E976FC3894E112BE678 /* GameActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameActivityAttributes.swift; sourceTree = "<group>"; };
 		784043A884189B51E5C3D4C7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		7CE8E9B7CEE01B9474A2D458 /* HomefieldWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = HomefieldWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7E37C5FC5A71A8187A0A2B61 /* LiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityController.swift; sourceTree = "<group>"; };
 		817BCD2DAF8E8E08AD7547D8 /* Narrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Narrator.swift; sourceTree = "<group>"; };
 		828BE906D2D6C931808FCCE1 /* HomefieldApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomefieldApp.swift; sourceTree = "<group>"; };
 		94D0AAA6FC5A6530B326E690 /* SongLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibrary.swift; sourceTree = "<group>"; };
@@ -52,10 +91,10 @@
 		C4FDA0AAE05C664BD773726A /* Homefield.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Homefield.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D053340E166A4F1A5BF84104 /* GameListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameListView.swift; sourceTree = "<group>"; };
 		D6E9A4E4E97F1CE11E4A5AB3 /* AudioDirector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDirector.swift; sourceTree = "<group>"; };
-		DA8E8C565C22FFB05BD9315F /* TeamTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamTheme.swift; sourceTree = "<group>"; };
 		DC827045E0DC50DC290D9CF7 /* RemoteImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteImage.swift; sourceTree = "<group>"; };
 		DDFD1363B7D6D2BC8BA3FABA /* HomefieldCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = HomefieldCore; path = Packages/HomefieldCore; sourceTree = SOURCE_ROOT; };
 		E3F4B746485ED6231E2AD3A5 /* LiveGameSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveGameSession.swift; sourceTree = "<group>"; };
+		ED08E6D405D1B8D62B3679AD /* GameLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameLiveActivity.swift; sourceTree = "<group>"; };
 		EE468CA38FAC31882F4A4341 /* AttendanceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceStore.swift; sourceTree = "<group>"; };
 		F88404A98D4781471534A305 /* BatchImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchImportView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -100,6 +139,7 @@
 		138A6D97F57A4B2BBA0168C9 /* Live */ = {
 			isa = PBXGroup;
 			children = (
+				7E37C5FC5A71A8187A0A2B61 /* LiveActivityController.swift */,
 				E3F4B746485ED6231E2AD3A5 /* LiveGameSession.swift */,
 			);
 			path = Live;
@@ -109,6 +149,7 @@
 			isa = PBXGroup;
 			children = (
 				D6E9A4E4E97F1CE11E4A5AB3 /* AudioDirector.swift */,
+				589CB875B741E4A30913A615 /* BackgroundKeeper.swift */,
 				B08C14223DA04A9F63BDB1F2 /* MusicDeck.swift */,
 				817BCD2DAF8E8E08AD7547D8 /* Narrator.swift */,
 			);
@@ -127,9 +168,18 @@
 			isa = PBXGroup;
 			children = (
 				56E2C891CE7A8324FF9E81B9 /* AppSettings.swift */,
-				DA8E8C565C22FFB05BD9315F /* TeamTheme.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		5C51648E5650A867ADBF9B67 /* HomefieldWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				ED08E6D405D1B8D62B3679AD /* GameLiveActivity.swift */,
+				6EC5E31A9860CD61006645D3 /* HomefieldWidgetsBundle.swift */,
+				577415853449EF7CBAF369FF /* Info.plist */,
+			);
+			path = HomefieldWidgets;
 			sourceTree = "<group>";
 		};
 		7D1046D38A94100DC23B320D /* Songs */ = {
@@ -141,11 +191,22 @@
 			path = Songs;
 			sourceTree = "<group>";
 		};
+		86AAD20C6FC2C3BE7373AD35 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				71ED6E976FC3894E112BE678 /* GameActivityAttributes.swift */,
+				531513B24FF5100A973F43B7 /* TeamTheme.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		8F2643A3CA46B35CE3F35ECF = {
 			isa = PBXGroup;
 			children = (
 				B6787812A002A6146683CE04 /* Homefield */,
+				5C51648E5650A867ADBF9B67 /* HomefieldWidgets */,
 				4790B5FD594BF9975566F2A5 /* Packages */,
+				86AAD20C6FC2C3BE7373AD35 /* Shared */,
 				DFC91980B1583DCD8E5102E0 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -170,6 +231,7 @@
 			isa = PBXGroup;
 			children = (
 				C4FDA0AAE05C664BD773726A /* Homefield.app */,
+				7CE8E9B7CEE01B9474A2D458 /* HomefieldWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -186,6 +248,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		363B5823AB06A82F871D6B61 /* HomefieldWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C2A41444E0FAC650467CB403 /* Build configuration list for PBXNativeTarget "HomefieldWidgets" */;
+			buildPhases = (
+				4F7CB251F5172D3A6981A8B8 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HomefieldWidgets;
+			packageProductDependencies = (
+			);
+			productName = HomefieldWidgets;
+			productReference = 7CE8E9B7CEE01B9474A2D458 /* HomefieldWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		9BA0042162377CE52D5F8B43 /* Homefield */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 69F93F4736CE590A4C76880D /* Build configuration list for PBXNativeTarget "Homefield" */;
@@ -193,10 +272,12 @@
 				5687E1738F79678C31B8D58C /* Sources */,
 				2B610178E4DC0D1DA0514E50 /* Resources */,
 				B1EB728973A086AEA93727AC /* Frameworks */,
+				FF19028B98DFB262CE4C867B /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C7F16F83DCB2A9586117A0AF /* PBXTargetDependency */,
 			);
 			name = Homefield;
 			packageProductDependencies = (
@@ -235,6 +316,7 @@
 			projectRoot = "";
 			targets = (
 				9BA0042162377CE52D5F8B43 /* Homefield */,
+				363B5823AB06A82F871D6B61 /* HomefieldWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -251,6 +333,17 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		4F7CB251F5172D3A6981A8B8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F22C6655DFC59A787AC233D5 /* GameActivityAttributes.swift in Sources */,
+				35087BF99F96EA5DB236BDB1 /* GameLiveActivity.swift in Sources */,
+				E9ED0AFAF619313EB3667F97 /* HomefieldWidgetsBundle.swift in Sources */,
+				1589301489600F6A353D43DF /* TeamTheme.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5687E1738F79678C31B8D58C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -260,11 +353,14 @@
 				11BE5F7E7BE9056945D8EEEC /* AttendanceStore.swift in Sources */,
 				E95DD2DE66C84E9125705FE3 /* AttendanceView.swift in Sources */,
 				B9A77CAD4C5668180555AB35 /* AudioDirector.swift in Sources */,
+				5F4911FDEB0D180EED04B16B /* BackgroundKeeper.swift in Sources */,
 				056ED8024C4DFC1BE037CE0C /* BatchImportView.swift in Sources */,
 				4F7B7CA79348A9890A470763 /* BatchImporter.swift in Sources */,
+				0CBD853FECEB5E90B9C0FE2A /* GameActivityAttributes.swift in Sources */,
 				E0D19EA0CA2DEC10AE3E930E /* GameListView.swift in Sources */,
 				6D50328E89BF0FE7B7A737A3 /* GameStateViews.swift in Sources */,
 				334E351CE173F6275BA8B76F /* HomefieldApp.swift in Sources */,
+				651BA9A3EA05060F52EE3B0D /* LiveActivityController.swift in Sources */,
 				BE37DDC80F6FC36A1CB91F39 /* LiveGameSession.swift in Sources */,
 				BC841BB703886D4FCA7EE890 /* LiveGameView.swift in Sources */,
 				E51D8901121E5A550033057A /* MusicDeck.swift in Sources */,
@@ -274,27 +370,50 @@
 				056A69794F4A3268FF73BBAF /* SettingsView.swift in Sources */,
 				0856EA98D0034B2FA3D12256 /* SongLibrary.swift in Sources */,
 				CBB58CE35DC6C9C513ABA28D /* SongLibraryView.swift in Sources */,
-				895C9E53A2259A9C1AE0238C /* TeamTheme.swift in Sources */,
+				F18C553088DA5E2EAE670CC8 /* TeamTheme.swift in Sources */,
 				4406423AD173EEA7D5CAF1CA /* ThemeViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		C7F16F83DCB2A9586117A0AF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 363B5823AB06A82F871D6B61 /* HomefieldWidgets */;
+			targetProxy = 7F6A19E84013C9705F31548D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		1184CDD329062EB4090BBB8D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = HomefieldWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bravekoon.homefield.widgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		3EBCE6507DC391228AD67173 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = Homefield/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bravekoon.homefield;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
@@ -336,6 +455,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -348,6 +468,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -364,13 +485,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = Homefield/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bravekoon.homefield;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
@@ -412,6 +531,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -430,6 +550,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -438,6 +559,23 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		D1DC40D8E14E27490980F1ED /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = HomefieldWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bravekoon.homefield.widgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -458,6 +596,15 @@
 			buildConfigurations = (
 				3EBCE6507DC391228AD67173 /* Debug */,
 				9677226BB6632946F706DB51 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C2A41444E0FAC650467CB403 /* Build configuration list for PBXNativeTarget "HomefieldWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D1DC40D8E14E27490980F1ED /* Debug */,
+				1184CDD329062EB4090BBB8D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
