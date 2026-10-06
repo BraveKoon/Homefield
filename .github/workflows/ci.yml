@@ -68,7 +68,7 @@ jobs:
         env:
           SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
-          git add -A Homefield.xcodeproj Homefield/Info.plist
+          git add -A Homefield.xcodeproj Homefield/Info.plist HomefieldWidgets/Info.plist
           if git diff --cached --quiet; then
             echo "Homefield.xcodeproj is up to date"
             exit 0

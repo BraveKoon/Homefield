@@ -46,6 +46,9 @@ final class LiveGameSession {
     @ObservationIgnored private let tracker = PlateAppearanceTracker()
     @ObservationIgnored private let stateTracker = GameStateTracker()
     @ObservationIgnored private let classifier = RelayTextClassifier()
+    @ObservationIgnored private let headline = RelayHeadline()
+    @ObservationIgnored private let liveActivity = LiveActivityController()
+    @ObservationIgnored private let keeper = BackgroundKeeper()
 
     private struct PendingBatch {
         enum Payload {
@@ -72,6 +75,10 @@ final class LiveGameSession {
         AudioDirector.activateSession()
         library.register(team: game.home)
         library.register(team: game.away)
+        if settings.liveActivityEnabled {
+            liveActivity.start(game: game, state: activityState())
+            keeper.start()
+        }
 
         let (stream, continuation) = AsyncStream<PendingBatch>.makeStream()
         queue = continuation
@@ -114,6 +121,8 @@ final class LiveGameSession {
         queue = nil
         isRunning = false
         pendingBatches = 0
+        liveActivity.end(activityState(), finished: game.status == .finished)
+        keeper.stop()
         director.stopAll()
         UIApplication.shared.isIdleTimerDisabled = false
     }
@@ -131,6 +140,7 @@ final class LiveGameSession {
             stateTracker.setLineups(lineups, pitchers: pitchers)
             gameState = stateTracker.state
             lastError = nil
+            refreshActivity()
         case .entries(let entries):
             pendingBatches += 1
             queue?.yield(PendingBatch(receivedAt: Date(), payload: .entries(entries)))
@@ -151,6 +161,7 @@ final class LiveGameSession {
         for entry in entries.sorted(by: { $0.sequence < $1.sequence }) where !log.contains(where: { $0.id == entry.id }) {
             append(logLine(for: entry, at: now))
         }
+        refreshActivity()
     }
 
     private func logLine(for entry: RelayEntry, at time: Date) -> LogLine {
@@ -222,6 +233,31 @@ final class LiveGameSession {
         for cue in settings.composer.compose(events) {
             await director.perform(cue)
         }
+    }
+
+    // MARK: 잠금화면 실시간 중계
+
+    private func activityState() -> GameActivityAttributes.ContentState {
+        GameActivityAttributes.ContentState(
+            awayScore: game.awayScore,
+            homeScore: game.homeScore,
+            title: gameState.halfInningTitle ?? game.statusText ?? game.status.displayName,
+            status: game.status.displayName,
+            isLive: game.status == .live,
+            balls: gameState.balls,
+            strikes: gameState.strikes,
+            outs: gameState.outs,
+            bases: gameState.bases.map { $0 != nil },
+            pitcher: gameState.pitcherName,
+            batter: gameState.batterName,
+            // log 는 최신이 앞
+            recentPlays: Array(log.lazy.compactMap { self.headline.headline(for: $0.text) }.prefix(3))
+        )
+    }
+
+    private func refreshActivity() {
+        guard liveActivity.isRunning else { return }
+        liveActivity.update(activityState())
     }
 
     func todayLine(for player: Player) -> BattingLine? {

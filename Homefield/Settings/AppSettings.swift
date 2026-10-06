@@ -30,6 +30,8 @@ final class AppSettings {
     var favoriteTeamCode: String? { didSet { save() } }
     var songScope: SongScope { didSet { save() } }
     var useDemo: Bool { didSet { save() } }
+    /// 경기를 보는 동안 잠금화면·다이내믹 아일랜드에 실시간 중계
+    var liveActivityEnabled: Bool { didSet { save() } }
     /// 첫 실행 응원팀 선택을 마쳤는지
     var hasCompletedOnboarding: Bool { didSet { save() } }
 
@@ -48,6 +50,7 @@ final class AppSettings {
         customPhrases = Dictionary(uniqueKeysWithValues: storedPhrases.compactMap { key, value in
             PlayKind(rawValue: key).map { ($0, value) }
         })
+        liveActivityEnabled = defaults.object(forKey: Keys.liveActivityEnabled) as? Bool ?? true
         let favorite = defaults.string(forKey: Keys.favoriteTeamCode)
         favoriteTeamCode = favorite
         songScope = defaults.string(forKey: Keys.songScope).flatMap(SongScope.init(rawValue:)) ?? .allTeams
@@ -83,6 +86,7 @@ final class AppSettings {
         defaults.set(songScope.rawValue, forKey: Keys.songScope)
         defaults.set(useDemo, forKey: Keys.useDemo)
         defaults.set(hasCompletedOnboarding, forKey: Keys.hasCompletedOnboarding)
+        defaults.set(liveActivityEnabled, forKey: Keys.liveActivityEnabled)
     }
 
     private enum Keys {
@@ -97,5 +101,6 @@ final class AppSettings {
         static let songScope = "songScope"
         static let useDemo = "useDemo"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
+        static let liveActivityEnabled = "liveActivityEnabled"
     }
 }
