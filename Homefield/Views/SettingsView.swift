@@ -41,6 +41,12 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Toggle("잠금화면 실시간 중계", isOn: $settings.liveActivityEnabled)
+                } footer: {
+                    Text("경기 화면을 열어 두면 잠금화면 알림 영역과 다이내믹 아일랜드에 점수판과 최근 중계가 나옵니다. 앱이 백그라운드에 있어도 계속 갱신하도록 소리 없는 오디오를 함께 켭니다.")
+                }
+
+                Section {
                     Stepper(value: $settings.broadcastDelay, in: 0...120, step: 1) {
                         Text("방송 싱크: \(Int(settings.broadcastDelay))초 늦게")
                     }
