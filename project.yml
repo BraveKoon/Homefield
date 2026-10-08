@@ -10,6 +10,8 @@ settings:
   base:
     MARKETING_VERSION: "1.1.1"
     CURRENT_PROJECT_VERSION: "1"
+    # 기기에서 바로 실행할 때 서명 팀. CI는 APPLE_TEAM_ID 시크릿으로 덮어쓴다
+    DEVELOPMENT_TEAM: WK337QZLS3
 
 packages:
   HomefieldCore:
