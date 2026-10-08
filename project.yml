@@ -8,7 +8,7 @@ options:
 # 앱과 위젯 확장이 같은 버전을 쓴다 (버전 릴리스 때 여기만 올린다)
 settings:
   base:
-    MARKETING_VERSION: "1.1"
+    MARKETING_VERSION: "1.1.1"
     CURRENT_PROJECT_VERSION: "1"
 
 packages:
