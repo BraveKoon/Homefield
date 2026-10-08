@@ -296,6 +296,12 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					363B5823AB06A82F871D6B61 = {
+						DevelopmentTeam = WK337QZLS3;
+					};
+					9BA0042162377CE52D5F8B43 = {
+						DevelopmentTeam = WK337QZLS3;
+					};
 				};
 			};
 			buildConfigurationList = 42EF99766F95CF01213EF75F /* Build configuration list for PBXProject "Homefield" */;
@@ -457,6 +463,7 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = WK337QZLS3;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -533,6 +540,7 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = WK337QZLS3;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
