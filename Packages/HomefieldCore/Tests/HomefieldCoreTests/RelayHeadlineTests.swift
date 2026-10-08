@@ -27,4 +27,9 @@ final class RelayHeadlineTests: XCTestCase {
         XCTAssertEqual(headline.headline(for: "투수 원태인 : 투수 김재윤 (으)로 교체"), "투수 원태인 → 투수 김재윤 (으)로 교체")
         XCTAssertNil(headline.headline(for: "   "))
     }
+
+    func testSeparatorLines() {
+        XCTAssertNil(headline.headline(for: "=================================="))
+        XCTAssertNil(headline.headline(for: " ------ "))
+    }
 }

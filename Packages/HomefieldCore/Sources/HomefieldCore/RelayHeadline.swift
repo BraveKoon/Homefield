@@ -7,6 +7,7 @@ import Foundation
 /// - "3루주자 김지찬 : 홈인" → "김지찬 홈인"
 /// - "3번타자 구자욱" → "3번타자 구자욱 타석"
 /// - "1구 볼" 같은 투구 한 개는 nil (너무 잦아서 뺀다)
+/// - "=====" 처럼 글자 없이 기호만 있는 구분선은 nil
 public struct RelayHeadline: Sendable {
     private let classifier = RelayTextClassifier()
 
@@ -24,7 +25,8 @@ public struct RelayHeadline: Sendable {
 
     public func headline(for rawText: String) -> String? {
         let text = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return nil }
+        // 이닝 사이 "=====" 같은 구분선
+        guard text.contains(where: { $0.isLetter || $0.isNumber }) else { return nil }
         let range = NSRange(text.startIndex..., in: text)
         if Self.pitchRegex.firstMatch(in: text, range: range) != nil { return nil }
 
