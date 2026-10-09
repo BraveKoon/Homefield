@@ -42,7 +42,9 @@ final class LiveGameSession {
     @ObservationIgnored private let director: AudioDirector
     @ObservationIgnored private var monitorTask: Task<Void, Never>?
     @ObservationIgnored private var dispatchTask: Task<Void, Never>?
-    @ObservationIgnored private var queue: AsyncStream<PendingBatch>.Continuation?
+    @ObservationIgnored private var entryTask: Task<Void, Never>?
+    @ObservationIgnored private var entryQueue: AsyncStream<PendingBatch>.Continuation?
+    @ObservationIgnored private var eventQueue: AsyncStream<PendingBatch>.Continuation?
     @ObservationIgnored private let tracker = PlateAppearanceTracker()
     @ObservationIgnored private let stateTracker = GameStateTracker()
     @ObservationIgnored private let classifier = RelayTextClassifier()
@@ -80,21 +82,24 @@ final class LiveGameSession {
             keeper.start()
         }
 
-        let (stream, continuation) = AsyncStream<PendingBatch>.makeStream()
-        queue = continuation
-        dispatchTask = Task { [weak self] in
-            for await batch in stream {
-                guard let self else { return }
-                let wait = batch.receivedAt.addingTimeInterval(self.settings.broadcastDelay).timeIntervalSinceNow
-                if wait > 0 {
-                    try? await Task.sleep(for: .seconds(wait))
-                }
-                guard !Task.isCancelled else { return }
+        // 화면·잠금화면 갱신(중계 줄)과 소리(이벤트)를 따로 처리한다.
+        // 한 줄로 처리하면 나레이션·등장곡이 끝날 때까지 점수판과 실시간 중계가 늦게 바뀐다.
+        let (entryStream, entryContinuation) = AsyncStream<PendingBatch>.makeStream()
+        let (eventStream, eventContinuation) = AsyncStream<PendingBatch>.makeStream()
+        entryQueue = entryContinuation
+        eventQueue = eventContinuation
+        entryTask = Task { [weak self] in
+            for await batch in entryStream {
+                guard let self, await self.waitForBroadcastDelay(batch) else { return }
                 self.pendingBatches -= 1
-                switch batch.payload {
-                case .entries(let entries): self.apply(entries)
-                case .events(let events): await self.dispatch(events)
-                }
+                if case .entries(let entries) = batch.payload { self.apply(entries) }
+            }
+        }
+        dispatchTask = Task { [weak self] in
+            for await batch in eventStream {
+                guard let self, await self.waitForBroadcastDelay(batch) else { return }
+                self.pendingBatches -= 1
+                if case .events(let events) = batch.payload { await self.dispatch(events) }
             }
         }
 
@@ -108,17 +113,31 @@ final class LiveGameSession {
                 guard let self else { return }
                 self.handle(update)
             }
-            self?.queue?.finish()
+            self?.entryQueue?.finish()
+            self?.eventQueue?.finish()
         }
+    }
+
+    /// 방송 지연만큼 기다린다. 취소되면 false.
+    private func waitForBroadcastDelay(_ batch: PendingBatch) async -> Bool {
+        let wait = batch.receivedAt.addingTimeInterval(settings.broadcastDelay).timeIntervalSinceNow
+        if wait > 0 {
+            try? await Task.sleep(for: .seconds(wait))
+        }
+        return !Task.isCancelled
     }
 
     func stop() {
         monitorTask?.cancel()
+        entryTask?.cancel()
         dispatchTask?.cancel()
-        queue?.finish()
+        entryQueue?.finish()
+        eventQueue?.finish()
         monitorTask = nil
+        entryTask = nil
         dispatchTask = nil
-        queue = nil
+        entryQueue = nil
+        eventQueue = nil
         isRunning = false
         pendingBatches = 0
         liveActivity.end(activityState(), finished: game.status == .finished)
@@ -143,10 +162,10 @@ final class LiveGameSession {
             refreshActivity()
         case .entries(let entries):
             pendingBatches += 1
-            queue?.yield(PendingBatch(receivedAt: Date(), payload: .entries(entries)))
+            entryQueue?.yield(PendingBatch(receivedAt: Date(), payload: .entries(entries)))
         case .events(let events):
             pendingBatches += 1
-            queue?.yield(PendingBatch(receivedAt: Date(), payload: .events(events)))
+            eventQueue?.yield(PendingBatch(receivedAt: Date(), payload: .events(events)))
         case .failure(let message):
             lastError = message
         }
