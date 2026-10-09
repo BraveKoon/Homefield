@@ -41,7 +41,7 @@ final class AppSettings {
         self.defaults = defaults
         broadcastDelay = defaults.object(forKey: Keys.broadcastDelay) as? Double ?? 0
         walkUpDuration = defaults.object(forKey: Keys.walkUpDuration) as? Double ?? 15
-        pollInterval = defaults.object(forKey: Keys.pollInterval) as? Double ?? 4
+        pollInterval = defaults.object(forKey: Keys.pollInterval) as? Double ?? 3
         announceBatter = defaults.object(forKey: Keys.announceBatter) as? Bool ?? true
         speechRate = defaults.object(forKey: Keys.speechRate) as? Float ?? 0.5
         let storedPlays = (defaults.stringArray(forKey: Keys.enabledPlays) ?? []).compactMap(PlayKind.init(rawValue:))

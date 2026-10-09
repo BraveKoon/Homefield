@@ -26,7 +26,8 @@ final class AudioDirector {
 
     static func activateSession() {
         let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .default)
+        // 다른 앱 소리(중계 영상 등)와 섞어서 재생: 서로 끊지 않아야 백그라운드에서도 중계를 계속 따라간다
+        try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
         try? session.setActive(true)
     }
 

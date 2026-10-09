@@ -11,6 +11,8 @@ struct LiveGameView: View {
     @State private var editingBatter: Player?
     /// 펼쳐 둔 이닝 (진행 중인 이닝이 바뀌면 그 이닝만 펼친다)
     @State private var expandedHalves: Set<String> = []
+    /// 사용자가 직접 펼치거나 접은 투구 묶음
+    @State private var pitchToggles: [String: Bool] = [:]
 
     var body: some View {
         List {
@@ -72,8 +74,13 @@ struct LiveGameView: View {
                     }
                     ForEach(session.halves) { half in
                         DisclosureGroup(isExpanded: expansion(for: half.id)) {
-                            ForEach(half.lines) { line in
-                                RelayLineRow(line: line)
+                            ForEach(RelayItem.items(for: half.lines, isCurrentHalf: half.id == session.currentHalfKey)) { item in
+                                switch item {
+                                case .line(let line):
+                                    RelayLineRow(line: line)
+                                case .pitches(let id, let lines, let live):
+                                    PitchGroupRow(lines: lines, isExpanded: pitchExpansion(for: id, live: live))
+                                }
                             }
                         } label: {
                             HStack {
@@ -134,6 +141,14 @@ struct LiveGameView: View {
 }
 
 private extension LiveGameView {
+    /// 지금 타석의 투구는 펼치고, 끝난 타석의 투구는 접는다 (사용자가 누르면 그 선택을 따른다)
+    func pitchExpansion(for id: String, live: Bool) -> Binding<Bool> {
+        Binding(
+            get: { pitchToggles[id] ?? live },
+            set: { pitchToggles[id] = $0 }
+        )
+    }
+
     func expansion(for key: String) -> Binding<Bool> {
         Binding(
             get: { expandedHalves.contains(key) },
@@ -141,6 +156,77 @@ private extension LiveGameView {
                 if isExpanded { expandedHalves.insert(key) } else { expandedHalves.remove(key) }
             }
         )
+    }
+}
+
+/// 이닝 중계 목록의 한 항목: 일반 중계 줄 또는 한 타석의 투구 묶음
+private enum RelayItem: Identifiable {
+    case line(LiveGameSession.LogLine)
+    /// live: 지금 진행 중인 타석의 투구
+    case pitches(id: String, lines: [LiveGameSession.LogLine], live: Bool)
+
+    var id: String {
+        switch self {
+        case .line(let line): line.id
+        case .pitches(let id, _, _): "pitches-\(id)"
+        }
+    }
+
+    /// 최신 줄이 앞에 오는 목록에서 이어진 투구 줄을 묶는다.
+    /// 맨 앞(가장 최근)에 있는 투구 묶음만 아직 타석이 끝나지 않은 것으로 본다.
+    static func items(for lines: [LiveGameSession.LogLine], isCurrentHalf: Bool) -> [RelayItem] {
+        var items: [RelayItem] = []
+        var pitches: [LiveGameSession.LogLine] = []
+        func flush() {
+            // 새 투구가 위에 붙어도 묶음이 그대로 유지되도록 그 타석의 첫 투구로 구분한다
+            guard let oldest = pitches.last else { return }
+            items.append(.pitches(id: oldest.id, lines: pitches, live: isCurrentHalf && items.isEmpty))
+            pitches = []
+        }
+        for line in lines {
+            if line.isPitch {
+                pitches.append(line)
+            } else {
+                flush()
+                items.append(.line(line))
+            }
+        }
+        flush()
+        return items
+    }
+}
+
+/// 한 타석의 투구들. 접혀 있으면 "투구 3개 · 볼 2 스트라이크 1" 요약만 보인다.
+private struct PitchGroupRow: View {
+    let lines: [LiveGameSession.LogLine]
+    @Binding var isExpanded: Bool
+
+    var body: some View {
+        DisclosureGroup(isExpanded: $isExpanded.animation(.snappy)) {
+            ForEach(lines) { line in
+                RelayLineRow(line: line)
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Text("⚾️").font(.caption).frame(width: 22)
+                Text(summary)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var summary: String {
+        let texts = lines.map(\.text)
+        let balls = texts.filter { $0.contains("볼") && !$0.contains("볼넷") }.count
+        let strikes = texts.filter { $0.contains("스트라이크") || $0.contains("헛스윙") }.count
+        let fouls = texts.filter { $0.contains("파울") }.count
+        let parts = [
+            balls > 0 ? "볼 \(balls)" : nil,
+            strikes > 0 ? "스트라이크 \(strikes)" : nil,
+            fouls > 0 ? "파울 \(fouls)" : nil,
+        ].compactMap { $0 }
+        return (["투구 \(lines.count)개"] + parts).joined(separator: " · ")
     }
 }
 

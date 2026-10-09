@@ -23,10 +23,20 @@ final class Narrator: NSObject {
         utterance.pitchMultiplier = 1.05
         utterance.postUtteranceDelay = 0.1
 
+        let key = ObjectIdentifier(utterance)
+        // iOS 가 끝났다는 알림(didFinish)을 주지 않는 경우가 있어서, 넉넉한 시간이 지나면 기다리기를 그만둔다.
+        // (그대로 두면 다음 나레이션·중계 처리가 계속 밀린다)
+        let limit = Duration.seconds(3 + Double(text.count) * 0.3)
+        let timeout = Task { [weak self] in
+            try? await Task.sleep(for: limit)
+            guard !Task.isCancelled else { return }
+            self?.finish(key)
+        }
         await withCheckedContinuation { continuation in
-            pending[ObjectIdentifier(utterance)] = continuation
+            pending[key] = continuation
             synthesizer.speak(utterance)
         }
+        timeout.cancel()
     }
 
     func stop() {

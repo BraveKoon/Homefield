@@ -51,6 +51,11 @@ public struct LiveGameMonitor: Sendable {
                 while !Task.isCancelled {
                     do {
                         var snapshot = try await provider.relay(gameId: gameId, inning: nil)
+                        // 경기 중간에 들어오면 1회부터 지난 이닝 중계도 받아서 앞에 붙인다 (재생은 하지 않는다)
+                        if lastInning == nil, let current = snapshot.currentInning, current > 1 {
+                            snapshot.entries = await Self.earlierEntries(provider: provider, gameId: gameId, before: current)
+                                + snapshot.entries
+                        }
                         // 이닝이 바뀌었으면 지난 이닝의 마지막 상황을 놓치지 않도록 같이 가져온다
                         if let last = lastInning, let current = snapshot.currentInning, current != last,
                            let previous = try? await provider.relay(gameId: gameId, inning: last) {
@@ -79,6 +84,21 @@ public struct LiveGameMonitor: Sendable {
                 continuation.finish()
             }
             continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    /// 1회부터 before-1 회까지 중계 줄 (한꺼번에 요청, 실패한 이닝은 건너뛴다)
+    static func earlierEntries(provider: any GameDataProvider, gameId: String, before current: Int) async -> [RelayEntry] {
+        await withTaskGroup(of: [RelayEntry].self) { group in
+            for inning in 1..<current {
+                group.addTask {
+                    ((try? await provider.relay(gameId: gameId, inning: inning))?.entries ?? [])
+                        .filter { $0.inning == nil || $0.inning == inning }
+                }
+            }
+            var all: [RelayEntry] = []
+            for await entries in group { all += entries }
+            return all.sorted { $0.sequence < $1.sequence }
         }
     }
 }
