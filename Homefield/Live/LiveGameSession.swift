@@ -99,7 +99,9 @@ final class LiveGameSession {
             for await batch in eventStream {
                 guard let self, await self.waitForBroadcastDelay(batch) else { return }
                 self.pendingBatches -= 1
-                if case .events(let events) = batch.payload { await self.dispatch(events) }
+                // 소리가 밀려서 30초 넘게 늦은 상황은 기록만 하고 읽지 않는다
+                let late = Date().timeIntervalSince(batch.receivedAt) - self.settings.broadcastDelay
+                if case .events(let events) = batch.payload { await self.dispatch(events, playAudio: late < 30) }
             }
         }
 
@@ -238,7 +240,7 @@ final class LiveGameSession {
         return "\(inning)회\(parts[1] == "0" ? "초" : "말")"
     }
 
-    private func dispatch(_ events: [DetectedEvent]) async {
+    private func dispatch(_ events: [DetectedEvent], playAudio: Bool = true) async {
         for event in events {
             if case .batterUp(let player) = event.kind {
                 currentBatter = player
@@ -250,6 +252,7 @@ final class LiveGameSession {
             todayLines[key, default: BattingLine()].record(result.kind)
             library.recordPlateAppearance(result.kind, for: result.player)
         }
+        guard playAudio else { return }
         for cue in settings.composer.compose(events) {
             await director.perform(cue)
         }
