@@ -159,6 +159,7 @@ final class LiveGameSession {
             stateTracker.setLineups(lineups, pitchers: pitchers)
             gameState = stateTracker.state
             lastError = nil
+            keeper.ensurePlaying()
             refreshActivity()
         case .entries(let entries):
             pendingBatches += 1

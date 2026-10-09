@@ -5,17 +5,45 @@ import AVFoundation
 @MainActor
 final class BackgroundKeeper {
     private var player: AVAudioPlayer?
+    private var observers: [NSObjectProtocol] = []
 
     func start() {
         guard player == nil else { return }
         guard let player = try? AVAudioPlayer(data: Self.silentWAV()) else { return }
         player.numberOfLoops = -1
         player.volume = 0
-        player.play()
         self.player = player
+        ensurePlaying()
+
+        // 전화·다른 앱·Apple Music 재생 등으로 끊기면 다시 튼다 (멈춘 채로 두면 앱이 잠들어 잠금화면이 멈춘다)
+        let center = NotificationCenter.default
+        let names: [Notification.Name] = [
+            AVAudioSession.interruptionNotification,
+            AVAudioSession.mediaServicesWereResetNotification,
+            AVAudioSession.routeChangeNotification,
+        ]
+        observers = names.map { name in
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] notification in
+                if name == AVAudioSession.interruptionNotification,
+                   let raw = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                   AVAudioSession.InterruptionType(rawValue: raw) == .began {
+                    return
+                }
+                Task { @MainActor in self?.ensurePlaying() }
+            }
+        }
+    }
+
+    /// 멈춰 있으면 세션을 다시 켜고 재생한다 (중계를 받을 때마다 불러도 된다)
+    func ensurePlaying() {
+        guard let player, !player.isPlaying else { return }
+        AudioDirector.activateSession()
+        player.play()
     }
 
     func stop() {
+        for observer in observers { NotificationCenter.default.removeObserver(observer) }
+        observers = []
         player?.stop()
         player = nil
     }
