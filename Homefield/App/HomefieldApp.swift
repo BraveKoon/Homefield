@@ -36,6 +36,8 @@ struct RootView: View {
         TabView {
             GameListView()
                 .tabItem { Label("경기", systemImage: "baseball") }
+            StandingsView()
+                .tabItem { Label("순위", systemImage: "list.number") }
             AttendanceView()
                 .tabItem { Label("직관", systemImage: "sportscourt") }
             SongLibraryView()

@@ -50,6 +50,13 @@ public struct NaverSportsProvider: GameDataProvider {
         return envelope.result?.game.map(NaverMapping.summary(from:))
     }
 
+    /// 정규시즌 팀 순위 (2026-10-12 실제 응답으로 확인: statistics/categories/kbo/seasons/{year}/teams)
+    public func standings(season: Int) async throws -> [TeamStanding] {
+        let url = makeURL("statistics/categories/kbo/seasons/\(season)/teams", query: [:])
+        let envelope: NaverEnvelope<NaverStandingsResult> = try await get(url)
+        return NaverMapping.standings(from: envelope.result)
+    }
+
     /// 팀 선수들의 시즌 기록 (타자·투수). 2026-10-05 실제 응답으로 확인한 경로·필드.
     public func teamSeasonStats(teamCode: String, season: Int) async throws -> [SeasonStats] {
         var stats: [SeasonStats] = []
@@ -113,6 +120,33 @@ public enum NaverMapping {
     public static func parseGames(_ data: Data) throws -> [GameSummary] {
         let envelope = try JSONDecoder().decode(NaverEnvelope<NaverScheduleResult>.self, from: data)
         return (envelope.result?.games ?? []).map(summary(from:))
+    }
+
+    public static func parseStandings(_ data: Data) throws -> [TeamStanding] {
+        let envelope = try JSONDecoder().decode(NaverEnvelope<NaverStandingsResult>.self, from: data)
+        return standings(from: envelope.result)
+    }
+
+    static func standings(from result: NaverStandingsResult?) -> [TeamStanding] {
+        (result?.rows ?? [])
+            .filter { ($0.gameType ?? "REGULAR_SEASON") == "REGULAR_SEASON" }
+            .compactMap { row -> TeamStanding? in
+                guard let code = row.teamId?.value, let rank = row.ranking?.value else { return nil }
+                return TeamStanding(
+                    teamCode: code,
+                    teamName: row.teamName ?? KBOTeams.name(for: code) ?? code,
+                    rank: rank,
+                    games: row.gameCount?.value ?? 0,
+                    wins: row.winGameCount?.value ?? 0,
+                    losses: row.loseGameCount?.value ?? 0,
+                    draws: row.drawnGameCount?.value ?? 0,
+                    winRate: row.wra?.value ?? 0,
+                    gamesBehind: row.gameBehind?.value ?? 0,
+                    streak: row.continuousGameResult,
+                    lastFive: row.lastFiveGames
+                )
+            }
+            .sorted { $0.rank < $1.rank }
     }
 
     public static func parseTeamSeasonStats(_ data: Data, kind: SeasonStats.Kind) throws -> [SeasonStats] {
@@ -356,6 +390,45 @@ struct NaverGame: Decodable {
     let awayTeamScoreByInning: [LenientString]?
     let homeTeamRheb: [LenientInt]?
     let awayTeamRheb: [LenientInt]?
+}
+
+/// 순위 배열이 들어 있는 키 이름이 바뀌어도 읽을 수 있게, 결과 안에서 teamId·ranking 이 있는 첫 배열을 쓴다
+struct NaverStandingsResult: Decodable {
+    let rows: [NaverTeamStanding]
+
+    private struct AnyKey: CodingKey {
+        var stringValue: String
+        var intValue: Int? { nil }
+        init?(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { nil }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: AnyKey.self)
+        for key in container.allKeys {
+            if let rows = try? container.decode([NaverTeamStanding].self, forKey: key),
+               rows.contains(where: { $0.teamId?.value != nil && $0.ranking?.value != nil }) {
+                self.rows = rows
+                return
+            }
+        }
+        rows = []
+    }
+}
+
+struct NaverTeamStanding: Decodable {
+    let teamId: LenientString?
+    let teamName: String?
+    let gameType: String?
+    let ranking: LenientInt?
+    let gameCount: LenientInt?
+    let winGameCount: LenientInt?
+    let drawnGameCount: LenientInt?
+    let loseGameCount: LenientInt?
+    let wra: LenientDouble?
+    let gameBehind: LenientDouble?
+    let continuousGameResult: String?
+    let lastFiveGames: String?
 }
 
 struct NaverSeasonStatsResult: Decodable {
