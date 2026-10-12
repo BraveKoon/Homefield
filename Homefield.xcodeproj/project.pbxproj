@@ -33,6 +33,7 @@
 		D75897F33FE2D49FCD748E53 /* Narrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 817BCD2DAF8E8E08AD7547D8 /* Narrator.swift */; };
 		E0D19EA0CA2DEC10AE3E930E /* GameListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D053340E166A4F1A5BF84104 /* GameListView.swift */; };
 		E51D8901121E5A550033057A /* MusicDeck.swift in Sources */ = {isa = PBXBuildFile; fileRef = B08C14223DA04A9F63BDB1F2 /* MusicDeck.swift */; };
+		E6BA8F072F19A3503D0D6D21 /* StandingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8D3D3B298855B5AF9541D7 /* StandingsView.swift */; };
 		E95DD2DE66C84E9125705FE3 /* AttendanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04E7BBF698CE61F7416A0B9C /* AttendanceView.swift */; };
 		E9ED0AFAF619313EB3667F97 /* HomefieldWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC5E31A9860CD61006645D3 /* HomefieldWidgetsBundle.swift */; };
 		EF68ED2BAAFFE0C9D04D1D94 /* AppleMusicSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B47E5624AF0AAA5216B492B8 /* AppleMusicSearchView.swift */; };
@@ -82,6 +83,7 @@
 		7E37C5FC5A71A8187A0A2B61 /* LiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityController.swift; sourceTree = "<group>"; };
 		817BCD2DAF8E8E08AD7547D8 /* Narrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Narrator.swift; sourceTree = "<group>"; };
 		828BE906D2D6C931808FCCE1 /* HomefieldApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomefieldApp.swift; sourceTree = "<group>"; };
+		8B8D3D3B298855B5AF9541D7 /* StandingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandingsView.swift; sourceTree = "<group>"; };
 		94D0AAA6FC5A6530B326E690 /* SongLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibrary.swift; sourceTree = "<group>"; };
 		B08C14223DA04A9F63BDB1F2 /* MusicDeck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicDeck.swift; sourceTree = "<group>"; };
 		B25D1558C74EF0BFA73DF59A /* GameStateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameStateViews.swift; sourceTree = "<group>"; };
@@ -123,6 +125,7 @@
 				DC827045E0DC50DC290D9CF7 /* RemoteImage.swift */,
 				657F724A45DB4F1155FC7256 /* SettingsView.swift */,
 				3633B3D940EB489FA4822CD9 /* SongLibraryView.swift */,
+				8B8D3D3B298855B5AF9541D7 /* StandingsView.swift */,
 				C4F2F4EDD449239E513D52AF /* ThemeViews.swift */,
 			);
 			path = Views;
@@ -376,6 +379,7 @@
 				056A69794F4A3268FF73BBAF /* SettingsView.swift in Sources */,
 				0856EA98D0034B2FA3D12256 /* SongLibrary.swift in Sources */,
 				CBB58CE35DC6C9C513ABA28D /* SongLibraryView.swift in Sources */,
+				E6BA8F072F19A3503D0D6D21 /* StandingsView.swift in Sources */,
 				F18C553088DA5E2EAE670CC8 /* TeamTheme.swift in Sources */,
 				4406423AD173EEA7D5CAF1CA /* ThemeViews.swift in Sources */,
 			);

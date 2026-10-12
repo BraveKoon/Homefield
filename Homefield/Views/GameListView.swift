@@ -57,7 +57,8 @@ struct GameListView: View {
             .navigationDestination(for: GameSummary.self) { game in
                 LiveGameView(game: game)
             }
-            .refreshable { await load() }
+            // 당겨서 새로고침하는 동안 화면이 다시 그려지며 작업이 취소되지 않도록 따로 돌리고 끝날 때까지 기다린다
+            .refreshable { await Task { await load() }.value }
             .task(id: LoadKey(date: Calendar.current.startOfDay(for: date), demo: settings.useDemo)) {
                 await load()
             }
@@ -78,6 +79,9 @@ struct GameListView: View {
                 games = loaded.sorted { sortKey($0) < sortKey($1) }
             }
             errorMessage = nil
+        } catch is CancellationError {
+            // 날짜를 바꾸는 등으로 앞 요청이 취소된 것은 오류가 아니다
+        } catch let error as URLError where error.code == .cancelled {
         } catch {
             errorMessage = "경기 목록을 불러오지 못했습니다: \(error.localizedDescription)"
         }
