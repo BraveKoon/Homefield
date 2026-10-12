@@ -19,3 +19,5 @@ jobs:
         run: python3 scripts/naver_api_check.py
       - name: Probe KBO player pages
         run: python3 scripts/naver_api_check.py kbo-player
+      - name: Probe standings
+        run: python3 scripts/naver_api_check.py standings

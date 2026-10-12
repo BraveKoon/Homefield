@@ -260,7 +260,36 @@ def probe_images():
         print(f"no referer: {error}")
 
 
+def probe_standings():
+    """팀 순위표 후보 경로"""
+    print("\n=== 팀 순위 ===")
+    season = dt.datetime.now(KST).year
+    candidates = [
+        f"/statistics/categories/kbo/seasons/{season}/teams",
+        f"/statistics/categories/kbo/seasons/{season}/teams?gameType=REGULAR_SEASON",
+        f"/statistics/categories/kbo/seasons/{season}/team-ranking",
+        f"/statistics/categories/kbo/seasons/{season}/teamRank",
+        f"/statistics/categories/kbo/seasons/{season}/teams/ranking",
+        f"/statistics/categories/kbo/teams?season={season}",
+    ]
+    for path in candidates:
+        status, body = get(path)
+        result = (body or {}).get("result") if isinstance(body, dict) else None
+        keys = list(result.keys()) if isinstance(result, dict) else type(result).__name__
+        print(f"{path}: HTTP {status}, result keys={keys}")
+        if status == 200 and result:
+            show(f"{path} shape", shape(result, max_depth=3), 2500)
+            for value in (result.values() if isinstance(result, dict) else []):
+                if isinstance(value, list) and value:
+                    show(f"{path} first row", value[0], 2500)
+                    break
+            break
+
+
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "standings":
+        probe_standings()
+        sys.exit(0)
     if len(sys.argv) > 1 and sys.argv[1] == "kbo-player":
         probe_images()
         # 오스틴(LG 타자), 임찬규(LG 투수), 박정우(KIA 타자), 대니엘(KT 투수)
