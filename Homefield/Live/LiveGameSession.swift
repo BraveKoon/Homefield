@@ -77,7 +77,8 @@ final class LiveGameSession {
         AudioDirector.activateSession()
         library.register(team: game.home)
         library.register(team: game.away)
-        if settings.liveActivityEnabled {
+        // 이미 끝난 경기는 잠금화면 실시간 중계를 켜지 않는다
+        if settings.liveActivityEnabled, game.status != .finished, game.status != .cancelled {
             liveActivity.start(game: game, state: activityState())
             keeper.start()
         }
@@ -117,6 +118,8 @@ final class LiveGameSession {
             }
             self?.entryQueue?.finish()
             self?.eventQueue?.finish()
+            // 경기가 끝나 중계 확인이 멈췄으면 잠금화면 실시간 중계도 정리한다
+            if !Task.isCancelled { await self?.finishLiveActivity() }
         }
     }
 
@@ -276,6 +279,17 @@ final class LiveGameSession {
             // log 는 최신이 앞
             recentPlays: Array(log.lazy.compactMap { self.headline.headline(for: $0.text) }.prefix(3))
         )
+    }
+
+    /// 경기 종료: 방송 지연만큼 밀린 중계까지 반영한 최종 점수를 잠시 보여 주고 잠금화면에서 내린다
+    private func finishLiveActivity() async {
+        guard liveActivity.isRunning else { return }
+        try? await Task.sleep(for: .seconds(settings.broadcastDelay + 3))
+        guard !Task.isCancelled else { return }
+        liveActivity.end(activityState(), finished: true)
+        // 종료 요청이 전달될 때까지 잠깐 깨어 있다가 백그라운드 유지를 끈다
+        try? await Task.sleep(for: .seconds(2))
+        keeper.stop()
     }
 
     private func refreshActivity() {

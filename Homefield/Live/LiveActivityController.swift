@@ -42,13 +42,14 @@ final class LiveActivityController {
         Task { await activity.update(ActivityContent(state: state, staleDate: Self.staleDate())) }
     }
 
-    /// 경기가 끝났으면 결과를 잠시 남기고, 중간에 나가면 바로 지운다
+    /// 경기가 끝났으면 최종 점수를 5분 동안 보여 주고 내리고, 중간에 나가면 바로 지운다
     func end(_ state: GameActivityAttributes.ContentState?, finished: Bool) {
         guard let activity else { return }
         self.activity = nil
         lastState = nil
         let content = state.map { ActivityContent(state: $0, staleDate: nil) }
-        Task { await activity.end(content, dismissalPolicy: finished ? .default : .immediate) }
+        let policy: ActivityUIDismissalPolicy = finished ? .after(Date().addingTimeInterval(5 * 60)) : .immediate
+        Task { await activity.end(content, dismissalPolicy: policy) }
     }
 
     /// 15분 넘게 갱신이 없으면 시스템이 오래된 정보로 표시한다
