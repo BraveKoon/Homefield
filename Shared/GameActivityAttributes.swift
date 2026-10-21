@@ -27,4 +27,13 @@ struct GameActivityAttributes: ActivityAttributes {
     var awayName: String
     var homeCode: String
     var homeName: String
+    /// "창원" 같은 구장 이름
+    var stadium: String? = nil
+    /// 응원팀이 이 경기에 나오면 그 팀 코드 (MY TEAM 표시, 배경색)
+    var favoriteCode: String? = nil
+}
+
+/// 홈 화면 위젯 종류 이름 (앱에서 위젯을 다시 그리라고 할 때 쓴다)
+enum TeamGameWidgetKind {
+    static let kind = "TeamGameWidget"
 }

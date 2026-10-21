@@ -21,40 +21,44 @@ struct SettingsView: View {
                         .background { ThemedBackground() }
                         .navigationTitle("응원팀")
                     } label: {
-                        HStack {
-                            if let code = settings.favoriteTeamCode {
-                                TeamBadge(code: code, size: 32)
-                            }
-                            Text("응원팀")
-                            Spacer()
-                            Text(settings.favoriteTeamCode.map(library.teamName(for:)) ?? "없음")
-                                .foregroundStyle(.secondary)
-                        }
+                        FavoriteTeamHeader(code: settings.favoriteTeamCode, name: settings.favoriteTeamCode.map(library.teamName(for:)))
                     }
-                    Picker("노래 재생", selection: $settings.songScope) {
+                    .listRowBackground(FavoriteTeamHeader.background(for: settings.favoriteTeamCode))
+                }
+
+                Section {
+                    Picker(selection: $settings.songScope) {
                         ForEach(AppSettings.SongScope.allCases) { scope in
                             Text(scope.displayName).tag(scope)
                         }
+                    } label: {
+                        SettingsLabel("노래 재생", systemImage: "music.note", color: .pink)
                     }
                 } header: {
                     Text("응원")
                 }
 
                 Section {
-                    Toggle("잠금화면 실시간 중계", isOn: $settings.liveActivityEnabled)
+                    Toggle(isOn: $settings.liveActivityEnabled) {
+                        SettingsLabel("잠금화면 실시간 중계", systemImage: "iphone.gen3.radiowaves.left.and.right", color: .red)
+                    }
+                    SettingsLabel("홈 화면 위젯", systemImage: "square.grid.2x2.fill", color: .indigo)
+                        .badge("길게 눌러 추가")
+                } header: {
+                    Text("위젯")
                 } footer: {
-                    Text("경기 화면을 열어 두면 잠금화면 알림 영역과 다이내믹 아일랜드에 점수판과 최근 중계가 나옵니다. 앱이 백그라운드에 있어도 계속 갱신하도록 소리 없는 오디오를 함께 켭니다.")
+                    Text("경기 화면을 열어 두면 잠금화면 알림 영역과 다이내믹 아일랜드에 점수판과 최근 중계가 나옵니다. 앱이 백그라운드에 있어도 계속 갱신하도록 소리 없는 오디오를 함께 켭니다. 홈 화면을 길게 눌러 '홈구장' 위젯을 추가하고, 위젯을 길게 눌러 팀을 고르면 그 팀 경기 점수가 나옵니다.")
                 }
 
                 Section {
                     Stepper(value: $settings.broadcastDelay, in: 0...120, step: 1) {
-                        Text("방송 싱크: \(Int(settings.broadcastDelay))초 늦게")
+                        SettingsLabel("방송 싱크 \(Int(settings.broadcastDelay))초 늦게", systemImage: "tv.fill", color: .blue)
                     }
                     Stepper(value: $settings.walkUpDuration, in: 5...60, step: 5) {
-                        Text("등장곡 재생: \(Int(settings.walkUpDuration))초")
+                        SettingsLabel("등장곡 \(Int(settings.walkUpDuration))초", systemImage: "figure.baseball", color: .orange)
                     }
                     Stepper(value: $settings.pollInterval, in: 2...30, step: 1) {
-                        Text("중계 확인 주기: \(Int(settings.pollInterval))초")
+                        SettingsLabel("중계 확인 \(Int(settings.pollInterval))초마다", systemImage: "arrow.triangle.2.circlepath", color: .teal)
                     }
                 } header: {
                     Text("타이밍")
@@ -63,18 +67,28 @@ struct SettingsView: View {
                 }
 
                 Section("나레이션") {
-                    Toggle("타자 소개 (\"3번 타자, 홍길동!\")", isOn: $settings.announceBatter)
-                    VStack(alignment: .leading) {
-                        Text("말하기 속도")
-                        Slider(value: $settings.speechRate, in: 0.3...0.65)
+                    Toggle(isOn: $settings.announceBatter) {
+                        SettingsLabel("타자 소개 (\"3번 타자, 홍길동!\")", systemImage: "megaphone.fill", color: .green)
                     }
-                    NavigationLink("상황별 나레이션") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        SettingsLabel("말하기 속도", systemImage: "speedometer", color: .purple)
+                        HStack {
+                            Image(systemName: "tortoise.fill").foregroundStyle(.secondary)
+                            Slider(value: $settings.speechRate, in: 0.3...0.65)
+                            Image(systemName: "hare.fill").foregroundStyle(.secondary)
+                        }
+                    }
+                    NavigationLink {
                         NarrationSettingsView()
+                    } label: {
+                        SettingsLabel("상황별 나레이션", systemImage: "text.bubble.fill", color: .mint)
                     }
                 }
 
                 Section {
-                    Toggle("데모 경기 사용", isOn: $settings.useDemo)
+                    Toggle(isOn: $settings.useDemo) {
+                        SettingsLabel("데모 경기 사용", systemImage: "play.rectangle.fill", color: .gray)
+                    }
                 } header: {
                     Text("테스트")
                 } footer: {
@@ -89,6 +103,65 @@ struct SettingsView: View {
             }
             .themedBackground()
             .navigationTitle("설정")
+        }
+    }
+}
+
+/// 설정 첫 줄: 응원팀 로고와 이름을 크게
+private struct FavoriteTeamHeader: View {
+    let code: String?
+    let name: String?
+
+    var body: some View {
+        HStack(spacing: 14) {
+            if let code {
+                TeamBadge(code: code, size: 54)
+            } else {
+                Image(systemName: "baseball.fill")
+                    .font(.system(size: 30))
+                    .frame(width: 54, height: 54)
+                    .background(.white.opacity(0.2), in: Circle())
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("MY TEAM")
+                    .font(.caption2.weight(.black))
+                    .tracking(1)
+                    .opacity(0.8)
+                Text(name ?? "응원팀 고르기")
+                    .font(.title3.weight(.heavy))
+            }
+            Spacer()
+        }
+        .foregroundStyle(.white)
+        .padding(.vertical, 6)
+    }
+
+    static func background(for code: String?) -> some View {
+        TeamTheme.forTeam(code).gradient
+    }
+}
+
+/// 색 네모 아이콘 + 글자 (iOS 설정 앱처럼)
+struct SettingsLabel: View {
+    let title: String
+    let systemImage: String
+    let color: Color
+
+    init(_ title: String, systemImage: String, color: Color) {
+        self.title = title
+        self.systemImage = systemImage
+        self.color = color
+    }
+
+    var body: some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(systemName: systemImage)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(color.gradient, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
         }
     }
 }

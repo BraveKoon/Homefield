@@ -5,5 +5,6 @@ import WidgetKit
 struct HomefieldWidgetsBundle: WidgetBundle {
     var body: some Widget {
         GameLiveActivity()
+        TeamGameWidget()
     }
 }

@@ -83,20 +83,28 @@ struct LiveGameView: View {
                                 }
                             }
                         } label: {
-                            HStack {
+                            HStack(spacing: 8) {
+                                Image(systemName: half.title.contains("초") ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill")
+                                    .font(.caption2)
+                                    .foregroundStyle(.tint)
                                 Text(half.title).font(.headline)
                                 if half.id == session.currentHalfKey {
-                                    Text("진행 중")
-                                        .font(.caption2.bold())
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(Color.red, in: Capsule())
-                                        .foregroundStyle(.white)
+                                    HStack(spacing: 3) {
+                                        Circle().fill(.white).frame(width: 5, height: 5)
+                                        Text("LIVE").font(.system(size: 10, weight: .black))
+                                    }
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 3)
+                                    .background(Color.red, in: Capsule())
+                                    .foregroundStyle(.white)
                                 }
                                 Spacer()
                                 Text("\(half.lines.filter { !$0.isPitch }.count)")
-                                    .font(.caption)
+                                    .font(.caption.monospacedDigit().bold())
                                     .foregroundStyle(.secondary)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 2)
+                                    .background(.quaternary, in: Capsule())
                             }
                         }
                     }
@@ -233,15 +241,37 @@ private struct PitchGroupRow: View {
 private struct RelayLineRow: View {
     let line: LiveGameSession.LogLine
 
+    /// 점수가 난 줄은 눈에 띄게
+    private var isScoring: Bool {
+        !line.isPitch && ["홈런", "홈인", "득점"].contains(where: line.text.contains)
+    }
+
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
             Text(line.badge)
-                .frame(width: 22)
+                .font(line.isPitch ? .caption2 : .footnote)
+                .frame(width: line.isPitch ? 22 : 28, height: line.isPitch ? 22 : 28)
+                .background {
+                    if !line.isPitch {
+                        Circle().fill(isScoring ? Color.yellow.opacity(0.35) : Color.secondary.opacity(0.12))
+                    }
+                }
             Text(line.text)
                 .font(line.isPitch ? .footnote : .body)
-                .fontWeight(line.isBatter ? .semibold : .regular)
+                .fontWeight(isScoring ? .bold : line.isBatter ? .semibold : .regular)
                 .foregroundStyle(line.isPitch ? .secondary : .primary)
             Spacer(minLength: 0)
+        }
+        .padding(.vertical, isScoring ? 6 : 0)
+        .padding(.horizontal, isScoring ? 8 : 0)
+        .background {
+            if isScoring {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.yellow.opacity(0.14))
+                    .overlay(alignment: .leading) {
+                        Capsule().fill(Color.orange).frame(width: 3).padding(.vertical, 6)
+                    }
+            }
         }
     }
 }
@@ -264,11 +294,22 @@ private struct Scoreboard: View {
                         .foregroundStyle(.white.opacity(0.8))
                         .lineLimit(1)
                 }
-                Text(game.status.displayName)
-                    .font(.caption2.bold())
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(statusColor.opacity(0.85), in: Capsule())
+                HStack(spacing: 4) {
+                    if game.status == .live {
+                        Circle().fill(.white).frame(width: 5, height: 5)
+                    }
+                    Text(game.status.displayName)
+                }
+                .font(.caption2.bold())
+                .padding(.horizontal, 9)
+                .padding(.vertical, 3)
+                .background(statusColor.opacity(0.85), in: Capsule())
+                if let stadium = game.stadium {
+                    Label(stadium, systemImage: "mappin.and.ellipse")
+                        .font(.caption2)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .lineLimit(1)
+                }
             }
             teamColumn(game.home, score: game.homeScore, label: "홈", batting: state.battingSide == .home)
         }
@@ -282,7 +323,9 @@ private struct Scoreboard: View {
                     startPoint: .leading,
                     endPoint: .trailing
                 )
-                Color.black.opacity(0.35)
+                LinearGradient(colors: [.black.opacity(0.15), .black.opacity(0.5)], startPoint: .top, endPoint: .bottom)
+                // 가운데에서 은은하게 퍼지는 빛
+                RadialGradient(colors: [.white.opacity(0.18), .clear], center: .center, startRadius: 0, endRadius: 160)
             }
         }
         .environment(\.colorScheme, .dark)
@@ -339,8 +382,13 @@ private struct BatterCard: View {
                     .font(.footnote)
             }
             Spacer()
-            Button("선수 정보", action: onEdit)
-                .buttonStyle(.bordered)
+            Button(action: onEdit) {
+                Image(systemName: "person.text.rectangle")
+                    .font(.title3)
+            }
+            .buttonStyle(.bordered)
+            .tint(TeamTheme.forTeam(batter.teamCode).primary)
+            .accessibilityLabel("선수 정보")
         }
     }
 }
