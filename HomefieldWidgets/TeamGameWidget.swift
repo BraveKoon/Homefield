@@ -33,7 +33,7 @@ struct SelectTeamIntent: WidgetConfigurationIntent {
 
 // MARK: - 타임라인
 
-struct TeamGameEntry: TimelineEntry {
+struct TeamGameEntry: WidgetKit.TimelineEntry {
     let date: Date
     let teamCode: String?
     let result: TeamGameFinder.Result?
