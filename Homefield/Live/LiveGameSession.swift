@@ -79,7 +79,7 @@ final class LiveGameSession {
         library.register(team: game.away)
         // 이미 끝난 경기는 잠금화면 실시간 중계를 켜지 않는다
         if settings.liveActivityEnabled, game.status != .finished, game.status != .cancelled {
-            liveActivity.start(game: game, state: activityState())
+            liveActivity.start(game: game, favoriteCode: settings.favoriteTeamCode, state: activityState())
             keeper.start()
         }
 
