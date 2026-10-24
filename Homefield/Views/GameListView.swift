@@ -15,6 +15,10 @@ struct GameListView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     DayStrip(date: $date)
 
+                    if settings.isAutumn {
+                        AutumnBanner()
+                    }
+
                     if settings.useDemo {
                         Label("데모 모드: 가상 경기가 표시됩니다", systemImage: "play.rectangle")
                             .font(.footnote)
@@ -321,5 +325,36 @@ struct StatusBadge: View {
             .padding(.vertical, 2)
             .background(game.status == .live ? Color.red : Color.secondary.opacity(0.2), in: Capsule())
             .foregroundStyle(game.status == .live ? Color.white : Color.primary)
+    }
+}
+
+/// 가을야구 기간 머리말 카드
+private struct AutumnBanner: View {
+    var body: some View {
+        HStack(spacing: 12) {
+            Text("🍁")
+                .font(.system(size: 34))
+                .rotationEffect(.degrees(-15))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("가을야구")
+                    .font(.title3.weight(.black))
+                Text("올해의 마지막 야구, 끝까지 함께 응원해요")
+                    .font(.caption.weight(.semibold))
+                    .opacity(0.9)
+            }
+            Spacer(minLength: 0)
+            Text("🍂").font(.title2).opacity(0.8)
+        }
+        .foregroundStyle(.white)
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            ZStack {
+                AutumnStyle.warmGradient
+                FallingLeaves(count: 6, animated: false, opacity: 0.25, scale: 0.8)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        }
+        .shadow(color: AutumnStyle.maple.opacity(0.35), radius: 10, y: 4)
     }
 }

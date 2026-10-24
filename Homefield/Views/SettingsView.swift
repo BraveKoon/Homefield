@@ -34,8 +34,17 @@ struct SettingsView: View {
                     } label: {
                         SettingsLabel("노래 재생", systemImage: "music.note", color: .pink)
                     }
+                    Picker(selection: $settings.autumnMode) {
+                        ForEach(AutumnBaseball.Mode.allCases) { mode in
+                            Text(mode.displayName).tag(mode)
+                        }
+                    } label: {
+                        SettingsLabel("가을야구 테마", systemImage: "leaf.fill", color: AutumnStyle.orange)
+                    }
                 } header: {
                     Text("응원")
+                } footer: {
+                    Text("가을야구 테마를 켜면 앱 배경과 홈 화면 위젯에 단풍잎이 떨어지고, 구단 로고에 단풍잎이 붙습니다. 기본은 포스트시즌 기간(10월 1일 ~ 11월 15일)에만 켜집니다.")
                 }
 
                 Section {

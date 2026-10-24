@@ -108,37 +108,76 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
 
+      # 서명 없는 아카이브에는 entitlements 가 안 들어가서, 내보낼 때 App Group(앱·위젯 응원팀 공유)이 빠진다.
+      # 인증서 없이 되는 임시(ad-hoc) 서명으로 entitlements 를 넣은 사본을 만들어 둔다. 내보낼 때 클라우드 인증서로 다시 서명된다.
+      - name: Embed entitlements
+        continue-on-error: true
+        run: |
+          cp -R "$RUNNER_TEMP/Homefield.xcarchive" "$RUNNER_TEMP/Entitled.xcarchive"
+          APP="$RUNNER_TEMP/Entitled.xcarchive/Products/Applications/Homefield.app"
+          if [ -d "$APP/Frameworks" ]; then
+            find "$APP/Frameworks" -maxdepth 1 \( -name '*.framework' -o -name '*.dylib' \) -exec codesign --force --sign - {} \;
+          fi
+          codesign --force --sign - --generate-entitlement-der \
+            --entitlements HomefieldWidgets/HomefieldWidgets.entitlements "$APP/PlugIns/HomefieldWidgets.appex"
+          codesign --force --sign - --generate-entitlement-der \
+            --entitlements Homefield/Homefield.entitlements "$APP"
+          codesign -d --entitlements - "$APP" 2>/dev/null || true
+
       - name: Upload to TestFlight
         run: |
-          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          write_options() {
+            cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
             <key>method</key><string>app-store-connect</string>
-            <key>destination</key><string>upload</string>
+            <key>destination</key><string>$1</string>
             <key>teamID</key><string>$TEAM_ID</string>
             <key>signingStyle</key><string>automatic</string>
             <key>manageAppVersionAndBuildNumber</key><false/>
           </dict>
           </plist>
           PLIST
+          }
           set -o pipefail
           auth=(-allowProvisioningUpdates
                 -authenticationKeyPath "$KEY_PATH"
                 -authenticationKeyID "$ASC_KEY_ID"
                 -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          # export_archive <아카이브> <upload|export>
           export_archive() {
+            write_options "$2"
+            rm -rf "$RUNNER_TEMP/export"
             xcodebuild -exportArchive \
-              -archivePath "$RUNNER_TEMP/Homefield.xcarchive" \
+              -archivePath "$1" \
               -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
               -exportPath "$RUNNER_TEMP/export" \
               "${auth[@]}"
           }
-          if ! export_archive; then
+          # 먼저 entitlements 를 넣은 사본을 내보내 보고, IPA 에 App Group 이 들어갔는지 확인한 뒤 올린다
+          entitled_ok=0
+          if export_archive "$RUNNER_TEMP/Entitled.xcarchive" export; then
+            ipa=$(ls "$RUNNER_TEMP"/export/*.ipa | head -1)
+            mkdir -p "$RUNNER_TEMP/ipa" && unzip -q -o "$ipa" -d "$RUNNER_TEMP/ipa" || true
+            for bundle in "$RUNNER_TEMP/ipa/Payload/Homefield.app" "$RUNNER_TEMP/ipa/Payload/Homefield.app/PlugIns/HomefieldWidgets.appex"; do
+              echo "== $(basename "$bundle")"
+              codesign -d --entitlements - "$bundle" 2>/dev/null | tee "$RUNNER_TEMP/ent.txt" || true
+              grep -q "group.com.bravekoon.homefield" "$RUNNER_TEMP/ent.txt" || { echo "::warning::$(basename "$bundle") 에 App Group 이 없습니다"; entitled_ok=2; }
+            done
+            [ "$entitled_ok" = 0 ] && entitled_ok=1
+          else
+            echo "::warning::entitlements 를 넣은 아카이브 내보내기 실패"
+          fi
+          if [ "$entitled_ok" = 1 ] && export_archive "$RUNNER_TEMP/Entitled.xcarchive" upload; then
+            echo "App Group 포함해서 업로드했습니다"
+          elif export_archive "$RUNNER_TEMP/Homefield.xcarchive" upload; then
+            echo "::warning::App Group 없이 업로드했습니다 (위젯이 앱 응원팀을 못 읽고 위젯에서 고른 팀만 씁니다)"
+          else
             # 서명 없는 아카이브를 내보내지 못하면 예전 방식(자동 서명 아카이브)으로 한 번 더
             echo "::warning::서명 없는 아카이브 내보내기 실패, 자동 서명으로 다시 아카이브합니다"
-            rm -rf "$RUNNER_TEMP/Homefield.xcarchive" "$RUNNER_TEMP/export"
+            rm -rf "$RUNNER_TEMP/Homefield.xcarchive"
             xcodebuild archive \
               -project Homefield.xcodeproj \
               -scheme Homefield \
@@ -149,7 +188,7 @@ jobs:
               DEVELOPMENT_TEAM="$TEAM_ID" \
               CODE_SIGN_STYLE=Automatic \
               CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
-            export_archive
+            export_archive "$RUNNER_TEMP/Homefield.xcarchive" upload
           fi
 
       - name: Clean up CI certificates (after)

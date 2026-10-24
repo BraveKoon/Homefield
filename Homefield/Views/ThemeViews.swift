@@ -5,6 +5,7 @@ import SwiftUI
 struct ThemedBackground: View {
     @Environment(\.teamTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.isAutumn) private var isAutumn
 
     var body: some View {
         ZStack {
@@ -14,8 +15,19 @@ struct ThemedBackground: View {
                 startPoint: .top,
                 endPoint: UnitPoint(x: 0.5, y: 0.55)
             )
+            if isAutumn {
+                // 가을야구: 아래에서 노을빛이 올라오고 단풍잎이 떨어진다
+                LinearGradient(
+                    colors: [.clear, AutumnStyle.gold.opacity(0.10), AutumnStyle.orange.opacity(colorScheme == .dark ? 0.30 : 0.22)],
+                    startPoint: UnitPoint(x: 0.5, y: 0.35),
+                    endPoint: .bottom
+                )
+            }
             StitchPattern()
                 .foregroundStyle(theme.primary.opacity(colorScheme == .dark ? 0.10 : 0.07))
+            if isAutumn {
+                FallingLeaves(count: 12, opacity: colorScheme == .dark ? 0.45 : 0.55)
+            }
         }
         .ignoresSafeArea()
     }
@@ -72,6 +84,7 @@ extension View {
 
 /// 팀 로고 (네이버 스포츠 이미지). 받기 전이나 없으면 팀 색 동그라미 + 짧은 팀 이름.
 struct TeamBadge: View {
+    @Environment(\.isAutumn) private var isAutumn
     let code: String
     var size: CGFloat = 44
 
@@ -94,6 +107,9 @@ struct TeamBadge: View {
         .clipShape(Circle())
         .overlay(Circle().stroke(theme.primary.opacity(0.35), lineWidth: size > 36 ? 1.5 : 1))
         .shadow(color: theme.primary.opacity(0.35), radius: size * 0.12, y: size * 0.05)
+        .overlay(alignment: .bottomTrailing) {
+            if isAutumn && size >= 30 { AutumnLeafBadge(size: size) }
+        }
         .accessibilityHidden(true)
     }
 }

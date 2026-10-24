@@ -1,4 +1,5 @@
 import Foundation
+import WidgetKit
 import HomefieldCore
 import Observation
 
@@ -27,13 +28,33 @@ final class AppSettings {
     var speechRate: Float { didSet { save() } }
     var enabledPlays: Set<PlayKind> { didSet { save() } }
     var customPhrases: [PlayKind: String] { didSet { save() } }
-    var favoriteTeamCode: String? { didSet { save() } }
+    var favoriteTeamCode: String? {
+        didSet {
+            save()
+            // 홈 화면 위젯이 응원팀을 따라가도록 같이 쓰는 저장소에도 남긴다
+            SharedSettings.favoriteTeamCode = favoriteTeamCode
+            if oldValue != favoriteTeamCode { WidgetCenter.shared.reloadTimelines(ofKind: TeamGameWidgetKind.kind) }
+        }
+    }
     var songScope: SongScope { didSet { save() } }
     var useDemo: Bool { didSet { save() } }
     /// 경기를 보는 동안 잠금화면·다이내믹 아일랜드에 실시간 중계
     var liveActivityEnabled: Bool { didSet { save() } }
     /// 첫 실행 응원팀 선택을 마쳤는지
     var hasCompletedOnboarding: Bool { didSet { save() } }
+    /// 가을야구 테마 (단풍잎·따뜻한 색). 위젯도 같은 값을 쓴다.
+    var autumnMode: AutumnBaseball.Mode {
+        didSet {
+            save()
+            SharedSettings.autumnMode = autumnMode
+            if oldValue != autumnMode { WidgetCenter.shared.reloadAllTimelines() }
+        }
+    }
+
+    /// 지금 가을야구 분위기인지
+    var isAutumn: Bool {
+        AutumnBaseball.isActive(mode: autumnMode)
+    }
 
     private let defaults: UserDefaults
 
@@ -53,10 +74,18 @@ final class AppSettings {
         liveActivityEnabled = defaults.object(forKey: Keys.liveActivityEnabled) as? Bool ?? true
         let favorite = defaults.string(forKey: Keys.favoriteTeamCode)
         favoriteTeamCode = favorite
+        // 예전 버전에서 고른 응원팀도 위젯이 알 수 있게
+        if SharedSettings.favoriteTeamCode != favorite {
+            SharedSettings.favoriteTeamCode = favorite
+            WidgetCenter.shared.reloadTimelines(ofKind: TeamGameWidgetKind.kind)
+        }
         songScope = defaults.string(forKey: Keys.songScope).flatMap(SongScope.init(rawValue:)) ?? .allTeams
         useDemo = defaults.object(forKey: Keys.useDemo) as? Bool ?? false
         // 예전 버전에서 이미 응원팀을 골랐다면 다시 묻지 않는다
         hasCompletedOnboarding = defaults.object(forKey: Keys.hasCompletedOnboarding) as? Bool ?? (favorite != nil)
+        let autumn = defaults.string(forKey: Keys.autumnMode).flatMap(AutumnBaseball.Mode.init(rawValue:)) ?? .auto
+        autumnMode = autumn
+        SharedSettings.autumnMode = autumn
     }
 
     var composer: NarrationComposer {
@@ -87,6 +116,7 @@ final class AppSettings {
         defaults.set(useDemo, forKey: Keys.useDemo)
         defaults.set(hasCompletedOnboarding, forKey: Keys.hasCompletedOnboarding)
         defaults.set(liveActivityEnabled, forKey: Keys.liveActivityEnabled)
+        defaults.set(autumnMode.rawValue, forKey: Keys.autumnMode)
     }
 
     private enum Keys {
@@ -102,5 +132,6 @@ final class AppSettings {
         static let useDemo = "useDemo"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
         static let liveActivityEnabled = "liveActivityEnabled"
+        static let autumnMode = "autumnMode"
     }
 }

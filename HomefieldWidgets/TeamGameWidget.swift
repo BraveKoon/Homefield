@@ -19,9 +19,10 @@ enum WidgetTeam: String, AppEnum {
 
 struct SelectTeamIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "응원팀 경기"
-    static var description = IntentDescription("고른 팀의 오늘 경기 점수를 보여 줍니다.")
+    static var description = IntentDescription("응원팀의 오늘 경기 점수를 보여 줍니다. 팀을 비워 두면 앱에서 고른 응원팀을 따라갑니다.")
 
-    @Parameter(title: "팀")
+    /// 비워 두면 앱의 응원팀
+    @Parameter(title: "팀 (비우면 내 응원팀)")
     var team: WidgetTeam?
 
     init() {}
@@ -40,6 +41,8 @@ struct TeamGameEntry: WidgetKit.TimelineEntry {
     /// 팀 코드 → 로고 PNG (위젯 뷰에서는 이미지를 받을 수 없어서 미리 받아 둔다)
     let logos: [String: Data]
     let failed: Bool
+    /// 가을야구 테마 (앱 설정을 따른다)
+    var isAutumn: Bool = AutumnStyle.isActive
 
     static func preview(teamCode: String = "HT") -> TeamGameEntry {
         let game = GameSummary(
@@ -62,7 +65,7 @@ struct TeamGameProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: SelectTeamIntent, in context: Context) async -> TeamGameEntry {
-        if context.isPreview { return .preview(teamCode: configuration.team?.rawValue ?? "HT") }
+        if context.isPreview { return .preview(teamCode: configuration.team?.rawValue ?? SharedSettings.favoriteTeamCode ?? "HT") }
         return await entry(for: configuration)
     }
 
@@ -75,7 +78,7 @@ struct TeamGameProvider: AppIntentTimelineProvider {
     }
 
     private func entry(for configuration: SelectTeamIntent) async -> TeamGameEntry {
-        guard let code = configuration.team?.rawValue else {
+        guard let code = configuration.team?.rawValue ?? SharedSettings.favoriteTeamCode else {
             return TeamGameEntry(date: Date(), teamCode: nil, result: nil, logos: [:], failed: false)
         }
         do {
@@ -113,7 +116,7 @@ struct TeamGameWidget: Widget {
             TeamGameWidgetView(entry: entry)
         }
         .configurationDisplayName("응원팀 경기")
-        .description("응원팀의 오늘 경기 점수와 다음 경기를 보여 줍니다. 길게 눌러 팀을 고르세요.")
+        .description("앱에서 고른 응원팀의 오늘 경기 점수와 다음 경기를 보여 줍니다. 다른 팀은 위젯을 길게 눌러 고르세요.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryInline])
     }
 }
@@ -124,6 +127,7 @@ struct TeamGameWidgetView: View {
 
     var body: some View {
         content
+            .environment(\.isAutumn, entry.isAutumn)
             .containerBackground(for: .widget) { background }
     }
 
@@ -154,6 +158,11 @@ struct TeamGameWidgetView: View {
                     .stroke(.white.opacity(0.05), lineWidth: 18)
                     .frame(width: 260, height: 260)
                     .offset(x: -120, y: 110)
+                if entry.isAutumn {
+                    // 가을야구: 아래쪽 노을빛 + 단풍잎
+                    LinearGradient(colors: [.clear, AutumnStyle.orange.opacity(0.45)], startPoint: .center, endPoint: .bottom)
+                    FallingLeaves(count: family == .systemSmall ? 5 : 8, animated: false, opacity: 0.45, scale: 0.75)
+                }
             }
         }
     }
@@ -267,7 +276,7 @@ private struct RectangularView: View {
         } else {
             VStack(alignment: .leading) {
                 Label("홈구장", systemImage: "baseball.fill").font(.headline)
-                Text(entry.teamCode == nil ? "길게 눌러 팀 선택" : "예정된 경기 없음").font(.caption)
+                Text(entry.teamCode == nil ? "앱에서 응원팀 선택" : "예정된 경기 없음").font(.caption)
             }
         }
     }
@@ -433,11 +442,19 @@ private struct TeamStack: View {
 
 /// 흰 원 안에 팀 로고. 로고를 못 받았으면 팀 색 동그라미.
 private struct LogoBadge: View {
+    @Environment(\.isAutumn) private var isAutumn
     let code: String
     let data: Data?
     let size: CGFloat
 
     var body: some View {
+        logo.overlay(alignment: .bottomTrailing) {
+            if isAutumn { AutumnLeafBadge(size: size) }
+        }
+    }
+
+    @ViewBuilder
+    private var logo: some View {
         if let data, let image = UIImage(data: data) {
             Image(uiImage: image)
                 .resizable()
@@ -465,7 +482,7 @@ private struct EmptyStateView: View {
             } else {
                 Image(systemName: "baseball.fill")
                     .font(.system(size: 30))
-                Text("위젯을 길게 눌러\n응원팀을 고르세요")
+                Text("앱에서 응원팀을\n골라 주세요")
                     .font(.caption.weight(.semibold))
                     .multilineTextAlignment(.center)
             }
