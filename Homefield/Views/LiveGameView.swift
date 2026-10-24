@@ -277,6 +277,7 @@ private struct RelayLineRow: View {
 }
 
 private struct Scoreboard: View {
+    @Environment(\.isAutumn) private var isAutumn
     let game: GameSummary
     let state: LiveGameState
 
@@ -326,6 +327,10 @@ private struct Scoreboard: View {
                 LinearGradient(colors: [.black.opacity(0.15), .black.opacity(0.5)], startPoint: .top, endPoint: .bottom)
                 // 가운데에서 은은하게 퍼지는 빛
                 RadialGradient(colors: [.white.opacity(0.18), .clear], center: .center, startRadius: 0, endRadius: 160)
+                if isAutumn {
+                    LinearGradient(colors: [.clear, AutumnStyle.orange.opacity(0.35)], startPoint: .top, endPoint: .bottom)
+                    FallingLeaves(count: 8, opacity: 0.4, scale: 0.8)
+                }
             }
         }
         .environment(\.colorScheme, .dark)

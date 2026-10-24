@@ -41,6 +41,8 @@ struct TeamGameEntry: WidgetKit.TimelineEntry {
     /// 팀 코드 → 로고 PNG (위젯 뷰에서는 이미지를 받을 수 없어서 미리 받아 둔다)
     let logos: [String: Data]
     let failed: Bool
+    /// 가을야구 테마 (앱 설정을 따른다)
+    var isAutumn: Bool = AutumnStyle.isActive
 
     static func preview(teamCode: String = "HT") -> TeamGameEntry {
         let game = GameSummary(
@@ -125,6 +127,7 @@ struct TeamGameWidgetView: View {
 
     var body: some View {
         content
+            .environment(\.isAutumn, entry.isAutumn)
             .containerBackground(for: .widget) { background }
     }
 
@@ -155,6 +158,11 @@ struct TeamGameWidgetView: View {
                     .stroke(.white.opacity(0.05), lineWidth: 18)
                     .frame(width: 260, height: 260)
                     .offset(x: -120, y: 110)
+                if entry.isAutumn {
+                    // 가을야구: 아래쪽 노을빛 + 단풍잎
+                    LinearGradient(colors: [.clear, AutumnStyle.orange.opacity(0.45)], startPoint: .center, endPoint: .bottom)
+                    FallingLeaves(count: family == .systemSmall ? 5 : 8, animated: false, opacity: 0.45, scale: 0.75)
+                }
             }
         }
     }
@@ -434,11 +442,19 @@ private struct TeamStack: View {
 
 /// 흰 원 안에 팀 로고. 로고를 못 받았으면 팀 색 동그라미.
 private struct LogoBadge: View {
+    @Environment(\.isAutumn) private var isAutumn
     let code: String
     let data: Data?
     let size: CGFloat
 
     var body: some View {
+        logo.overlay(alignment: .bottomTrailing) {
+            if isAutumn { AutumnLeafBadge(size: size) }
+        }
+    }
+
+    @ViewBuilder
+    private var logo: some View {
         if let data, let image = UIImage(data: data) {
             Image(uiImage: image)
                 .resizable()

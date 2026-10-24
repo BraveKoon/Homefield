@@ -129,12 +129,18 @@ struct LockScreenGameView: View {
                     .foregroundStyle(.white.opacity(0.06))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     .offset(x: 10, y: -12)
+                if AutumnStyle.isActive {
+                    FallingLeaves(count: 6, animated: false, opacity: 0.35, scale: 0.7)
+                }
             }
         }
     }
 
     private var header: some View {
         HStack(spacing: 6) {
+            if AutumnStyle.isActive {
+                Text("🍁").font(.caption2)
+            }
             if let favorite = attributes.favoriteCode {
                 TeamDot(code: favorite, size: 16)
                 Text("MY TEAM")
