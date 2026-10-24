@@ -27,6 +27,12 @@ targets:
     dependencies:
       - package: HomefieldCore
       - target: HomefieldWidgets
+    # 앱과 위젯이 응원팀 설정을 같이 쓴다
+    entitlements:
+      path: Homefield/Homefield.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.bravekoon.homefield
     info:
       path: Homefield/Info.plist
       properties:
@@ -60,6 +66,12 @@ targets:
       - Shared
     dependencies:
       - package: HomefieldCore
+    # 앱과 위젯이 응원팀 설정을 같이 쓴다
+    entitlements:
+      path: HomefieldWidgets/HomefieldWidgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.bravekoon.homefield
     info:
       path: HomefieldWidgets/Info.plist
       properties:

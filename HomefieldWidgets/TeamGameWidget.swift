@@ -19,9 +19,10 @@ enum WidgetTeam: String, AppEnum {
 
 struct SelectTeamIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "응원팀 경기"
-    static var description = IntentDescription("고른 팀의 오늘 경기 점수를 보여 줍니다.")
+    static var description = IntentDescription("응원팀의 오늘 경기 점수를 보여 줍니다. 팀을 비워 두면 앱에서 고른 응원팀을 따라갑니다.")
 
-    @Parameter(title: "팀")
+    /// 비워 두면 앱의 응원팀
+    @Parameter(title: "팀 (비우면 내 응원팀)")
     var team: WidgetTeam?
 
     init() {}
@@ -62,7 +63,7 @@ struct TeamGameProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: SelectTeamIntent, in context: Context) async -> TeamGameEntry {
-        if context.isPreview { return .preview(teamCode: configuration.team?.rawValue ?? "HT") }
+        if context.isPreview { return .preview(teamCode: configuration.team?.rawValue ?? SharedSettings.favoriteTeamCode ?? "HT") }
         return await entry(for: configuration)
     }
 
@@ -75,7 +76,7 @@ struct TeamGameProvider: AppIntentTimelineProvider {
     }
 
     private func entry(for configuration: SelectTeamIntent) async -> TeamGameEntry {
-        guard let code = configuration.team?.rawValue else {
+        guard let code = configuration.team?.rawValue ?? SharedSettings.favoriteTeamCode else {
             return TeamGameEntry(date: Date(), teamCode: nil, result: nil, logos: [:], failed: false)
         }
         do {
@@ -113,7 +114,7 @@ struct TeamGameWidget: Widget {
             TeamGameWidgetView(entry: entry)
         }
         .configurationDisplayName("응원팀 경기")
-        .description("응원팀의 오늘 경기 점수와 다음 경기를 보여 줍니다. 길게 눌러 팀을 고르세요.")
+        .description("앱에서 고른 응원팀의 오늘 경기 점수와 다음 경기를 보여 줍니다. 다른 팀은 위젯을 길게 눌러 고르세요.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryInline])
     }
 }
@@ -267,7 +268,7 @@ private struct RectangularView: View {
         } else {
             VStack(alignment: .leading) {
                 Label("홈구장", systemImage: "baseball.fill").font(.headline)
-                Text(entry.teamCode == nil ? "길게 눌러 팀 선택" : "예정된 경기 없음").font(.caption)
+                Text(entry.teamCode == nil ? "앱에서 응원팀 선택" : "예정된 경기 없음").font(.caption)
             }
         }
     }
@@ -465,7 +466,7 @@ private struct EmptyStateView: View {
             } else {
                 Image(systemName: "baseball.fill")
                     .font(.system(size: 30))
-                Text("위젯을 길게 눌러\n응원팀을 고르세요")
+                Text("앱에서 응원팀을\n골라 주세요")
                     .font(.caption.weight(.semibold))
                     .multilineTextAlignment(.center)
             }

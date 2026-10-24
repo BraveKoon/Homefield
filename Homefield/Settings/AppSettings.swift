@@ -1,4 +1,5 @@
 import Foundation
+import WidgetKit
 import HomefieldCore
 import Observation
 
@@ -27,7 +28,14 @@ final class AppSettings {
     var speechRate: Float { didSet { save() } }
     var enabledPlays: Set<PlayKind> { didSet { save() } }
     var customPhrases: [PlayKind: String] { didSet { save() } }
-    var favoriteTeamCode: String? { didSet { save() } }
+    var favoriteTeamCode: String? {
+        didSet {
+            save()
+            // 홈 화면 위젯이 응원팀을 따라가도록 같이 쓰는 저장소에도 남긴다
+            SharedSettings.favoriteTeamCode = favoriteTeamCode
+            if oldValue != favoriteTeamCode { WidgetCenter.shared.reloadTimelines(ofKind: TeamGameWidgetKind.kind) }
+        }
+    }
     var songScope: SongScope { didSet { save() } }
     var useDemo: Bool { didSet { save() } }
     /// 경기를 보는 동안 잠금화면·다이내믹 아일랜드에 실시간 중계
@@ -53,6 +61,11 @@ final class AppSettings {
         liveActivityEnabled = defaults.object(forKey: Keys.liveActivityEnabled) as? Bool ?? true
         let favorite = defaults.string(forKey: Keys.favoriteTeamCode)
         favoriteTeamCode = favorite
+        // 예전 버전에서 고른 응원팀도 위젯이 알 수 있게
+        if SharedSettings.favoriteTeamCode != favorite {
+            SharedSettings.favoriteTeamCode = favorite
+            WidgetCenter.shared.reloadTimelines(ofKind: TeamGameWidgetKind.kind)
+        }
         songScope = defaults.string(forKey: Keys.songScope).flatMap(SongScope.init(rawValue:)) ?? .allTeams
         useDemo = defaults.object(forKey: Keys.useDemo) as? Bool ?? false
         // 예전 버전에서 이미 응원팀을 골랐다면 다시 묻지 않는다
