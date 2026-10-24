@@ -23,6 +23,7 @@
 		517D574762A8331BA07CF101 /* HomefieldCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8B12B7181B7BBEC38FE7A7D2 /* HomefieldCore */; };
 		5F4911FDEB0D180EED04B16B /* BackgroundKeeper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 589CB875B741E4A30913A615 /* BackgroundKeeper.swift */; };
 		651BA9A3EA05060F52EE3B0D /* LiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E37C5FC5A71A8187A0A2B61 /* LiveActivityController.swift */; };
+		69B87C2C922189D597431CD3 /* SharedSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F96DC396223B94BEED9E9B1 /* SharedSettings.swift */; };
 		6D50328E89BF0FE7B7A737A3 /* GameStateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25D1558C74EF0BFA73DF59A /* GameStateViews.swift */; };
 		6D5FE78412DED5E1281E75D9 /* TeamGameWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AA95021AF14DBE29F10C03C /* TeamGameWidget.swift */; };
 		B9A77CAD4C5668180555AB35 /* AudioDirector.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E9A4E4E97F1CE11E4A5AB3 /* AudioDirector.swift */; };
@@ -33,6 +34,7 @@
 		CF64854B2048AB73B12FD426 /* HomefieldCore in Frameworks */ = {isa = PBXBuildFile; productRef = D144D72B11028824B3E5B1BB /* HomefieldCore */; };
 		D35C2D519E1BA99F79FE2C17 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E2C891CE7A8324FF9E81B9 /* AppSettings.swift */; };
 		D75897F33FE2D49FCD748E53 /* Narrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 817BCD2DAF8E8E08AD7547D8 /* Narrator.swift */; };
+		DFA6BA1F0AF020052558864F /* SharedSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F96DC396223B94BEED9E9B1 /* SharedSettings.swift */; };
 		E0D19EA0CA2DEC10AE3E930E /* GameListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D053340E166A4F1A5BF84104 /* GameListView.swift */; };
 		E51D8901121E5A550033057A /* MusicDeck.swift in Sources */ = {isa = PBXBuildFile; fileRef = B08C14223DA04A9F63BDB1F2 /* MusicDeck.swift */; };
 		E6BA8F072F19A3503D0D6D21 /* StandingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8D3D3B298855B5AF9541D7 /* StandingsView.swift */; };
@@ -69,7 +71,9 @@
 
 /* Begin PBXFileReference section */
 		04E7BBF698CE61F7416A0B9C /* AttendanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceView.swift; sourceTree = "<group>"; };
+		0F96DC396223B94BEED9E9B1 /* SharedSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedSettings.swift; sourceTree = "<group>"; };
 		232CF63C1BC09B67169F1B7E /* PlayerDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerDetailView.swift; sourceTree = "<group>"; };
+		31D4D1A2DF40A9B77B247DD2 /* HomefieldWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HomefieldWidgets.entitlements; sourceTree = "<group>"; };
 		3633B3D940EB489FA4822CD9 /* SongLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryView.swift; sourceTree = "<group>"; };
 		363EE5EA2EA56C30F27C8D24 /* LiveGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveGameView.swift; sourceTree = "<group>"; };
 		531513B24FF5100A973F43B7 /* TeamTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamTheme.swift; sourceTree = "<group>"; };
@@ -80,6 +84,7 @@
 		657F724A45DB4F1155FC7256 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		6EC5E31A9860CD61006645D3 /* HomefieldWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomefieldWidgetsBundle.swift; sourceTree = "<group>"; };
 		71ED6E976FC3894E112BE678 /* GameActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameActivityAttributes.swift; sourceTree = "<group>"; };
+		76DBE19A4EB64D0C62DEBB1B /* Homefield.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Homefield.entitlements; sourceTree = "<group>"; };
 		784043A884189B51E5C3D4C7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7CE8E9B7CEE01B9474A2D458 /* HomefieldWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = HomefieldWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7E37C5FC5A71A8187A0A2B61 /* LiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityController.swift; sourceTree = "<group>"; };
@@ -190,6 +195,7 @@
 			isa = PBXGroup;
 			children = (
 				ED08E6D405D1B8D62B3679AD /* GameLiveActivity.swift */,
+				31D4D1A2DF40A9B77B247DD2 /* HomefieldWidgets.entitlements */,
 				6EC5E31A9860CD61006645D3 /* HomefieldWidgetsBundle.swift */,
 				577415853449EF7CBAF369FF /* Info.plist */,
 				8AA95021AF14DBE29F10C03C /* TeamGameWidget.swift */,
@@ -210,6 +216,7 @@
 			isa = PBXGroup;
 			children = (
 				71ED6E976FC3894E112BE678 /* GameActivityAttributes.swift */,
+				0F96DC396223B94BEED9E9B1 /* SharedSettings.swift */,
 				531513B24FF5100A973F43B7 /* TeamTheme.swift */,
 			);
 			path = Shared;
@@ -230,6 +237,7 @@
 			isa = PBXGroup;
 			children = (
 				53B22290F4B62BC14E1F4B8F /* Assets.xcassets */,
+				76DBE19A4EB64D0C62DEBB1B /* Homefield.entitlements */,
 				784043A884189B51E5C3D4C7 /* Info.plist */,
 				0F17161AD194834A0E5E74A7 /* App */,
 				EA28EDB9C7C311598351E85F /* Attendance */,
@@ -363,6 +371,7 @@
 				F22C6655DFC59A787AC233D5 /* GameActivityAttributes.swift in Sources */,
 				35087BF99F96EA5DB236BDB1 /* GameLiveActivity.swift in Sources */,
 				E9ED0AFAF619313EB3667F97 /* HomefieldWidgetsBundle.swift in Sources */,
+				69B87C2C922189D597431CD3 /* SharedSettings.swift in Sources */,
 				6D5FE78412DED5E1281E75D9 /* TeamGameWidget.swift in Sources */,
 				1589301489600F6A353D43DF /* TeamTheme.swift in Sources */,
 			);
@@ -392,6 +401,7 @@
 				068AC986E43A8908EFAEB484 /* PlayerDetailView.swift in Sources */,
 				30EE2CF0EC8C0169EF2B8053 /* RemoteImage.swift in Sources */,
 				056A69794F4A3268FF73BBAF /* SettingsView.swift in Sources */,
+				DFA6BA1F0AF020052558864F /* SharedSettings.swift in Sources */,
 				0856EA98D0034B2FA3D12256 /* SongLibrary.swift in Sources */,
 				CBB58CE35DC6C9C513ABA28D /* SongLibraryView.swift in Sources */,
 				E6BA8F072F19A3503D0D6D21 /* StandingsView.swift in Sources */,
@@ -414,6 +424,7 @@
 		1184CDD329062EB4090BBB8D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = HomefieldWidgets/HomefieldWidgets.entitlements;
 				INFOPLIST_FILE = HomefieldWidgets/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -433,6 +444,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Homefield/Homefield.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				INFOPLIST_FILE = Homefield/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -510,6 +522,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Homefield/Homefield.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				INFOPLIST_FILE = Homefield/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -592,6 +605,7 @@
 		D1DC40D8E14E27490980F1ED /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = HomefieldWidgets/HomefieldWidgets.entitlements;
 				INFOPLIST_FILE = HomefieldWidgets/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
