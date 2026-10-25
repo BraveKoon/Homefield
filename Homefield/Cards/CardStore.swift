@@ -69,6 +69,14 @@ final class CardStore {
         if changed { save() }
     }
 
+    /// 코드를 써서 포인트를 받는다
+    @discardableResult
+    func redeem(code: String) throws -> CardCoupon {
+        let coupon = try collection.wallet.redeem(code: code)
+        save()
+        return coupon
+    }
+
     private func award(_ reward: CardReward, key: String) {
         if collection.wallet.award(reward, key: key) { save() }
     }
