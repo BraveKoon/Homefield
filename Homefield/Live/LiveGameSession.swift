@@ -38,6 +38,7 @@ final class LiveGameSession {
 
     @ObservationIgnored private let provider: any GameDataProvider
     @ObservationIgnored private let settings: AppSettings
+    @ObservationIgnored private let cards: CardStore
     @ObservationIgnored private let library: SongLibrary
     @ObservationIgnored private let director: AudioDirector
     @ObservationIgnored private var monitorTask: Task<Void, Never>?
@@ -62,12 +63,20 @@ final class LiveGameSession {
         let payload: Payload
     }
 
-    init(game: GameSummary, provider: any GameDataProvider, settings: AppSettings, library: SongLibrary, director: AudioDirector) {
+    init(
+        game: GameSummary,
+        provider: any GameDataProvider,
+        settings: AppSettings,
+        library: SongLibrary,
+        director: AudioDirector,
+        cards: CardStore
+    ) {
         self.game = game
         self.provider = provider
         self.settings = settings
         self.library = library
         self.director = director
+        self.cards = cards
     }
 
     func start() {
@@ -248,6 +257,12 @@ final class LiveGameSession {
             if case .batterUp(let player) = event.kind {
                 currentBatter = player
                 library.register(players: [player])
+            }
+        }
+        // 응원 라인업에 넣은 선수가 활약하면 카드 포인트
+        for event in events {
+            if let award = LineupBonus.award(for: event, game: game, state: gameState, collection: cards.collection) {
+                cards.award(lineupBonus: award)
             }
         }
         for result in tracker.process(events) {

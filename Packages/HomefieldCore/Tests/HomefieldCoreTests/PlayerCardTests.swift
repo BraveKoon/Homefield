@@ -567,3 +567,122 @@ final class CardBulkOpenTests: XCTestCase {
         XCTAssertEqual(collection.wallet.points, 200)
     }
 }
+
+final class LineupBonusTests: XCTestCase {
+    private let game = GameSummary(
+        id: "20261025LGHT0",
+        home: Team(code: "HT", name: "KIA 타이거즈"),
+        away: Team(code: "LG", name: "LG 트윈스"),
+        status: .live
+    )
+
+    private func card(_ name: String, team: String, kind: SeasonStats.Kind = .batter) -> PlayerCard {
+        PlayerCard(
+            playerId: "\(team)-\(name)",
+            name: name,
+            teamCode: team,
+            season: 2026,
+            kind: kind,
+            grade: .four,
+            rating: 0.8
+        )
+    }
+
+    /// 원정(LG) 공격, 홈(KIA) 투수 정해영
+    private func state() -> LiveGameState {
+        var state = LiveGameState()
+        state.battingSide = .away
+        state.defense = [.home: [.pitcher: "정해영"]]
+        return state
+    }
+
+    private func play(_ kind: PlayKind, subject: String, id: String = "e1") -> DetectedEvent {
+        DetectedEvent(id: id, kind: .play(kind), text: "\(subject) \(kind.displayName)", subject: subject, side: .away)
+    }
+
+    private func lineup(of cards: [PlayerCard]) -> CardCollection {
+        var collection = CardCollection()
+        for (index, card) in cards.enumerated() {
+            collection.add(card)
+            collection.setLineup(card.id, at: index)
+        }
+        return collection
+    }
+
+    func testBatterInLineupEarnsPoints() throws {
+        let hitter = card("홍길동", team: "LG")
+        let collection = lineup(of: [hitter])
+        for (kind, points) in [(PlayKind.homeRun, 50), (.triple, 40), (.double, 30), (.single, 20), (.stolenBase, 20), (.run, 15), (.walk, 5)] {
+            let award = try XCTUnwrap(
+                LineupBonus.award(for: play(kind, subject: "홍길동"), game: game, state: state(), collection: collection),
+                "\(kind) 는 포인트를 준다"
+            )
+            XCTAssertEqual(award.points, points)
+            XCTAssertEqual(award.cardId, hitter.id)
+            XCTAssertEqual(award.playerName, "홍길동")
+        }
+        XCTAssertEqual(
+            LineupBonus.award(for: play(.homeRun, subject: "홍길동"), game: game, state: state(), collection: collection)?.displayText,
+            "홍길동 홈런 +50P"
+        )
+    }
+
+    func testPitcherInLineupEarnsStrikeoutPoints() throws {
+        let pitcher = card("정해영", team: "HT", kind: .pitcher)
+        let collection = lineup(of: [pitcher])
+        // 삼진은 타자가 아니라 마운드에 선 투수에게 준다
+        let award = try XCTUnwrap(
+            LineupBonus.award(for: play(.strikeout, subject: "홍길동"), game: game, state: state(), collection: collection)
+        )
+        XCTAssertEqual(award.cardId, pitcher.id)
+        XCTAssertEqual(award.points, 15)
+        XCTAssertEqual(award.kind, .strikeout)
+    }
+
+    func testPlayersOutsideLineupEarnNothing() {
+        let collection = lineup(of: [card("홍길동", team: "LG")])
+        // 라인업에 없는 선수
+        XCTAssertNil(LineupBonus.award(for: play(.homeRun, subject: "김하늘"), game: game, state: state(), collection: collection))
+        // 같은 이름이라도 다른 팀이면 아니다
+        let otherTeam = lineup(of: [card("홍길동", team: "HT")])
+        XCTAssertNil(LineupBonus.award(for: play(.homeRun, subject: "홍길동"), game: game, state: state(), collection: otherTeam))
+        // 포인트를 주지 않는 상황
+        for kind in [PlayKind.flyOut, .groundOut, .caughtStealing, .error, .pitcherChange] {
+            XCTAssertNil(
+                LineupBonus.award(for: play(kind, subject: "홍길동"), game: game, state: state(), collection: collection),
+                "\(kind) 는 포인트가 없다"
+            )
+        }
+        // 타자 등장은 상황이 아니다
+        let batterUp = DetectedEvent(id: "x", kind: .batterUp(Player(id: "1", name: "홍길동", teamCode: "LG")), text: "타석")
+        XCTAssertNil(LineupBonus.award(for: batterUp, game: game, state: state(), collection: collection))
+    }
+
+    func testSamePlayIsPaidOnce() {
+        var collection = lineup(of: [card("홍길동", team: "LG")])
+        let event = play(.homeRun, subject: "홍길동", id: "home-run-1")
+        let award = LineupBonus.award(for: event, game: game, state: state(), collection: collection)!
+
+        XCTAssertTrue(collection.wallet.award(lineupBonus: award))
+        XCTAssertEqual(collection.wallet.points, 50)
+        XCTAssertFalse(collection.wallet.award(lineupBonus: award), "같은 상황은 한 번만")
+        XCTAssertEqual(collection.wallet.points, 50)
+
+        // 다른 상황이면 또 준다
+        let next = LineupBonus.award(for: play(.single, subject: "홍길동", id: "single-1"), game: game, state: state(), collection: collection)!
+        XCTAssertTrue(collection.wallet.award(lineupBonus: next))
+        XCTAssertEqual(collection.wallet.points, 70)
+    }
+
+    func testWelcomeGiftIsPaidOnce() {
+        var wallet = CardWallet()
+        XCTAssertEqual(CardReward.welcome.points, 3_000)
+        XCTAssertTrue(wallet.award(.welcome, key: "install"))
+        XCTAssertEqual(wallet.points, 3_000)
+        XCTAssertFalse(wallet.award(.welcome, key: "install"), "첫 선물은 한 번만")
+        XCTAssertEqual(wallet.points, 3_000)
+        // 적립 안내 목록에는 첫 선물이 없다
+        XCTAssertFalse(CardReward.recurring.contains(.welcome))
+        XCTAssertEqual(Set(CardReward.recurring), [.dailyVisit, .watchGame, .checkIn])
+    }
+}

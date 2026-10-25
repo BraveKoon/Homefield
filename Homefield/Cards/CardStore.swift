@@ -11,6 +11,10 @@ final class CardStore {
     private(set) var pool: CardPool?
     /// 방금 뽑은 카드 (카드팩 열기 화면에서 보여 준다)
     var lastOpened: [PlayerCard] = []
+    /// 보고 있는 경기에서 라인업 선수가 받은 포인트
+    private(set) var gameBonus = 0
+    /// 가장 최근 라인업 활약 ("홍길동 홈런 +50P")
+    private(set) var lastBonus: LineupBonus.Award?
 
     @ObservationIgnored private let storeURL: URL
 
@@ -19,6 +23,8 @@ final class CardStore {
         try? fileManager.createDirectory(at: support, withIntermediateDirectories: true)
         storeURL = support.appendingPathComponent("cards.json")
         collection = (try? JSONDecoder().decode(CardCollection.self, from: Data(contentsOf: storeURL))) ?? CardCollection()
+        // 앱을 처음 받았으면 첫 선물
+        award(.welcome, key: "install")
     }
 
     var points: Int { collection.wallet.points }
@@ -58,6 +64,20 @@ final class CardStore {
     /// 경기 중계를 보면 (경기당 한 번)
     func awardWatching(gameId: String) {
         award(.watchGame, key: gameId)
+    }
+
+    /// 응원 라인업에 넣은 선수가 활약하면 포인트를 준다
+    func award(lineupBonus award: LineupBonus.Award) {
+        guard collection.wallet.award(lineupBonus: award) else { return }
+        gameBonus += award.points
+        lastBonus = award
+        save()
+    }
+
+    /// 다른 경기를 보기 시작하면 이 경기 보너스를 0으로
+    func resetGameBonus() {
+        gameBonus = 0
+        lastBonus = nil
     }
 
     /// 직관 인증 기록을 포인트로 바꾼다. 이미 준 인증은 건너뛴다.

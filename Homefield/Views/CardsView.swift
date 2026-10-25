@@ -216,13 +216,17 @@ private struct WalletHeader: View {
                 }
             }
 
-            HStack(spacing: 12) {
-                ForEach(CardReward.allCases) { reward in
-                    Label("\(reward.displayName) +\(reward.points)", systemImage: icon(for: reward))
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.white.opacity(0.9))
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 12) {
+                    ForEach(CardReward.recurring) { reward in
+                        Label("\(reward.displayName) +\(reward.points)", systemImage: icon(for: reward))
+                            .font(.caption2.weight(.bold))
+                    }
                 }
+                Label("라인업 선수가 안타·홈런·도루·삼진을 하면 포인트", systemImage: "star.fill")
+                    .font(.caption2.weight(.bold))
             }
+            .foregroundStyle(.white.opacity(0.9))
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -235,6 +239,7 @@ private struct WalletHeader: View {
 
     private func icon(for reward: CardReward) -> String {
         switch reward {
+        case .welcome: "gift.fill"
         case .dailyVisit: "sun.max.fill"
         case .watchGame: "tv.fill"
         case .checkIn: "sportscourt.fill"

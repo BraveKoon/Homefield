@@ -2,6 +2,8 @@ import Foundation
 
 /// 포인트를 얻는 방법
 public enum CardReward: String, Codable, CaseIterable, Sendable, Identifiable {
+    /// 앱을 처음 받았을 때 한 번
+    case welcome
     /// 하루에 한 번 앱을 열면
     case dailyVisit
     /// 경기 중계를 한 번 보면 (경기당 한 번)
@@ -13,6 +15,7 @@ public enum CardReward: String, Codable, CaseIterable, Sendable, Identifiable {
 
     public var points: Int {
         switch self {
+        case .welcome: 3_000
         case .dailyVisit: 20
         case .watchGame: 50
         case .checkIn: 200
@@ -21,10 +24,16 @@ public enum CardReward: String, Codable, CaseIterable, Sendable, Identifiable {
 
     public var displayName: String {
         switch self {
+        case .welcome: "첫 선물"
         case .dailyVisit: "매일 접속"
         case .watchGame: "경기 시청"
         case .checkIn: "직관 인증"
         }
+    }
+
+    /// 되풀이해서 받을 수 있는 적립 (첫 선물은 한 번만)
+    public static var recurring: [CardReward] {
+        allCases.filter { $0 != .welcome }
     }
 }
 
@@ -42,9 +51,14 @@ public struct CardWallet: Codable, Hashable, Sendable {
     /// 아직 안 준 적립이면 주고 true
     @discardableResult
     public mutating func award(_ reward: CardReward, key: String) -> Bool {
-        let full = "\(reward.rawValue)-\(key)"
-        guard awarded.insert(full).inserted else { return false }
-        points += reward.points
+        insert(key: "\(reward.rawValue)-\(key)", points: reward.points)
+    }
+
+    /// 처음 보는 열쇠면 포인트를 넣는다 (같은 적립을 두 번 주지 않는다)
+    @discardableResult
+    mutating func insert(key: String, points amount: Int) -> Bool {
+        guard awarded.insert(key).inserted else { return false }
+        points += amount
         return true
     }
 
@@ -284,8 +298,7 @@ public extension CardWallet {
     @discardableResult
     mutating func redeem(code: String) throws -> CardCoupon {
         guard let coupon = CardCoupons.coupon(for: code) else { throw CardCouponError.unknown }
-        guard awarded.insert("coupon-\(coupon.code)").inserted else { throw CardCouponError.alreadyUsed }
-        points += coupon.points
+        guard insert(key: "coupon-\(coupon.code)", points: coupon.points) else { throw CardCouponError.alreadyUsed }
         return coupon
     }
 }

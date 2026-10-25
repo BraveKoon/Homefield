@@ -60,6 +60,9 @@ struct LiveGameView: View {
                         if let card = cards.lineupCard(for: batter) {
                             LineupCardRow(card: card)
                         }
+                        if cards.gameBonus > 0 {
+                            LineupBonusRow(total: cards.gameBonus, last: cards.lastBonus)
+                        }
                     } else {
                         Text("다음 타자를 기다리는 중…")
                             .foregroundStyle(.secondary)
@@ -182,8 +185,10 @@ private extension LiveGameView {
             provider: settings.makeProvider(),
             settings: settings,
             library: library,
-            director: director
+            director: director,
+            cards: cards
         )
+        cards.resetGameBonus()
         self.session = session
         session.start()
         // 경기를 보면 카드 포인트 (경기당 한 번)
@@ -393,6 +398,29 @@ private struct Scoreboard: View {
                 .contentTransition(.numericText())
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+/// 이 경기에서 라인업 선수가 모은 카드 포인트
+private struct LineupBonusRow: View {
+    let total: Int
+    let last: LineupBonus.Award?
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "baseball.circle.fill")
+                .foregroundStyle(.pink)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("라인업 보너스 +\(total)P")
+                    .font(.footnote.weight(.bold))
+                if let last {
+                    Text(last.displayText)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer(minLength: 0)
+        }
     }
 }
 
