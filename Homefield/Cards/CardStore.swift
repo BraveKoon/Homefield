@@ -88,16 +88,16 @@ final class CardStore {
 
     // MARK: 카드팩
 
-    func canOpen(_ kind: CardPackKind) -> Bool {
-        pool != nil && collection.canOpen(kind)
+    func canOpen(_ kind: CardPackKind, count: Int = 1) -> Bool {
+        pool != nil && collection.canOpen(kind, count: count)
     }
 
-    /// 카드팩을 열고 받은 카드를 돌려준다. 못 열면 nil.
+    /// 카드팩을 count 개 열고 받은 카드를 돌려준다. 못 열면 nil.
     @discardableResult
-    func open(_ kind: CardPackKind) -> [PlayerCard]? {
+    func open(_ kind: CardPackKind, count: Int = 1) -> [PlayerCard]? {
         guard let pool else { return nil }
         var generator = SystemRandomNumberGenerator()
-        guard let drawn = collection.open(kind, from: pool, using: &generator) else { return nil }
+        guard let drawn = collection.open(kind, count: count, from: pool, using: &generator) else { return nil }
         lastOpened = drawn
         save()
         return drawn

@@ -484,3 +484,86 @@ final class CardSortTests: XCTestCase {
         }
     }
 }
+
+final class CardBulkOpenTests: XCTestCase {
+    private let calendar = Calendar(identifier: .gregorian)
+    private let today = Date(timeIntervalSince1970: 1_790_000_000)
+
+    private func pool() -> CardPool {
+        let teams = KBOTeams.all.map(\.code)
+        let players = (0..<120).map { index in
+            Player(id: "p\(index)", name: "선수\(String(format: "%03d", index))", teamCode: teams[index % teams.count])
+        }
+        var stats: [String: SeasonStats] = [:]
+        for (index, player) in players.enumerated() {
+            var stat = SeasonStats(playerId: player.id, kind: .batter, updatedAt: today)
+            let share = Double(120 - index) / 120
+            stat.atBats = Int(share * 550)
+            stat.average = 0.200 + share * 0.150
+            stat.onBase = 0.280 + share * 0.150
+            stat.homeRuns = Int(share * 40)
+            stat.rbi = Int(share * 120)
+            stat.games = Int(share * 144)
+            stats[player.id] = stat
+        }
+        return CardPool(season: 2026, players: players, stats: stats)
+    }
+
+    func testBulkOpenDrawsEveryPackAndChargesOnce() throws {
+        var generator = SeededGenerator(seed: 11)
+        var collection = CardCollection()
+        collection.wallet.award(.checkIn, key: "a")
+        collection.wallet.award(.checkIn, key: "b")
+        collection.wallet.award(.checkIn, key: "c")
+        collection.wallet.award(.checkIn, key: "d")
+        collection.wallet.award(.checkIn, key: "e")
+        collection.wallet.award(.checkIn, key: "f")
+        collection.wallet.award(.checkIn, key: "g")
+        collection.wallet.award(.checkIn, key: "h")
+        XCTAssertEqual(collection.wallet.points, 1_600)
+
+        let bulk = CardCollection.bulkCount
+        let drawn = try XCTUnwrap(
+            collection.open(.premium, count: bulk, from: pool(), on: today, calendar: calendar, using: &generator)
+        )
+        // 고급 카드팩은 한 팩에 3장
+        XCTAssertEqual(drawn.count, bulk * CardPackKind.premium.cardCount)
+        XCTAssertEqual(collection.wallet.points, 1_600 - CardPackKind.premium.cost * bulk)
+        XCTAssertTrue(drawn.allSatisfy { $0.grade >= .three })
+    }
+
+    func testBulkOpenNeedsEveryPacksPoints() {
+        var generator = SeededGenerator(seed: 12)
+        var collection = CardCollection()
+        collection.wallet.award(.checkIn, key: "a")
+        // 200P 로는 고급 카드팩 1개만 (150P)
+        XCTAssertTrue(collection.canOpen(.premium, count: 1, on: today, calendar: calendar))
+        XCTAssertFalse(collection.canOpen(.premium, count: 2, on: today, calendar: calendar))
+        XCTAssertNil(collection.open(.premium, count: 2, from: pool(), on: today, calendar: calendar, using: &generator))
+        // 한 개도 열지 않았으니 포인트도 그대로
+        XCTAssertEqual(collection.wallet.points, 200)
+        XCTAssertTrue(collection.owned.isEmpty)
+    }
+
+    func testBasicPackCannotBeDrawnInBulk() {
+        var generator = SeededGenerator(seed: 13)
+        var collection = CardCollection()
+        XCTAssertTrue(collection.canOpen(.basic, count: 1, on: today, calendar: calendar))
+        XCTAssertFalse(collection.canOpen(.basic, count: 2, on: today, calendar: calendar), "기본 카드팩은 하루 한 번")
+        XCTAssertNil(collection.open(.basic, count: 2, from: pool(), on: today, calendar: calendar, using: &generator))
+        XCTAssertNotNil(collection.open(.basic, count: 1, from: pool(), on: today, calendar: calendar, using: &generator))
+        // 오늘 몫을 쓰면 더는 못 연다
+        XCTAssertFalse(collection.canOpen(.basic, count: 1, on: today, calendar: calendar))
+    }
+
+    func testZeroOrNegativeCountIsRejected() {
+        var generator = SeededGenerator(seed: 14)
+        var collection = CardCollection()
+        collection.wallet.award(.checkIn, key: "a")
+        for count in [0, -1] {
+            XCTAssertFalse(collection.canOpen(.premium, count: count, on: today, calendar: calendar))
+            XCTAssertNil(collection.open(.premium, count: count, from: pool(), on: today, calendar: calendar, using: &generator))
+        }
+        XCTAssertEqual(collection.wallet.points, 200)
+    }
+}

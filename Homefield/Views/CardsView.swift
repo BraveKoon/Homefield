@@ -25,7 +25,7 @@ struct CardsView: View {
                         section("카드팩") {
                             VStack(spacing: 10) {
                                 ForEach(CardPackKind.allCases) { kind in
-                                    CardPackRow(kind: kind, store: store) { open(kind) }
+                                    CardPackRow(kind: kind, store: store) { open(kind, count: $0) }
                                 }
                             }
                         }
@@ -80,7 +80,7 @@ struct CardsView: View {
         .onChange(of: library.rostersUpdatedAt) { _, _ in store.refreshPool(library: library) }
         .onChange(of: attendance.checkIns.count) { _, _ in store.syncCheckIns(attendance.checkIns) }
         .sheet(item: $opening) { kind in
-            PackOpeningView(kind: kind, cards: store.lastOpened, store: store)
+            PackOpeningView(kind: kind, store: store)
         }
         .sheet(isPresented: $isEnteringCode) {
             CouponView(store: store)
@@ -103,11 +103,11 @@ struct CardsView: View {
         }
     }
 
-    private func open(_ kind: CardPackKind) {
-        guard store.open(kind) != nil else {
+    private func open(_ kind: CardPackKind, count: Int = 1) {
+        guard store.open(kind, count: count) != nil else {
             notice = kind == .basic
                 ? "오늘 기본 카드팩은 이미 열었어요. 내일 다시 받을 수 있어요."
-                : "포인트가 \(kind.cost - store.points) 모자라요. 경기를 보거나 직관을 인증해 포인트를 모아 주세요."
+                : "포인트가 \(kind.cost * count - store.points) 모자라요. 경기를 보거나 직관을 인증해 포인트를 모아 주세요."
             return
         }
         opening = kind
@@ -210,7 +210,7 @@ private struct WalletHeader: View {
                 VStack(alignment: .leading, spacing: 4) {
                     ProgressView(value: completion)
                         .tint(.white)
-                    Text("\(pool.season) 도감 \(Int((completion * 100).rounded()))% · 전체 \(pool.cards.count)종")
+                    Text("\(String(pool.season)) 도감 \(Int((completion * 100).rounded()))% · 전체 \(pool.cards.count)종")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.9))
                 }
@@ -268,35 +268,60 @@ private struct PoolMissingCard: View {
 private struct CardPackRow: View {
     let kind: CardPackKind
     let store: CardStore
-    let action: () -> Void
+    /// (한 번에 열 카드팩 수)
+    let action: (Int) -> Void
+
+    private var bulk: Int { CardCollection.bulkCount }
 
     var body: some View {
-        let available = store.canOpen(kind)
-        HStack(spacing: 14) {
-            PackArt(kind: kind)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(kind.displayName)
-                    .font(.headline)
-                Text(kind.summary)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Text(kind.oddsText)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 14) {
+                PackArt(kind: kind)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(kind.displayName)
+                        .font(.headline)
+                    Text(kind.summary)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(kind.oddsText)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
             }
-            Spacer(minLength: 0)
-            Button(action: action) {
-                Text(buttonTitle)
-                    .font(.subheadline.weight(.bold))
-                    .frame(minWidth: 62)
+            HStack(spacing: 8) {
+                // 포인트로 사는 팩은 연속 뽑기도 할 수 있다 (기본 카드팩은 하루 한 번)
+                if kind != .basic {
+                    Button { action(bulk) } label: {
+                        VStack(spacing: 1) {
+                            Text("\(bulk)연속")
+                                .font(.subheadline.weight(.bold))
+                            Text("\(kind.cost * bulk)P")
+                                .font(.caption2.monospacedDigit())
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(kind.topGrade.color)
+                    .disabled(!store.canOpen(kind, count: bulk))
+                }
+                Button { action(1) } label: {
+                    VStack(spacing: 1) {
+                        Text("1회")
+                            .font(.subheadline.weight(.bold))
+                        Text(priceTitle)
+                            .font(.caption2.monospacedDigit())
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(store.canOpen(kind) ? kind.topGrade.color : .gray)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(available ? kind.topGrade.color : .gray)
         }
         .cardStyle(padding: 12)
     }
 
-    private var buttonTitle: String {
+    private var priceTitle: String {
         if kind == .basic {
             return store.canOpenDailyPack ? "무료" : "내일"
         }
@@ -331,47 +356,40 @@ private struct PackArt: View {
 private struct PackOpeningView: View {
     @Environment(\.dismiss) private var dismiss
     let kind: CardPackKind
-    let cards: [PlayerCard]
     let store: CardStore
 
     @State private var revealed = 0
+    @State private var notice: String?
+
+    private var cards: [PlayerCard] { store.lastOpened }
+    /// 연속 뽑기처럼 카드가 많으면 한꺼번에 펼쳐 보여 준다
+    private var isBulk: Bool { cards.count > 3 }
+    private var bulk: Int { CardCollection.bulkCount }
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text(kind.displayName)
-                .font(.title2.weight(.black))
-                .foregroundStyle(.white)
-
-            Spacer()
-
-            HStack(spacing: 12) {
-                ForEach(Array(cards.enumerated()), id: \.offset) { index, card in
-                    Group {
-                        if index < revealed {
-                            PlayerCardView(card: card, width: cardWidth, isNew: store.isSingleCopy(card))
-                                .transition(.scale(scale: 0.6).combined(with: .opacity))
-                        } else {
-                            CardBack(width: cardWidth)
-                        }
-                    }
+        VStack(spacing: 16) {
+            VStack(spacing: 2) {
+                Text(kind.displayName)
+                    .font(.title2.weight(.black))
+                if isBulk {
+                    Text("\(cards.count / kind.cardCount)팩 · 카드 \(cards.count)장")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white.opacity(0.8))
                 }
             }
-            .animation(.spring(duration: 0.45), value: revealed)
+            .foregroundStyle(.white)
 
-            Spacer()
-
-            if revealed < cards.count {
-                Text("탭해서 카드 확인")
-                    .font(.headline)
-                    .foregroundStyle(.white.opacity(0.9))
+            if isBulk {
+                bulkResult
             } else {
-                Button("닫기") { dismiss() }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.white)
-                    .foregroundStyle(.black)
+                Spacer()
+                singleResult
+                Spacer()
             }
+
+            footer
         }
-        .padding(24)
+        .padding(20)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             ZStack {
@@ -392,10 +410,129 @@ private struct PackOpeningView: View {
         .onTapGesture {
             if revealed < cards.count { revealed += 1 }
         }
-        .onAppear {
-            // 1장짜리 팩은 바로 보여 준다
-            if cards.count == 1 { revealed = 1 }
+        .onAppear(perform: reveal)
+        .onChange(of: cards.map(\.id)) { _, _ in reveal() }
+    }
+
+    /// 1~3장은 탭해서 한 장씩 뒤집는다
+    private var singleResult: some View {
+        HStack(spacing: 12) {
+            ForEach(Array(cards.enumerated()), id: \.offset) { index, card in
+                Group {
+                    if index < revealed {
+                        PlayerCardView(card: card, width: cardWidth, isNew: store.isSingleCopy(card))
+                            .transition(.scale(scale: 0.6).combined(with: .opacity))
+                    } else {
+                        CardBack(width: cardWidth)
+                    }
+                }
+            }
         }
+        .animation(.spring(duration: 0.45), value: revealed)
+    }
+
+    /// 연속 뽑기는 등급 높은 카드부터 격자로
+    private var bulkResult: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 6) {
+                ForEach(CardGrade.allCases.reversed()) { grade in
+                    let count = cards.filter { $0.grade == grade }.count
+                    if count > 0 {
+                        Text("\(grade.displayName) \(count)")
+                            .font(.caption2.weight(.bold))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(grade.color, in: Capsule())
+                            .foregroundStyle(grade == .five ? .black : .white)
+                    }
+                }
+            }
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 88), spacing: 8)], spacing: 10) {
+                    ForEach(Array(sortedCards.enumerated()), id: \.offset) { _, card in
+                        PlayerCardView(card: card, width: 88, isNew: store.isSingleCopy(card))
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        }
+    }
+
+    private var footer: some View {
+        VStack(spacing: 10) {
+            if revealed < cards.count {
+                Text("탭해서 카드 확인")
+                    .font(.headline)
+                    .foregroundStyle(.white.opacity(0.9))
+            } else {
+                HStack(spacing: 8) {
+                    // 연속 뽑기를 결제(한 번 더) 버튼 앞에 둔다
+                    if kind != .basic {
+                        Button { draw(count: bulk) } label: {
+                            VStack(spacing: 1) {
+                                Text("\(bulk)연속").font(.subheadline.weight(.bold))
+                                Text("\(kind.cost * bulk)P").font(.caption2.monospacedDigit())
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.white)
+                        .disabled(!store.canOpen(kind, count: bulk))
+                    }
+                    Button { draw(count: 1) } label: {
+                        VStack(spacing: 1) {
+                            Text("한 번 더").font(.subheadline.weight(.bold))
+                            Text(againPrice).font(.caption2.monospacedDigit())
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.white)
+                    .foregroundStyle(.black)
+                    .disabled(!store.canOpen(kind))
+                }
+                HStack(spacing: 12) {
+                    Text("\(store.points) P")
+                        .font(.caption.weight(.bold).monospacedDigit())
+                        .foregroundStyle(.white.opacity(0.85))
+                    Button("닫기") { dismiss() }
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(.white)
+                }
+            }
+            if let notice {
+                Text(notice)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.yellow)
+                    .multilineTextAlignment(.center)
+            }
+        }
+    }
+
+    private var againPrice: String {
+        if kind == .basic {
+            return store.canOpenDailyPack ? "무료" : "내일"
+        }
+        return "\(kind.cost)P"
+    }
+
+    private var sortedCards: [PlayerCard] {
+        CardSort(field: .grade, isDescending: true).apply(to: cards)
+    }
+
+    private func draw(count: Int) {
+        guard store.open(kind, count: count) != nil else {
+            notice = kind == .basic
+                ? "오늘 기본 카드팩은 이미 열었어요."
+                : "포인트가 \(kind.cost * count - store.points) 모자라요."
+            return
+        }
+        notice = nil
+    }
+
+    /// 1장짜리 팩과 연속 뽑기는 바로 보여 주고, 2~3장은 탭해서 뒤집는다
+    private func reveal() {
+        revealed = cards.count == 1 || isBulk ? cards.count : 0
     }
 
     private var cardWidth: CGFloat {

@@ -196,6 +196,16 @@ public struct CardCollection: Codable, Hashable, Sendable {
         kind == .basic ? canOpenDailyPack(on: date, calendar: calendar) : wallet.canAfford(kind)
     }
 
+    /// 연속 뽑기 한 번에 여는 카드팩 수
+    public static let bulkCount = 10
+
+    /// 카드팩을 count 개 열 수 있는지. 기본 카드팩은 하루 한 번이라 한 개만.
+    public func canOpen(_ kind: CardPackKind, count: Int, on date: Date = Date(), calendar: Calendar = .current) -> Bool {
+        guard count >= 1 else { return false }
+        if kind == .basic { return count == 1 && canOpenDailyPack(on: date, calendar: calendar) }
+        return wallet.points >= kind.cost * count
+    }
+
     /// 카드팩을 열고 받은 카드를 넣는다. 열 수 없으면 nil.
     public mutating func open<G: RandomNumberGenerator>(
         _ kind: CardPackKind,
@@ -204,13 +214,28 @@ public struct CardCollection: Codable, Hashable, Sendable {
         calendar: Calendar = .current,
         using generator: inout G
     ) -> [PlayerCard]? {
-        guard canOpen(kind, on: date, calendar: calendar) else { return nil }
-        let drawn = pool.open(kind, using: &generator)
+        open(kind, count: 1, from: pool, on: date, calendar: calendar, using: &generator)
+    }
+
+    /// 카드팩을 count 개 연다 (연속 뽑기). 포인트가 모자라면 한 개도 열지 않고 nil.
+    public mutating func open<G: RandomNumberGenerator>(
+        _ kind: CardPackKind,
+        count: Int,
+        from pool: CardPool,
+        on date: Date = Date(),
+        calendar: Calendar = .current,
+        using generator: inout G
+    ) -> [PlayerCard]? {
+        guard canOpen(kind, count: count, on: date, calendar: calendar) else { return nil }
+        var drawn: [PlayerCard] = []
+        for _ in 0..<count {
+            drawn += pool.open(kind, using: &generator)
+        }
         guard !drawn.isEmpty else { return nil }
         if kind == .basic {
             markDailyPackOpened(on: date)
         } else {
-            guard wallet.spend(kind.cost) else { return nil }
+            guard wallet.spend(kind.cost * count) else { return nil }
         }
         for card in drawn { add(card) }
         return drawn
