@@ -11,6 +11,7 @@ struct CardsView: View {
     @State private var opening: CardPackKind?
     @State private var lineupSlot: LineupSlot?
     @State private var notice: String?
+    @State private var isEnteringCode = false
 
     var body: some View {
         NavigationStack {
@@ -28,6 +29,32 @@ struct CardsView: View {
                                 }
                             }
                         }
+                    }
+
+                    section("코드 사용") {
+                        Button {
+                            isEnteringCode = true
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "gift.fill")
+                                    .font(.title3)
+                                    .foregroundStyle(.white)
+                                    .frame(width: 38, height: 38)
+                                    .background(Color.pink.gradient, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("코드 입력").font(.headline)
+                                    Text("받은 코드를 넣으면 포인트를 받습니다")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 0)
+                                Image(systemName: "chevron.right")
+                                    .font(.footnote.weight(.bold))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .cardStyle(padding: 12)
+                        }
+                        .buttonStyle(.plain)
                     }
 
                     section("응원 라인업") {
@@ -55,6 +82,9 @@ struct CardsView: View {
         .sheet(item: $opening) { kind in
             PackOpeningView(kind: kind, cards: store.lastOpened, store: store)
         }
+        .sheet(isPresented: $isEnteringCode) {
+            CouponView(store: store)
+        }
         .sheet(item: $lineupSlot) { slot in
             LineupPickerView(slot: slot.index, store: store)
         }
@@ -81,6 +111,68 @@ struct CardsView: View {
             return
         }
         opening = kind
+    }
+}
+
+/// 코드를 넣어 포인트를 받는 창
+private struct CouponView: View {
+    @Environment(\.dismiss) private var dismiss
+    let store: CardStore
+
+    @State private var code = ""
+    @State private var message: String?
+    @State private var isError = false
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("코드", text: $code)
+                        .font(.body.monospaced())
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.done)
+                        .focused($focused)
+                        .onSubmit(use)
+                } footer: {
+                    if let message {
+                        Label(message, systemImage: isError ? "exclamationmark.triangle" : "checkmark.circle.fill")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(isError ? .red : .green)
+                    } else {
+                        Text("받은 코드를 그대로 넣어 주세요. 코드마다 한 번만 쓸 수 있습니다.")
+                    }
+                }
+
+                Section {
+                    Button("사용하기", action: use)
+                        .disabled(code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    LabeledContent("지금 포인트", value: "\(store.points) P")
+                }
+            }
+            .navigationTitle("코드 사용")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("닫기") { dismiss() }
+                }
+            }
+            .onAppear { focused = true }
+        }
+    }
+
+    private func use() {
+        do {
+            let coupon = try store.redeem(code: code)
+            isError = false
+            message = "\(coupon.points) 포인트를 받았어요!"
+            code = ""
+            focused = false
+        } catch {
+            isError = true
+            message = error.localizedDescription
+        }
     }
 }
 

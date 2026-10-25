@@ -216,3 +216,51 @@ public struct CardCollection: Codable, Hashable, Sendable {
         return drawn
     }
 }
+
+/// 포인트를 주는 코드 한 개
+public struct CardCoupon: Hashable, Sendable {
+    /// 사용자가 입력하는 코드
+    public var code: String
+    public var points: Int
+
+    public init(code: String, points: Int) {
+        self.code = code
+        self.points = points
+    }
+}
+
+public enum CardCoupons {
+    public static let all: [CardCoupon] = [
+        CardCoupon(code: "0609Bangjy!", points: 100_000),
+    ]
+
+    /// 앞뒤 빈칸과 대소문자는 넘어가 준다 (키보드가 첫 글자를 바꿀 수 있다)
+    public static func coupon(for input: String) -> CardCoupon? {
+        let cleaned = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return nil }
+        return all.first { $0.code.compare(cleaned, options: .caseInsensitive) == .orderedSame }
+    }
+}
+
+public enum CardCouponError: LocalizedError, Equatable {
+    case unknown
+    case alreadyUsed
+
+    public var errorDescription: String? {
+        switch self {
+        case .unknown: "없는 코드예요. 다시 확인해 주세요."
+        case .alreadyUsed: "이미 사용한 코드예요."
+        }
+    }
+}
+
+public extension CardWallet {
+    /// 코드를 쓰고 포인트를 받는다. 코드마다 한 번만 쓸 수 있다.
+    @discardableResult
+    mutating func redeem(code: String) throws -> CardCoupon {
+        guard let coupon = CardCoupons.coupon(for: code) else { throw CardCouponError.unknown }
+        guard awarded.insert("coupon-\(coupon.code)").inserted else { throw CardCouponError.alreadyUsed }
+        points += coupon.points
+        return coupon
+    }
+}
