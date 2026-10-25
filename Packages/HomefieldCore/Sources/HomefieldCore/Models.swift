@@ -255,4 +255,10 @@ public enum KBOTeams {
     public static func name(for code: String) -> String? {
         all.first { $0.code == code }?.name
     }
+
+    /// "KIA", "삼성" 처럼 중계에 나오는 짧은 팀 이름으로 팀 코드를 찾는다
+    public static func code(forShortName name: String) -> String? {
+        let cleaned = name.trimmingCharacters(in: .whitespaces)
+        return all.first { $0.name.split(separator: " ").first.map(String.init) == cleaned }?.code
+    }
 }

@@ -636,7 +636,7 @@ final class LineupBonusTests: XCTestCase {
         )
         XCTAssertEqual(award.cardId, pitcher.id)
         XCTAssertEqual(award.points, 15)
-        XCTAssertEqual(award.kind, .strikeout)
+        XCTAssertEqual(award.title, "삼진")
     }
 
     func testPlayersOutsideLineupEarnNothing() {
@@ -774,5 +774,100 @@ final class CardRefundTests: XCTestCase {
         // 라인업에 넣은 카드는 남아 있다
         XCTAssertEqual(collection.lineupCards[2]?.id, star.id)
         XCTAssertEqual(collection.count(of: star.id), 1)
+    }
+}
+
+final class RelayAwardTests: XCTestCase {
+    /// 2026-10-25 화면에 보인 중계 문장
+    func testParsesWinningPitcherAndDailyMVP() {
+        XCTAssertEqual(RelayAward.parse("승리투수: 올러"), .winningPitcher(name: "올러"))
+        XCTAssertEqual(RelayAward.parse("승리투수 : 올러"), .winningPitcher(name: "올러"))
+        XCTAssertEqual(RelayAward.parse("승리투수: 올러 (1승)"), .winningPitcher(name: "올러"))
+        XCTAssertEqual(RelayAward.parse("데일리 MVP KIA 전상현"), .dailyMVP(teamCode: "HT", name: "전상현"))
+        XCTAssertEqual(RelayAward.parse("데일리 MVP LG 홍창기"), .dailyMVP(teamCode: "LG", name: "홍창기"))
+        XCTAssertEqual(RelayAward.parse("데일리 MVP 삼성 구자욱"), .dailyMVP(teamCode: "SS", name: "구자욱"))
+        XCTAssertEqual(RelayAward.parse("승리투수").map(\.title), nil)
+    }
+
+    func testIgnoresOtherLines() {
+        for line in [
+            "패전투수: 임찬규",
+            "세이브투수: 정해영",
+            "구본혁 : 삼진 아웃",
+            "========================",
+            "데일리 MVP 없는팀 홍길동",
+        ] {
+            XCTAssertNil(RelayAward.parse(line), "\(line) 는 시상이 아니다")
+        }
+    }
+
+    func testAwardPoints() {
+        XCTAssertEqual(RelayAward.winningPitcher(name: "올러").points, 80)
+        XCTAssertEqual(RelayAward.dailyMVP(teamCode: "HT", name: "전상현").points, 100)
+        XCTAssertEqual(KBOTeams.code(forShortName: "KIA"), "HT")
+        XCTAssertEqual(KBOTeams.code(forShortName: "키움"), "WO")
+        XCTAssertNil(KBOTeams.code(forShortName: "타이거즈"))
+    }
+
+    func testOnlyLineupPlayersOnTheWinningTeamGetPaid() throws {
+        // KIA 5 : 2 LG (홈 KIA 승)
+        let game = GameSummary(
+            id: "20261025LGHT0",
+            home: Team(code: "HT", name: "KIA 타이거즈"),
+            away: Team(code: "LG", name: "LG 트윈스"),
+            homeScore: 5,
+            awayScore: 2,
+            status: .finished
+        )
+        func card(_ name: String, team: String) -> PlayerCard {
+            PlayerCard(playerId: "\(team)-\(name)", name: name, teamCode: team, season: 2026, kind: .pitcher, grade: .four, rating: 0.8)
+        }
+        var collection = CardCollection()
+        let winner = card("올러", team: "HT")
+        let mvp = card("전상현", team: "HT")
+        let loser = card("임찬규", team: "LG")
+        for (index, item) in [winner, mvp, loser].enumerated() {
+            collection.add(item)
+            collection.setLineup(item.id, at: index)
+        }
+
+        let win = try XCTUnwrap(LineupBonus.award(forRelayText: "승리투수: 올러", entryId: "1", game: game, collection: collection))
+        XCTAssertEqual(win.points, 80)
+        XCTAssertEqual(win.displayText, "올러 승리투수 +80P")
+
+        let daily = try XCTUnwrap(LineupBonus.award(forRelayText: "데일리 MVP KIA 전상현", entryId: "2", game: game, collection: collection))
+        XCTAssertEqual(daily.points, 100)
+        XCTAssertEqual(daily.playerName, "전상현")
+
+        // 진 팀 투수는 승리투수가 될 수 없다
+        XCTAssertNil(LineupBonus.award(forRelayText: "승리투수: 임찬규", entryId: "3", game: game, collection: collection))
+        // 라인업에 없는 선수
+        XCTAssertNil(LineupBonus.award(forRelayText: "데일리 MVP KIA 김도영", entryId: "4", game: game, collection: collection))
+
+        // 점수를 모르면 승리투수를 가릴 수 없다
+        var tied = game
+        tied.homeScore = 2
+        XCTAssertNil(LineupBonus.award(forRelayText: "승리투수: 올러", entryId: "5", game: tied, collection: collection))
+        XCTAssertNil(LineupBonus.winningSide(of: tied))
+    }
+
+    func testSameAwardIsPaidOnce() {
+        let game = GameSummary(
+            id: "g1",
+            home: Team(code: "HT", name: "KIA 타이거즈"),
+            away: Team(code: "LG", name: "LG 트윈스"),
+            homeScore: 5,
+            awayScore: 2,
+            status: .finished
+        )
+        var collection = CardCollection()
+        let card = PlayerCard(playerId: "HT-올러", name: "올러", teamCode: "HT", season: 2026, kind: .pitcher, grade: .five, rating: 0.9)
+        collection.add(card)
+        collection.setLineup(card.id, at: 0)
+
+        let award = LineupBonus.award(forRelayText: "승리투수: 올러", entryId: "1", game: game, collection: collection)!
+        XCTAssertTrue(collection.wallet.award(lineupBonus: award))
+        XCTAssertFalse(collection.wallet.award(lineupBonus: award))
+        XCTAssertEqual(collection.wallet.points, 80)
     }
 }

@@ -194,6 +194,10 @@ final class LiveGameSession {
         let now = Date()
         for entry in entries.sorted(by: { $0.sequence < $1.sequence }) where !log.contains(where: { $0.id == entry.id }) {
             append(logLine(for: entry, at: now))
+            // "승리투수: 올러", "데일리 MVP KIA 전상현" 같은 시상도 라인업 포인트
+            if let award = LineupBonus.award(forRelayText: entry.text, entryId: entry.id, game: game, collection: cards.collection) {
+                cards.award(lineupBonus: award)
+            }
         }
         refreshActivity()
     }
