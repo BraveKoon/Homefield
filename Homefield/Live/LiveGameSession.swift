@@ -38,6 +38,7 @@ final class LiveGameSession {
 
     @ObservationIgnored private let provider: any GameDataProvider
     @ObservationIgnored private let settings: AppSettings
+    @ObservationIgnored private let cards: CardStore
     @ObservationIgnored private let library: SongLibrary
     @ObservationIgnored private let director: AudioDirector
     @ObservationIgnored private var monitorTask: Task<Void, Never>?
@@ -62,12 +63,20 @@ final class LiveGameSession {
         let payload: Payload
     }
 
-    init(game: GameSummary, provider: any GameDataProvider, settings: AppSettings, library: SongLibrary, director: AudioDirector) {
+    init(
+        game: GameSummary,
+        provider: any GameDataProvider,
+        settings: AppSettings,
+        library: SongLibrary,
+        director: AudioDirector,
+        cards: CardStore
+    ) {
         self.game = game
         self.provider = provider
         self.settings = settings
         self.library = library
         self.director = director
+        self.cards = cards
     }
 
     func start() {
@@ -77,8 +86,8 @@ final class LiveGameSession {
         AudioDirector.activateSession()
         library.register(team: game.home)
         library.register(team: game.away)
-        // 이미 끝난 경기는 잠금화면 실시간 중계를 켜지 않는다
-        if settings.liveActivityEnabled, game.status != .finished, game.status != .cancelled {
+        // 이미 끝난 경기와 아직 열리지 않은 경기(시작 30분 전)는 잠금화면 실시간 중계를 켜지 않는다
+        if settings.liveActivityEnabled, game.status != .finished, game.status != .cancelled, !game.isPregameLocked() {
             liveActivity.start(game: game, favoriteCode: settings.favoriteTeamCode, state: activityState())
             keeper.start()
         }
@@ -185,6 +194,10 @@ final class LiveGameSession {
         let now = Date()
         for entry in entries.sorted(by: { $0.sequence < $1.sequence }) where !log.contains(where: { $0.id == entry.id }) {
             append(logLine(for: entry, at: now))
+            // "승리투수: 올러", "데일리 MVP KIA 전상현" 같은 시상도 라인업 포인트
+            if let award = LineupBonus.award(forRelayText: entry.text, entryId: entry.id, game: game, collection: cards.collection) {
+                cards.award(lineupBonus: award)
+            }
         }
         refreshActivity()
     }
@@ -248,6 +261,12 @@ final class LiveGameSession {
             if case .batterUp(let player) = event.kind {
                 currentBatter = player
                 library.register(players: [player])
+            }
+        }
+        // 응원 라인업에 넣은 선수가 활약하면 카드 포인트
+        for event in events {
+            if let award = LineupBonus.award(for: event, game: game, state: gameState, collection: cards.collection) {
+                cards.award(lineupBonus: award)
             }
         }
         for result in tracker.process(events) {

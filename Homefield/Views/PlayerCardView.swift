@@ -68,7 +68,7 @@ struct PlayerCardView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
             Spacer(minLength: 0)
-            Text("\(card.season)")
+            Text(String(card.season))
                 .font(.system(size: width * 0.065, weight: .heavy))
                 .foregroundStyle(card.grade == .five ? .black.opacity(0.7) : .white.opacity(0.8))
         }

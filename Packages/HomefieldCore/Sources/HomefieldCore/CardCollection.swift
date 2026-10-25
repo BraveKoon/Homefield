@@ -2,6 +2,8 @@ import Foundation
 
 /// 포인트를 얻는 방법
 public enum CardReward: String, Codable, CaseIterable, Sendable, Identifiable {
+    /// 앱을 처음 받았을 때 한 번
+    case welcome
     /// 하루에 한 번 앱을 열면
     case dailyVisit
     /// 경기 중계를 한 번 보면 (경기당 한 번)
@@ -13,6 +15,7 @@ public enum CardReward: String, Codable, CaseIterable, Sendable, Identifiable {
 
     public var points: Int {
         switch self {
+        case .welcome: 3_000
         case .dailyVisit: 20
         case .watchGame: 50
         case .checkIn: 200
@@ -21,10 +24,16 @@ public enum CardReward: String, Codable, CaseIterable, Sendable, Identifiable {
 
     public var displayName: String {
         switch self {
+        case .welcome: "첫 선물"
         case .dailyVisit: "매일 접속"
         case .watchGame: "경기 시청"
         case .checkIn: "직관 인증"
         }
+    }
+
+    /// 되풀이해서 받을 수 있는 적립 (첫 선물은 한 번만)
+    public static var recurring: [CardReward] {
+        allCases.filter { $0 != .welcome }
     }
 }
 
@@ -42,9 +51,20 @@ public struct CardWallet: Codable, Hashable, Sendable {
     /// 아직 안 준 적립이면 주고 true
     @discardableResult
     public mutating func award(_ reward: CardReward, key: String) -> Bool {
-        let full = "\(reward.rawValue)-\(key)"
-        guard awarded.insert(full).inserted else { return false }
-        points += reward.points
+        insert(key: "\(reward.rawValue)-\(key)", points: reward.points)
+    }
+
+    /// 열쇠 없이 포인트를 넣는다 (중복 카드 환불처럼 여러 번 할 수 있는 것)
+    mutating func insert(points amount: Int) {
+        guard amount > 0 else { return }
+        points += amount
+    }
+
+    /// 처음 보는 열쇠면 포인트를 넣는다 (같은 적립을 두 번 주지 않는다)
+    @discardableResult
+    mutating func insert(key: String, points amount: Int) -> Bool {
+        guard awarded.insert(key).inserted else { return false }
+        points += amount
         return true
     }
 
@@ -196,6 +216,16 @@ public struct CardCollection: Codable, Hashable, Sendable {
         kind == .basic ? canOpenDailyPack(on: date, calendar: calendar) : wallet.canAfford(kind)
     }
 
+    /// 연속 뽑기 한 번에 여는 카드팩 수
+    public static let bulkCount = 10
+
+    /// 카드팩을 count 개 열 수 있는지. 기본 카드팩은 하루 한 번이라 한 개만.
+    public func canOpen(_ kind: CardPackKind, count: Int, on date: Date = Date(), calendar: Calendar = .current) -> Bool {
+        guard count >= 1 else { return false }
+        if kind == .basic { return count == 1 && canOpenDailyPack(on: date, calendar: calendar) }
+        return wallet.points >= kind.cost * count
+    }
+
     /// 카드팩을 열고 받은 카드를 넣는다. 열 수 없으면 nil.
     public mutating func open<G: RandomNumberGenerator>(
         _ kind: CardPackKind,
@@ -204,13 +234,28 @@ public struct CardCollection: Codable, Hashable, Sendable {
         calendar: Calendar = .current,
         using generator: inout G
     ) -> [PlayerCard]? {
-        guard canOpen(kind, on: date, calendar: calendar) else { return nil }
-        let drawn = pool.open(kind, using: &generator)
+        open(kind, count: 1, from: pool, on: date, calendar: calendar, using: &generator)
+    }
+
+    /// 카드팩을 count 개 연다 (연속 뽑기). 포인트가 모자라면 한 개도 열지 않고 nil.
+    public mutating func open<G: RandomNumberGenerator>(
+        _ kind: CardPackKind,
+        count: Int,
+        from pool: CardPool,
+        on date: Date = Date(),
+        calendar: Calendar = .current,
+        using generator: inout G
+    ) -> [PlayerCard]? {
+        guard canOpen(kind, count: count, on: date, calendar: calendar) else { return nil }
+        var drawn: [PlayerCard] = []
+        for _ in 0..<count {
+            drawn += pool.open(kind, using: &generator)
+        }
         guard !drawn.isEmpty else { return nil }
         if kind == .basic {
             markDailyPackOpened(on: date)
         } else {
-            guard wallet.spend(kind.cost) else { return nil }
+            guard wallet.spend(kind.cost * count) else { return nil }
         }
         for card in drawn { add(card) }
         return drawn
@@ -259,8 +304,7 @@ public extension CardWallet {
     @discardableResult
     mutating func redeem(code: String) throws -> CardCoupon {
         guard let coupon = CardCoupons.coupon(for: code) else { throw CardCouponError.unknown }
-        guard awarded.insert("coupon-\(coupon.code)").inserted else { throw CardCouponError.alreadyUsed }
-        points += coupon.points
+        guard insert(key: "coupon-\(coupon.code)", points: coupon.points) else { throw CardCouponError.alreadyUsed }
         return coupon
     }
 }
@@ -341,5 +385,56 @@ public extension CardCollection {
     /// 이 카드가 라인업 몇 번 칸에 들어가 있는지 (없으면 nil)
     func lineupSlot(of cardId: String) -> Int? {
         lineupCards.firstIndex { $0?.id == cardId }
+    }
+}
+
+public extension CardGrade {
+    /// 중복 카드를 되팔 때 돌려받는 포인트.
+    /// 카드팩 값보다 한참 낮게 둬서, 뽑고 되파는 것으로 포인트가 늘어나지 않게 한다.
+    var refundPoints: Int {
+        switch self {
+        case .one: 5
+        case .two: 10
+        case .three: 25
+        case .four: 60
+        case .five: 150
+        }
+    }
+}
+
+public extension CardCollection {
+    /// 되팔 수 있는 장수 (도감에 한 장은 남긴다)
+    func spareCount(of id: String) -> Int {
+        max(count(of: id) - 1, 0)
+    }
+
+    /// 중복으로 가진 카드
+    var spares: [PlayerCard] {
+        owned.filter { spareCount(of: $0.id) > 0 }
+    }
+
+    /// 중복을 모두 되팔면 받는 포인트
+    var totalRefund: Int {
+        spares.reduce(0) { $0 + $1.grade.refundPoints * spareCount(of: $1.id) }
+    }
+
+    /// 중복 카드를 되팔고 받은 포인트. 중복이 없으면 nil.
+    @discardableResult
+    mutating func refund(_ cardId: String, count: Int = 1) -> Int? {
+        guard count >= 1, let card = cards[cardId], spareCount(of: cardId) >= count else { return nil }
+        let points = card.grade.refundPoints * count
+        counts[cardId] = self.count(of: cardId) - count
+        wallet.insert(points: points)
+        return points
+    }
+
+    /// 중복 카드를 모두 되팔고 받은 포인트
+    @discardableResult
+    mutating func refundAllSpares() -> Int {
+        var total = 0
+        for card in spares {
+            total += refund(card.id, count: spareCount(of: card.id)) ?? 0
+        }
+        return total
     }
 }

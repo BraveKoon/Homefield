@@ -484,3 +484,390 @@ final class CardSortTests: XCTestCase {
         }
     }
 }
+
+final class CardBulkOpenTests: XCTestCase {
+    private let calendar = Calendar(identifier: .gregorian)
+    private let today = Date(timeIntervalSince1970: 1_790_000_000)
+
+    private func pool() -> CardPool {
+        let teams = KBOTeams.all.map(\.code)
+        let players = (0..<120).map { index in
+            Player(id: "p\(index)", name: "선수\(String(format: "%03d", index))", teamCode: teams[index % teams.count])
+        }
+        var stats: [String: SeasonStats] = [:]
+        for (index, player) in players.enumerated() {
+            var stat = SeasonStats(playerId: player.id, kind: .batter, updatedAt: today)
+            let share = Double(120 - index) / 120
+            stat.atBats = Int(share * 550)
+            stat.average = 0.200 + share * 0.150
+            stat.onBase = 0.280 + share * 0.150
+            stat.homeRuns = Int(share * 40)
+            stat.rbi = Int(share * 120)
+            stat.games = Int(share * 144)
+            stats[player.id] = stat
+        }
+        return CardPool(season: 2026, players: players, stats: stats)
+    }
+
+    func testBulkOpenDrawsEveryPackAndChargesOnce() throws {
+        var generator = SeededGenerator(seed: 11)
+        var collection = CardCollection()
+        collection.wallet.award(.checkIn, key: "a")
+        collection.wallet.award(.checkIn, key: "b")
+        collection.wallet.award(.checkIn, key: "c")
+        collection.wallet.award(.checkIn, key: "d")
+        collection.wallet.award(.checkIn, key: "e")
+        collection.wallet.award(.checkIn, key: "f")
+        collection.wallet.award(.checkIn, key: "g")
+        collection.wallet.award(.checkIn, key: "h")
+        XCTAssertEqual(collection.wallet.points, 1_600)
+
+        let bulk = CardCollection.bulkCount
+        let drawn = try XCTUnwrap(
+            collection.open(.premium, count: bulk, from: pool(), on: today, calendar: calendar, using: &generator)
+        )
+        // 고급 카드팩은 한 팩에 3장
+        XCTAssertEqual(drawn.count, bulk * CardPackKind.premium.cardCount)
+        XCTAssertEqual(collection.wallet.points, 1_600 - CardPackKind.premium.cost * bulk)
+        XCTAssertTrue(drawn.allSatisfy { $0.grade >= .three })
+    }
+
+    func testBulkOpenNeedsEveryPacksPoints() {
+        var generator = SeededGenerator(seed: 12)
+        var collection = CardCollection()
+        collection.wallet.award(.checkIn, key: "a")
+        // 200P 로는 고급 카드팩 1개만 (150P)
+        XCTAssertTrue(collection.canOpen(.premium, count: 1, on: today, calendar: calendar))
+        XCTAssertFalse(collection.canOpen(.premium, count: 2, on: today, calendar: calendar))
+        XCTAssertNil(collection.open(.premium, count: 2, from: pool(), on: today, calendar: calendar, using: &generator))
+        // 한 개도 열지 않았으니 포인트도 그대로
+        XCTAssertEqual(collection.wallet.points, 200)
+        XCTAssertTrue(collection.owned.isEmpty)
+    }
+
+    func testBasicPackCannotBeDrawnInBulk() {
+        var generator = SeededGenerator(seed: 13)
+        var collection = CardCollection()
+        XCTAssertTrue(collection.canOpen(.basic, count: 1, on: today, calendar: calendar))
+        XCTAssertFalse(collection.canOpen(.basic, count: 2, on: today, calendar: calendar), "기본 카드팩은 하루 한 번")
+        XCTAssertNil(collection.open(.basic, count: 2, from: pool(), on: today, calendar: calendar, using: &generator))
+        XCTAssertNotNil(collection.open(.basic, count: 1, from: pool(), on: today, calendar: calendar, using: &generator))
+        // 오늘 몫을 쓰면 더는 못 연다
+        XCTAssertFalse(collection.canOpen(.basic, count: 1, on: today, calendar: calendar))
+    }
+
+    func testZeroOrNegativeCountIsRejected() {
+        var generator = SeededGenerator(seed: 14)
+        var collection = CardCollection()
+        collection.wallet.award(.checkIn, key: "a")
+        for count in [0, -1] {
+            XCTAssertFalse(collection.canOpen(.premium, count: count, on: today, calendar: calendar))
+            XCTAssertNil(collection.open(.premium, count: count, from: pool(), on: today, calendar: calendar, using: &generator))
+        }
+        XCTAssertEqual(collection.wallet.points, 200)
+    }
+}
+
+final class LineupBonusTests: XCTestCase {
+    private let game = GameSummary(
+        id: "20261025LGHT0",
+        home: Team(code: "HT", name: "KIA 타이거즈"),
+        away: Team(code: "LG", name: "LG 트윈스"),
+        status: .live
+    )
+
+    private func card(_ name: String, team: String, kind: SeasonStats.Kind = .batter) -> PlayerCard {
+        PlayerCard(
+            playerId: "\(team)-\(name)",
+            name: name,
+            teamCode: team,
+            season: 2026,
+            kind: kind,
+            grade: .four,
+            rating: 0.8
+        )
+    }
+
+    /// 원정(LG) 공격, 홈(KIA) 투수 정해영
+    private func state() -> LiveGameState {
+        var state = LiveGameState()
+        state.battingSide = .away
+        state.defense = [.home: [.pitcher: "정해영"]]
+        return state
+    }
+
+    private func play(_ kind: PlayKind, subject: String, id: String = "e1") -> DetectedEvent {
+        DetectedEvent(id: id, kind: .play(kind), text: "\(subject) \(kind.displayName)", subject: subject, side: .away)
+    }
+
+    private func lineup(of cards: [PlayerCard]) -> CardCollection {
+        var collection = CardCollection()
+        for (index, card) in cards.enumerated() {
+            collection.add(card)
+            collection.setLineup(card.id, at: index)
+        }
+        return collection
+    }
+
+    func testBatterInLineupEarnsPoints() throws {
+        let hitter = card("홍길동", team: "LG")
+        let collection = lineup(of: [hitter])
+        for (kind, points) in [(PlayKind.homeRun, 50), (.triple, 40), (.double, 30), (.single, 20), (.stolenBase, 20), (.run, 15), (.walk, 5)] {
+            let award = try XCTUnwrap(
+                LineupBonus.award(for: play(kind, subject: "홍길동"), game: game, state: state(), collection: collection),
+                "\(kind) 는 포인트를 준다"
+            )
+            XCTAssertEqual(award.points, points)
+            XCTAssertEqual(award.cardId, hitter.id)
+            XCTAssertEqual(award.playerName, "홍길동")
+        }
+        XCTAssertEqual(
+            LineupBonus.award(for: play(.homeRun, subject: "홍길동"), game: game, state: state(), collection: collection)?.displayText,
+            "홍길동 홈런 +50P"
+        )
+    }
+
+    func testPitcherInLineupEarnsStrikeoutPoints() throws {
+        let pitcher = card("정해영", team: "HT", kind: .pitcher)
+        let collection = lineup(of: [pitcher])
+        // 삼진은 타자가 아니라 마운드에 선 투수에게 준다
+        let award = try XCTUnwrap(
+            LineupBonus.award(for: play(.strikeout, subject: "홍길동"), game: game, state: state(), collection: collection)
+        )
+        XCTAssertEqual(award.cardId, pitcher.id)
+        XCTAssertEqual(award.points, 15)
+        XCTAssertEqual(award.title, "삼진")
+    }
+
+    func testPlayersOutsideLineupEarnNothing() {
+        let collection = lineup(of: [card("홍길동", team: "LG")])
+        // 라인업에 없는 선수
+        XCTAssertNil(LineupBonus.award(for: play(.homeRun, subject: "김하늘"), game: game, state: state(), collection: collection))
+        // 같은 이름이라도 다른 팀이면 아니다
+        let otherTeam = lineup(of: [card("홍길동", team: "HT")])
+        XCTAssertNil(LineupBonus.award(for: play(.homeRun, subject: "홍길동"), game: game, state: state(), collection: otherTeam))
+        // 포인트를 주지 않는 상황
+        for kind in [PlayKind.flyOut, .groundOut, .caughtStealing, .error, .pitcherChange] {
+            XCTAssertNil(
+                LineupBonus.award(for: play(kind, subject: "홍길동"), game: game, state: state(), collection: collection),
+                "\(kind) 는 포인트가 없다"
+            )
+        }
+        // 타자 등장은 상황이 아니다
+        let batterUp = DetectedEvent(id: "x", kind: .batterUp(Player(id: "1", name: "홍길동", teamCode: "LG")), text: "타석")
+        XCTAssertNil(LineupBonus.award(for: batterUp, game: game, state: state(), collection: collection))
+    }
+
+    func testSamePlayIsPaidOnce() {
+        var collection = lineup(of: [card("홍길동", team: "LG")])
+        let event = play(.homeRun, subject: "홍길동", id: "home-run-1")
+        let award = LineupBonus.award(for: event, game: game, state: state(), collection: collection)!
+
+        XCTAssertTrue(collection.wallet.award(lineupBonus: award))
+        XCTAssertEqual(collection.wallet.points, 50)
+        XCTAssertFalse(collection.wallet.award(lineupBonus: award), "같은 상황은 한 번만")
+        XCTAssertEqual(collection.wallet.points, 50)
+
+        // 다른 상황이면 또 준다
+        let next = LineupBonus.award(for: play(.single, subject: "홍길동", id: "single-1"), game: game, state: state(), collection: collection)!
+        XCTAssertTrue(collection.wallet.award(lineupBonus: next))
+        XCTAssertEqual(collection.wallet.points, 70)
+    }
+
+    func testWelcomeGiftIsPaidOnce() {
+        var wallet = CardWallet()
+        XCTAssertEqual(CardReward.welcome.points, 3_000)
+        XCTAssertTrue(wallet.award(.welcome, key: "install"))
+        XCTAssertEqual(wallet.points, 3_000)
+        XCTAssertFalse(wallet.award(.welcome, key: "install"), "첫 선물은 한 번만")
+        XCTAssertEqual(wallet.points, 3_000)
+        // 적립 안내 목록에는 첫 선물이 없다
+        XCTAssertFalse(CardReward.recurring.contains(.welcome))
+        XCTAssertEqual(Set(CardReward.recurring), [.dailyVisit, .watchGame, .checkIn])
+    }
+}
+
+final class CardRefundTests: XCTestCase {
+    private func card(_ name: String, grade: CardGrade) -> PlayerCard {
+        PlayerCard(
+            playerId: name,
+            name: name,
+            teamCode: "LG",
+            season: 2026,
+            kind: .batter,
+            grade: grade,
+            rating: 0.5
+        )
+    }
+
+    func testOnlyDuplicatesCanBeRefunded() {
+        let only = card("홍길동", grade: .five)
+        var collection = CardCollection()
+        collection.add(only)
+
+        // 한 장뿐이면 되팔 수 없다 (도감에 남긴다)
+        XCTAssertEqual(collection.spareCount(of: only.id), 0)
+        XCTAssertNil(collection.refund(only.id))
+        XCTAssertEqual(collection.count(of: only.id), 1)
+        XCTAssertEqual(collection.totalRefund, 0)
+        XCTAssertTrue(collection.spares.isEmpty)
+
+        // 두 장이면 한 장을 되팔 수 있다
+        collection.add(only)
+        XCTAssertEqual(collection.spareCount(of: only.id), 1)
+        XCTAssertEqual(collection.totalRefund, CardGrade.five.refundPoints)
+        XCTAssertEqual(collection.refund(only.id), CardGrade.five.refundPoints)
+        XCTAssertEqual(collection.wallet.points, CardGrade.five.refundPoints)
+        XCTAssertEqual(collection.count(of: only.id), 1)
+        XCTAssertNil(collection.refund(only.id))
+    }
+
+    func testRefundPointsFollowGrade() {
+        XCTAssertEqual(CardGrade.one.refundPoints, 5)
+        for (low, high) in zip(CardGrade.allCases, CardGrade.allCases.dropFirst()) {
+            XCTAssertLessThan(low.refundPoints, high.refundPoints, "\(high) 가 더 값지다")
+        }
+        // 카드팩을 사서 되파는 것으로 포인트가 늘어나면 안 된다
+        let premium = CardPackKind.premium
+        let expected = premium.odds.reduce(0.0) { $0 + $1.value * Double($1.key.refundPoints) }
+            * Double(premium.cardCount)
+        XCTAssertLessThan(expected, Double(premium.cost), "고급 카드팩 값보다 환불이 적어야 한다")
+        XCTAssertLessThan(CardGrade.four.refundPoints, CardPackKind.four.cost)
+        XCTAssertLessThan(CardGrade.five.refundPoints, CardPackKind.five.cost)
+    }
+
+    func testRefundSeveralCopiesAndAllSpares() {
+        let star = card("김하늘", grade: .four)
+        let common = card("박바다", grade: .one)
+        var collection = CardCollection()
+        for _ in 0..<4 { collection.add(star) }
+        for _ in 0..<3 { collection.add(common) }
+
+        // 한 번에 여러 장
+        XCTAssertEqual(collection.refund(star.id, count: 2), CardGrade.four.refundPoints * 2)
+        XCTAssertEqual(collection.count(of: star.id), 2)
+        // 가진 장수보다 많이 되팔 수는 없다
+        XCTAssertNil(collection.refund(star.id, count: 5))
+        XCTAssertNil(collection.refund(star.id, count: 0))
+        XCTAssertNil(collection.refund("없는카드"))
+
+        let before = collection.wallet.points
+        let total = collection.totalRefund
+        XCTAssertEqual(total, CardGrade.four.refundPoints + CardGrade.one.refundPoints * 2)
+        XCTAssertEqual(collection.refundAllSpares(), total)
+        XCTAssertEqual(collection.wallet.points, before + total)
+        // 도감은 그대로 (한 장씩 남는다)
+        XCTAssertEqual(collection.count(of: star.id), 1)
+        XCTAssertEqual(collection.count(of: common.id), 1)
+        XCTAssertEqual(collection.owned.count, 2)
+        XCTAssertEqual(collection.refundAllSpares(), 0)
+    }
+
+    func testRefundKeepsLineup() {
+        let star = card("김하늘", grade: .five)
+        var collection = CardCollection()
+        collection.add(star)
+        collection.add(star)
+        collection.setLineup(star.id, at: 2)
+
+        collection.refundAllSpares()
+        // 라인업에 넣은 카드는 남아 있다
+        XCTAssertEqual(collection.lineupCards[2]?.id, star.id)
+        XCTAssertEqual(collection.count(of: star.id), 1)
+    }
+}
+
+final class RelayAwardTests: XCTestCase {
+    /// 2026-10-25 화면에 보인 중계 문장
+    func testParsesWinningPitcherAndDailyMVP() {
+        XCTAssertEqual(RelayAward.parse("승리투수: 올러"), .winningPitcher(name: "올러"))
+        XCTAssertEqual(RelayAward.parse("승리투수 : 올러"), .winningPitcher(name: "올러"))
+        XCTAssertEqual(RelayAward.parse("승리투수: 올러 (1승)"), .winningPitcher(name: "올러"))
+        XCTAssertEqual(RelayAward.parse("데일리 MVP KIA 전상현"), .dailyMVP(teamCode: "HT", name: "전상현"))
+        XCTAssertEqual(RelayAward.parse("데일리 MVP LG 홍창기"), .dailyMVP(teamCode: "LG", name: "홍창기"))
+        XCTAssertEqual(RelayAward.parse("데일리 MVP 삼성 구자욱"), .dailyMVP(teamCode: "SS", name: "구자욱"))
+        XCTAssertEqual(RelayAward.parse("승리투수").map(\.title), nil)
+    }
+
+    func testIgnoresOtherLines() {
+        for line in [
+            "패전투수: 임찬규",
+            "세이브투수: 정해영",
+            "구본혁 : 삼진 아웃",
+            "========================",
+            "데일리 MVP 없는팀 홍길동",
+        ] {
+            XCTAssertNil(RelayAward.parse(line), "\(line) 는 시상이 아니다")
+        }
+    }
+
+    func testAwardPoints() {
+        XCTAssertEqual(RelayAward.winningPitcher(name: "올러").points, 80)
+        XCTAssertEqual(RelayAward.dailyMVP(teamCode: "HT", name: "전상현").points, 100)
+        XCTAssertEqual(KBOTeams.code(forShortName: "KIA"), "HT")
+        XCTAssertEqual(KBOTeams.code(forShortName: "키움"), "WO")
+        XCTAssertNil(KBOTeams.code(forShortName: "타이거즈"))
+    }
+
+    func testOnlyLineupPlayersOnTheWinningTeamGetPaid() throws {
+        // KIA 5 : 2 LG (홈 KIA 승)
+        let game = GameSummary(
+            id: "20261025LGHT0",
+            home: Team(code: "HT", name: "KIA 타이거즈"),
+            away: Team(code: "LG", name: "LG 트윈스"),
+            homeScore: 5,
+            awayScore: 2,
+            status: .finished
+        )
+        func card(_ name: String, team: String) -> PlayerCard {
+            PlayerCard(playerId: "\(team)-\(name)", name: name, teamCode: team, season: 2026, kind: .pitcher, grade: .four, rating: 0.8)
+        }
+        var collection = CardCollection()
+        let winner = card("올러", team: "HT")
+        let mvp = card("전상현", team: "HT")
+        let loser = card("임찬규", team: "LG")
+        for (index, item) in [winner, mvp, loser].enumerated() {
+            collection.add(item)
+            collection.setLineup(item.id, at: index)
+        }
+
+        let win = try XCTUnwrap(LineupBonus.award(forRelayText: "승리투수: 올러", entryId: "1", game: game, collection: collection))
+        XCTAssertEqual(win.points, 80)
+        XCTAssertEqual(win.displayText, "올러 승리투수 +80P")
+
+        let daily = try XCTUnwrap(LineupBonus.award(forRelayText: "데일리 MVP KIA 전상현", entryId: "2", game: game, collection: collection))
+        XCTAssertEqual(daily.points, 100)
+        XCTAssertEqual(daily.playerName, "전상현")
+
+        // 진 팀 투수는 승리투수가 될 수 없다
+        XCTAssertNil(LineupBonus.award(forRelayText: "승리투수: 임찬규", entryId: "3", game: game, collection: collection))
+        // 라인업에 없는 선수
+        XCTAssertNil(LineupBonus.award(forRelayText: "데일리 MVP KIA 김도영", entryId: "4", game: game, collection: collection))
+
+        // 점수를 모르면 승리투수를 가릴 수 없다
+        var tied = game
+        tied.homeScore = 2
+        XCTAssertNil(LineupBonus.award(forRelayText: "승리투수: 올러", entryId: "5", game: tied, collection: collection))
+        XCTAssertNil(LineupBonus.winningSide(of: tied))
+    }
+
+    func testSameAwardIsPaidOnce() {
+        let game = GameSummary(
+            id: "g1",
+            home: Team(code: "HT", name: "KIA 타이거즈"),
+            away: Team(code: "LG", name: "LG 트윈스"),
+            homeScore: 5,
+            awayScore: 2,
+            status: .finished
+        )
+        var collection = CardCollection()
+        let card = PlayerCard(playerId: "HT-올러", name: "올러", teamCode: "HT", season: 2026, kind: .pitcher, grade: .five, rating: 0.9)
+        collection.add(card)
+        collection.setLineup(card.id, at: 0)
+
+        let award = LineupBonus.award(forRelayText: "승리투수: 올러", entryId: "1", game: game, collection: collection)!
+        XCTAssertTrue(collection.wallet.award(lineupBonus: award))
+        XCTAssertFalse(collection.wallet.award(lineupBonus: award))
+        XCTAssertEqual(collection.wallet.points, 80)
+    }
+}
