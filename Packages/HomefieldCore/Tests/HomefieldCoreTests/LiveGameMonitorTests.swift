@@ -58,3 +58,39 @@ private struct InningProvider: GameDataProvider {
         return RelaySnapshot(game: game, currentInning: target, entries: entries)
     }
 }
+
+final class PregameLockTests: XCTestCase {
+    private let start = Date(timeIntervalSince1970: 1_790_000_000)
+
+    private func game(_ status: GameStatus, startTime: Date?) -> GameSummary {
+        GameSummary(
+            id: "20261025LGHT0",
+            home: Team(code: "HT", name: "KIA"),
+            away: Team(code: "LG", name: "LG"),
+            status: status,
+            startTime: startTime
+        )
+    }
+
+    func testScheduledGameOpensThirtyMinutesBeforeStart() {
+        let scheduled = game(.scheduled, startTime: start)
+        XCTAssertTrue(scheduled.isPregameLocked(now: start.addingTimeInterval(-31 * 60)))
+        XCTAssertFalse(scheduled.isPregameLocked(now: start.addingTimeInterval(-30 * 60)), "30분 전부터 열린다")
+        XCTAssertFalse(scheduled.isPregameLocked(now: start.addingTimeInterval(-29 * 60)))
+        XCTAssertFalse(scheduled.isPregameLocked(now: start))
+        XCTAssertFalse(scheduled.isPregameLocked(now: start.addingTimeInterval(3600)))
+        XCTAssertEqual(scheduled.pregameOpensAt, start.addingTimeInterval(-30 * 60))
+    }
+
+    func testOtherStatusesAreNeverLocked() {
+        for status in [GameStatus.live, .finished, .cancelled, .unknown] {
+            XCTAssertFalse(
+                game(status, startTime: start).isPregameLocked(now: start.addingTimeInterval(-3600)),
+                "\(status) 는 가리지 않는다"
+            )
+        }
+        // 시작 시각을 모르면 가리지 않는다
+        XCTAssertFalse(game(.scheduled, startTime: nil).isPregameLocked(now: start))
+        XCTAssertNil(game(.scheduled, startTime: nil).pregameOpensAt)
+    }
+}

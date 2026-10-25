@@ -77,8 +77,8 @@ final class LiveGameSession {
         AudioDirector.activateSession()
         library.register(team: game.home)
         library.register(team: game.away)
-        // 이미 끝난 경기는 잠금화면 실시간 중계를 켜지 않는다
-        if settings.liveActivityEnabled, game.status != .finished, game.status != .cancelled {
+        // 이미 끝난 경기와 아직 열리지 않은 경기(시작 30분 전)는 잠금화면 실시간 중계를 켜지 않는다
+        if settings.liveActivityEnabled, game.status != .finished, game.status != .cancelled, !game.isPregameLocked() {
             liveActivity.start(game: game, favoriteCode: settings.favoriteTeamCode, state: activityState())
             keeper.start()
         }

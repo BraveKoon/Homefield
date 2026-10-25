@@ -76,6 +76,20 @@ public struct GameSummary: Identifiable, Hashable, Codable, Sendable {
     public func team(for side: TeamSide) -> Team {
         side == .home ? home : away
     }
+
+    /// 경기 시작 이만큼 전부터 점수판·중계를 연다
+    public static let pregameLead: TimeInterval = 30 * 60
+
+    /// 아직 열리지 않은 경기인지 (시작 30분 전까지는 중계 데이터가 없다)
+    public func isPregameLocked(now: Date = Date()) -> Bool {
+        guard status == .scheduled, let startTime else { return false }
+        return now < startTime.addingTimeInterval(-Self.pregameLead)
+    }
+
+    /// 점수판·중계가 열리는 시각
+    public var pregameOpensAt: Date? {
+        startTime?.addingTimeInterval(-Self.pregameLead)
+    }
 }
 
 /// 이닝별 점수판: 이닝마다 점수, 그리고 R(득점)·H(안타)·E(실책)·B(볼넷)

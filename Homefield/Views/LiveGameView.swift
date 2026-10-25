@@ -14,10 +14,24 @@ struct LiveGameView: View {
     @State private var expandedHalves: Set<String> = []
     /// 사용자가 직접 펼치거나 접은 투구 묶음
     @State private var pitchToggles: [String: Bool] = [:]
+    /// 경기 시작 30분 전이 지났는지 보려고 흐르는 시각
+    @State private var now = Date()
+
+    /// 시작 30분 전까지는 점수판 아래를 가리고 중계를 받지 않는다
+    private var isPregameLocked: Bool {
+        game.isPregameLocked(now: now)
+    }
 
     var body: some View {
         List {
-            if let session {
+            if isPregameLocked {
+                Section {
+                    Scoreboard(game: game, state: LiveGameState())
+                        .listRowInsets(EdgeInsets())
+                    PregameLockedView(game: game)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 12, trailing: 12))
+                }
+            } else if let session {
                 Section {
                     Scoreboard(game: session.game, state: session.gameState)
                         .listRowInsets(EdgeInsets())
@@ -132,20 +146,17 @@ struct LiveGameView: View {
                 )
             }
         }
-        .onAppear {
-            guard session == nil else { return }
-            let session = LiveGameSession(
-                game: game,
-                provider: settings.makeProvider(),
-                settings: settings,
-                library: library,
-                director: director
-            )
-            self.session = session
-            session.start()
-            // 경기를 보면 카드 포인트 (경기당 한 번)
-            cards.awardWatching(gameId: game.id)
-            expandedHalves = [session.currentHalfKey]
+        .onAppear(perform: startIfOpen)
+        .onChange(of: isPregameLocked) { _, locked in
+            // 시작 30분 전이 되면 바로 중계를 받기 시작한다
+            if !locked { startIfOpen() }
+        }
+        .task {
+            // 30초마다 잠금이 풀렸는지 본다
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                now = Date()
+            }
         }
         .onDisappear {
             session?.stop()
@@ -161,6 +172,23 @@ private extension LiveGameView {
             get: { pitchToggles[id] ?? live },
             set: { pitchToggles[id] = $0 }
         )
+    }
+
+    /// 경기가 열렸으면 중계를 받기 시작한다
+    func startIfOpen() {
+        guard session == nil, !isPregameLocked else { return }
+        let session = LiveGameSession(
+            game: game,
+            provider: settings.makeProvider(),
+            settings: settings,
+            library: library,
+            director: director
+        )
+        self.session = session
+        session.start()
+        // 경기를 보면 카드 포인트 (경기당 한 번)
+        cards.awardWatching(gameId: game.id)
+        expandedHalves = [session.currentHalfKey]
     }
 
     func expansion(for key: String) -> Binding<Bool> {
@@ -365,6 +393,63 @@ private struct Scoreboard: View {
                 .contentTransition(.numericText())
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+/// 시작 30분 전까지 점수판 아래를 흐릿하게 가린다 (아직 중계·기록이 없다)
+private struct PregameLockedView: View {
+    let game: GameSummary
+
+    var body: some View {
+        ZStack {
+            placeholder
+                .blur(radius: 6)
+                .opacity(0.4)
+            VStack(spacing: 6) {
+                Image(systemName: "clock.fill")
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
+                Text("경기 전")
+                    .font(.title3.weight(.heavy))
+                Text(detail)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 12)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 18)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("경기 전. \(detail)")
+    }
+
+    /// 이닝별 점수판과 수비 맵이 들어갈 자리
+    private var placeholder: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 4) {
+                ForEach(0..<12, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(.secondary.opacity(0.5))
+                        .frame(height: 34)
+                }
+            }
+            RoundedRectangle(cornerRadius: 14)
+                .fill(.secondary.opacity(0.35))
+                .frame(height: 120)
+        }
+        .padding(.horizontal, 10)
+        .allowsHitTesting(false)
+    }
+
+    private var detail: String {
+        guard let startTime = game.startTime, let opensAt = game.pregameOpensAt else {
+            return "경기가 시작되면 점수판과 중계가 나옵니다"
+        }
+        let start = startTime.formatted(date: .omitted, time: .shortened)
+        let opens = opensAt.formatted(date: .omitted, time: .shortened)
+        return "\(start) 경기 시작 · \(opens)부터 점수판과 중계가 열립니다"
     }
 }
 
