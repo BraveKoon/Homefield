@@ -5,6 +5,7 @@ struct LiveGameView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(SongLibrary.self) private var library
     @Environment(AudioDirector.self) private var director
+    @Environment(CardStore.self) private var cards
     let game: GameSummary
 
     @State private var session: LiveGameSession?
@@ -42,6 +43,9 @@ struct LiveGameView: View {
                 Section("타석") {
                     if let batter = session.currentBatter {
                         BatterCard(batter: batter) { editingBatter = batter }
+                        if let card = cards.lineupCard(for: batter) {
+                            LineupCardRow(card: card)
+                        }
                     } else {
                         Text("다음 타자를 기다리는 중…")
                             .foregroundStyle(.secondary)
@@ -139,6 +143,8 @@ struct LiveGameView: View {
             )
             self.session = session
             session.start()
+            // 경기를 보면 카드 포인트 (경기당 한 번)
+            cards.awardWatching(gameId: game.id)
             expandedHalves = [session.currentHalfKey]
         }
         .onDisappear {
@@ -359,6 +365,29 @@ private struct Scoreboard: View {
                 .contentTransition(.numericText())
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+/// 응원 라인업에 넣은 선수가 타석에 서면 그 카드를 보여 준다
+private struct LineupCardRow: View {
+    let card: PlayerCard
+
+    var body: some View {
+        HStack(spacing: 14) {
+            PlayerCardView(card: card, width: 92)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("내 응원 라인업")
+                    .font(.caption.weight(.black))
+                    .foregroundStyle(.secondary)
+                Text("\(card.grade.displayName) \(card.name)")
+                    .font(.headline)
+                Text(card.grade.stars)
+                    .font(.subheadline.weight(.black))
+                    .foregroundStyle(card.grade.color)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 4)
     }
 }
 

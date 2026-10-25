@@ -58,6 +58,15 @@ struct GameListView: View {
                 if isLoading && games.isEmpty { ProgressView() }
             }
             .navigationTitle("홈구장")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        StandingsView()
+                    } label: {
+                        Label("순위", systemImage: "list.number")
+                    }
+                }
+            }
             .navigationDestination(for: GameSummary.self) { game in
                 LiveGameView(game: game)
             }

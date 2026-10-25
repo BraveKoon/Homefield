@@ -12,49 +12,47 @@ struct StandingsView: View {
     @State private var updatedAt: Date?
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    if let errorMessage {
-                        Label(errorMessage, systemImage: "exclamationmark.triangle")
-                            .font(.footnote)
-                            .foregroundStyle(.red)
-                            .cardStyle(padding: 12)
-                    }
-
-                    if !standings.isEmpty {
-                        VStack(spacing: 0) {
-                            header
-                            ForEach(standings) { standing in
-                                Divider()
-                                StandingRow(standing: standing, isFavorite: standing.teamCode == settings.favoriteTeamCode)
-                            }
-                        }
-                        .padding(.vertical, 6)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-
-                        if let updatedAt {
-                            Text("네이버 스포츠 기준 · \(updatedAt.formatted(date: .omitted, time: .shortened)) 업데이트 · 당겨서 새로고침")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    } else if !isLoading && errorMessage == nil {
-                        Text("순위 정보가 없어요")
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 40)
-                    }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                if let errorMessage {
+                    Label(errorMessage, systemImage: "exclamationmark.triangle")
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .cardStyle(padding: 12)
                 }
-                .padding(16)
+
+                if !standings.isEmpty {
+                    VStack(spacing: 0) {
+                        header
+                        ForEach(standings) { standing in
+                            Divider()
+                            StandingRow(standing: standing, isFavorite: standing.teamCode == settings.favoriteTeamCode)
+                        }
+                    }
+                    .padding(.vertical, 6)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+                    if let updatedAt {
+                        Text("네이버 스포츠 기준 · \(updatedAt.formatted(date: .omitted, time: .shortened)) 업데이트 · 당겨서 새로고침")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } else if !isLoading && errorMessage == nil {
+                    Text("순위 정보가 없어요")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                }
             }
-            .background { ThemedBackground() }
-            .overlay {
-                if isLoading && standings.isEmpty { ProgressView() }
-            }
-            .navigationTitle("\(String(season)) 순위")
-            .refreshable { await Task { await load() }.value }
-            .task { await load() }
+            .padding(16)
         }
+        .background { ThemedBackground() }
+        .overlay {
+            if isLoading && standings.isEmpty { ProgressView() }
+        }
+        .navigationTitle("\(String(season)) 순위")
+        .refreshable { await Task { await load() }.value }
+        .task { await load() }
     }
 
     private var header: some View {

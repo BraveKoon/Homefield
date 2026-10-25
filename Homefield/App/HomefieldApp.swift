@@ -7,6 +7,7 @@ struct HomefieldApp: App {
     @State private var library: SongLibrary
     @State private var director: AudioDirector
     @State private var attendance: AttendanceStore
+    @State private var cards: CardStore
 
     init() {
         let settings = AppSettings()
@@ -15,6 +16,7 @@ struct HomefieldApp: App {
         _library = State(initialValue: library)
         _director = State(initialValue: AudioDirector(settings: settings, library: library))
         _attendance = State(initialValue: AttendanceStore())
+        _cards = State(initialValue: CardStore())
     }
 
     var body: some Scene {
@@ -24,6 +26,7 @@ struct HomefieldApp: App {
                 .environment(library)
                 .environment(director)
                 .environment(attendance)
+                .environment(cards)
         }
     }
 }
@@ -36,8 +39,8 @@ struct RootView: View {
         TabView {
             GameListView()
                 .tabItem { Label("경기", systemImage: "baseball") }
-            StandingsView()
-                .tabItem { Label("순위", systemImage: "list.number") }
+            CardsView()
+                .tabItem { Label("카드", systemImage: "rectangle.on.rectangle.angled") }
             AttendanceView()
                 .tabItem { Label("직관", systemImage: "sportscourt") }
             SongLibraryView()
