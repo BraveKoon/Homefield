@@ -460,6 +460,13 @@ private struct LineupPickerView: View {
     let slot: Int
     let store: CardStore
 
+    @AppStorage("cardSortField") private var sortField = CardSortField.grade.rawValue
+    @AppStorage("cardSortDescending") private var isDescending = true
+
+    private var sort: CardSort {
+        CardSort(field: CardSortField(rawValue: sortField) ?? .grade, isDescending: isDescending)
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -469,25 +476,17 @@ private struct LineupPickerView: View {
                         dismiss()
                     }
                 }
-                ForEach(store.collection.owned) { card in
+                ForEach(store.collection.owned(sortedBy: sort)) { card in
                     Button {
                         store.setLineup(card.id, at: slot)
                         dismiss()
                     } label: {
-                        HStack(spacing: 12) {
-                            Text(card.grade.stars)
-                                .font(.caption.weight(.black))
-                                .foregroundStyle(card.grade.color)
-                                .frame(width: 44, alignment: .leading)
-                            TeamBadge(code: card.teamCode, size: 28)
-                            Text(card.name).font(.body.weight(.semibold))
-                            Spacer()
-                            if store.collection.count(of: card.id) > 1 {
-                                Text("×\(store.collection.count(of: card.id))")
-                                    .font(.caption.monospacedDigit())
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
+                        CardPickerRow(
+                            card: card,
+                            copies: store.collection.count(of: card.id),
+                            registeredSlot: store.collection.lineupSlot(of: card.id),
+                            currentSlot: slot
+                        )
                     }
                 }
             }
@@ -497,11 +496,79 @@ private struct LineupPickerView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("닫기") { dismiss() }
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    SortMenu(sortField: $sortField, isDescending: $isDescending)
+                }
             }
             .overlay {
                 if store.collection.owned.isEmpty {
                     ContentUnavailableView("아직 카드가 없어요", systemImage: "rectangle.on.rectangle", description: Text("카드팩을 열어 카드를 모아 주세요."))
                 }
+            }
+        }
+    }
+}
+
+/// 정렬 기준(등급·팀·가나다)과 높은순·낮은순을 고른다
+private struct SortMenu: View {
+    @Binding var sortField: String
+    @Binding var isDescending: Bool
+
+    private var field: CardSortField {
+        CardSortField(rawValue: sortField) ?? .grade
+    }
+
+    var body: some View {
+        Menu {
+            Picker("정렬 기준", selection: $sortField) {
+                ForEach(CardSortField.allCases) { item in
+                    Text(item.displayName).tag(item.rawValue)
+                }
+            }
+            Picker("순서", selection: $isDescending) {
+                Text(field.orderName(descending: true)).tag(true)
+                Text(field.orderName(descending: false)).tag(false)
+            }
+        } label: {
+            Label(CardSort(field: field, isDescending: isDescending).displayName, systemImage: "arrow.up.arrow.down")
+                .font(.footnote.weight(.semibold))
+        }
+    }
+}
+
+/// 라인업에 넣을 카드 한 줄. 이미 라인업에 있으면 '등록됨'.
+private struct CardPickerRow: View {
+    let card: PlayerCard
+    let copies: Int
+    let registeredSlot: Int?
+    let currentSlot: Int
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(card.grade.stars)
+                .font(.caption.weight(.black))
+                .foregroundStyle(card.grade.color)
+                .frame(width: 44, alignment: .leading)
+            TeamBadge(code: card.teamCode, size: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(card.name).font(.body.weight(.semibold))
+                Text(TeamTheme.shortName(for: card.teamCode))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            if copies > 1 {
+                Text("×\(copies)")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            if let registeredSlot {
+                Text(registeredSlot == currentSlot ? "이 칸" : "\(registeredSlot + 1)번 등록됨")
+                    .font(.caption2.weight(.bold))
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(registeredSlot == currentSlot ? Color.accentColor : Color.secondary.opacity(0.25), in: Capsule())
+                    .foregroundStyle(registeredSlot == currentSlot ? .white : .secondary)
             }
         }
     }

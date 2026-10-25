@@ -264,3 +264,82 @@ public extension CardWallet {
         return coupon
     }
 }
+
+/// 카드 목록을 어떤 기준으로 늘어놓을지
+public enum CardSortField: String, Codable, CaseIterable, Sendable, Identifiable {
+    case grade
+    case team
+    case name
+
+    public var id: String { rawValue }
+
+    public var displayName: String {
+        switch self {
+        case .grade: "등급"
+        case .team: "팀"
+        case .name: "가나다"
+        }
+    }
+
+    /// 내림차순·오름차순 버튼에 쓸 이름
+    public func orderName(descending: Bool) -> String {
+        switch self {
+        case .grade: descending ? "높은순" : "낮은순"
+        case .team, .name: descending ? "역순" : "가나다순"
+        }
+    }
+}
+
+public struct CardSort: Codable, Hashable, Sendable {
+    public var field: CardSortField
+    public var isDescending: Bool
+
+    public init(field: CardSortField = .grade, isDescending: Bool = true) {
+        self.field = field
+        self.isDescending = isDescending
+    }
+
+    public var displayName: String {
+        "\(field.displayName) \(field.orderName(descending: isDescending))"
+    }
+
+    /// 한글 이름은 글자 순서가 그대로 가나다 순서라 그냥 견주어도 된다
+    public func apply(to cards: [PlayerCard]) -> [PlayerCard] {
+        cards.sorted(by: isBefore)
+    }
+
+    private func isBefore(_ left: PlayerCard, _ right: PlayerCard) -> Bool {
+        switch field {
+        case .grade:
+            if left.grade != right.grade { return isDescending ? left.grade > right.grade : left.grade < right.grade }
+            if left.rating != right.rating { return isDescending ? left.rating > right.rating : left.rating < right.rating }
+            return left.name < right.name
+        case .team:
+            let leftTeam = Self.teamName(left.teamCode)
+            let rightTeam = Self.teamName(right.teamCode)
+            if leftTeam != rightTeam { return isDescending ? leftTeam > rightTeam : leftTeam < rightTeam }
+            // 같은 팀 안에서는 등급 높은 선수를 위로
+            if left.grade != right.grade { return left.grade > right.grade }
+            return left.name < right.name
+        case .name:
+            if left.name != right.name { return isDescending ? left.name > right.name : left.name < right.name }
+            return left.id < right.id
+        }
+    }
+
+    static func teamName(_ code: String) -> String {
+        KBOTeams.name(for: code) ?? code
+    }
+}
+
+public extension CardCollection {
+    /// 가진 카드를 고른 기준으로 늘어놓는다
+    func owned(sortedBy sort: CardSort) -> [PlayerCard] {
+        sort.apply(to: owned)
+    }
+
+    /// 이 카드가 라인업 몇 번 칸에 들어가 있는지 (없으면 nil)
+    func lineupSlot(of cardId: String) -> Int? {
+        lineupCards.firstIndex { $0?.id == cardId }
+    }
+}
