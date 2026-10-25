@@ -392,3 +392,95 @@ final class CardCouponTests: XCTestCase {
         }
     }
 }
+
+final class CardSortTests: XCTestCase {
+    private func card(_ name: String, team: String, grade: CardGrade, rating: Double = 0.5) -> PlayerCard {
+        PlayerCard(
+            playerId: "\(team)-\(name)",
+            name: name,
+            teamCode: team,
+            season: 2026,
+            kind: .batter,
+            grade: grade,
+            rating: rating
+        )
+    }
+
+    /// LG 트윈스, KIA 타이거즈, 두산 베어스
+    private var cards: [PlayerCard] {
+        [
+            card("홍길동", team: "LG", grade: .three),
+            card("김하늘", team: "HT", grade: .five),
+            card("박바다", team: "OB", grade: .one),
+            card("가나다", team: "LG", grade: .five, rating: 0.9),
+        ]
+    }
+
+    func testGradeSort() {
+        let high = CardSort(field: .grade, isDescending: true).apply(to: cards)
+        XCTAssertEqual(high.map(\.grade), [.five, .five, .three, .one])
+        // 같은 5성이면 점수 높은 쪽이 위
+        XCTAssertEqual(high.first?.name, "가나다")
+
+        let low = CardSort(field: .grade, isDescending: false).apply(to: cards)
+        XCTAssertEqual(low.map(\.grade), [.one, .three, .five, .five])
+        XCTAssertEqual(low.last?.name, "가나다")
+    }
+
+    func testTeamSort() {
+        let ascending = CardSort(field: .team, isDescending: false).apply(to: cards)
+        // 팀 이름 순: KIA 타이거즈, LG 트윈스, 두산 베어스
+        XCTAssertEqual(ascending.map { CardSort.teamName($0.teamCode) }, ["KIA 타이거즈", "LG 트윈스", "LG 트윈스", "두산 베어스"])
+        // 같은 팀 안에서는 등급이 높은 선수가 위
+        XCTAssertEqual(ascending[1].grade, .five)
+        XCTAssertEqual(ascending[2].grade, .three)
+
+        let descending = CardSort(field: .team, isDescending: true).apply(to: cards)
+        XCTAssertEqual(descending.first.map { CardSort.teamName($0.teamCode) }, "두산 베어스")
+        // 뒤집어도 같은 팀 안에서는 등급 높은 선수가 위
+        XCTAssertEqual(descending[1].grade, .five)
+    }
+
+    func testNameSort() {
+        let ascending = CardSort(field: .name, isDescending: false).apply(to: cards)
+        XCTAssertEqual(ascending.map(\.name), ["가나다", "김하늘", "박바다", "홍길동"])
+        let descending = CardSort(field: .name, isDescending: true).apply(to: cards)
+        XCTAssertEqual(descending.map(\.name), ["홍길동", "박바다", "김하늘", "가나다"])
+    }
+
+    func testSortNameAndDefault() {
+        XCTAssertEqual(CardSort().field, .grade)
+        XCTAssertTrue(CardSort().isDescending)
+        XCTAssertEqual(CardSort(field: .grade, isDescending: true).displayName, "등급 높은순")
+        XCTAssertEqual(CardSort(field: .grade, isDescending: false).displayName, "등급 낮은순")
+        XCTAssertEqual(CardSort(field: .name, isDescending: false).displayName, "가나다 가나다순")
+        XCTAssertEqual(CardSort(field: .team, isDescending: true).displayName, "팀 역순")
+    }
+
+    func testOwnedSortedAndLineupSlot() {
+        var collection = CardCollection()
+        for card in cards { collection.add(card) }
+        let byName = collection.owned(sortedBy: CardSort(field: .name, isDescending: false))
+        XCTAssertEqual(byName.map(\.name), ["가나다", "김하늘", "박바다", "홍길동"])
+
+        // 라인업에 넣은 카드는 몇 번 칸인지 알 수 있다
+        let picked = cards[1]
+        XCTAssertNil(collection.lineupSlot(of: picked.id))
+        collection.setLineup(picked.id, at: 4)
+        XCTAssertEqual(collection.lineupSlot(of: picked.id), 4)
+        collection.setLineup(nil, at: 4)
+        XCTAssertNil(collection.lineupSlot(of: picked.id))
+    }
+
+    func testSortKeepsEveryCard() {
+        var collection = CardCollection()
+        for card in cards { collection.add(card) }
+        for field in CardSortField.allCases {
+            for descending in [true, false] {
+                let sorted = CardSort(field: field, isDescending: descending).apply(to: collection.owned)
+                XCTAssertEqual(Set(sorted.map(\.id)), Set(cards.map(\.id)), "\(field) \(descending) 에서 카드가 빠졌다")
+                XCTAssertEqual(sorted.count, cards.count)
+            }
+        }
+    }
+}
