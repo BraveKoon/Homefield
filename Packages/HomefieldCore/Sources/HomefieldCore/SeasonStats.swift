@@ -38,6 +38,25 @@ public struct SeasonStats: Codable, Hashable, Sendable {
         self.updatedAt = updatedAt
     }
 
+    /// "161 1/3" 처럼 적힌 이닝을 숫자로 (161.333…)
+    public var inningsPitched: Double? {
+        guard let innings else { return nil }
+        var total = 0.0
+        var found = false
+        for part in innings.split(whereSeparator: { $0 == " " || $0 == "\u{00A0}" }) {
+            if part.contains("/") {
+                let numbers = part.split(separator: "/").compactMap { Double($0) }
+                guard numbers.count == 2, numbers[1] != 0 else { continue }
+                total += numbers[0] / numbers[1]
+                found = true
+            } else if let value = Double(part) {
+                total += value
+                found = true
+            }
+        }
+        return found ? total : nil
+    }
+
     /// 날짜를 뺀 기록이 같은지 (같으면 다시 저장하지 않는다)
     public func sameNumbers(as other: SeasonStats) -> Bool {
         var copy = other
