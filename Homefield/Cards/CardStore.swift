@@ -74,6 +74,31 @@ final class CardStore {
         save()
     }
 
+    // MARK: 중복 카드 환불
+
+    /// 중복을 모두 되팔면 받는 포인트
+    var totalRefund: Int { collection.totalRefund }
+
+    func spareCount(of cardId: String) -> Int {
+        collection.spareCount(of: cardId)
+    }
+
+    /// 중복 카드를 되팔고 받은 포인트
+    @discardableResult
+    func refund(_ cardId: String, count: Int = 1) -> Int? {
+        guard let points = collection.refund(cardId, count: count) else { return nil }
+        save()
+        return points
+    }
+
+    /// 중복 카드를 모두 되팔고 받은 포인트
+    @discardableResult
+    func refundAllSpares() -> Int {
+        let points = collection.refundAllSpares()
+        if points > 0 { save() }
+        return points
+    }
+
     /// 다른 경기를 보기 시작하면 이 경기 보너스를 0으로
     func resetGameBonus() {
         gameBonus = 0

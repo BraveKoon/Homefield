@@ -724,6 +724,8 @@ private struct CollectionBrowser: View {
 
     @State private var team: String?
     @State private var grade: CardGrade?
+    @State private var isConfirmingRefund = false
+    @State private var refunded: Int?
 
     private var columns: [GridItem] {
         [GridItem(.adaptive(minimum: 104), spacing: 10)]
@@ -731,6 +733,7 @@ private struct CollectionBrowser: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            refundBar
             filters
             if let pool = store.pool {
                 let cards = filtered(pool.cards)
@@ -738,6 +741,7 @@ private struct CollectionBrowser: View {
                     ForEach(cards) { card in
                         if store.collection.has(card.id) {
                             let mine = store.collection.cards[card.id] ?? card
+                            let spare = store.spareCount(of: card.id)
                             PlayerCardView(card: mine, width: 104)
                                 .overlay(alignment: .bottomTrailing) {
                                     let count = store.collection.count(of: card.id)
@@ -749,6 +753,24 @@ private struct CollectionBrowser: View {
                                             .background(.black.opacity(0.6), in: Capsule())
                                             .foregroundStyle(.white)
                                             .padding(5)
+                                    }
+                                }
+                                .contextMenu {
+                                    if spare > 0 {
+                                        Button {
+                                            refunded = store.refund(card.id, count: 1)
+                                        } label: {
+                                            Label("1장 환불 +\(mine.grade.refundPoints)P", systemImage: "arrow.uturn.left.circle")
+                                        }
+                                        if spare > 1 {
+                                            Button {
+                                                refunded = store.refund(card.id, count: spare)
+                                            } label: {
+                                                Label("중복 \(spare)장 환불 +\(mine.grade.refundPoints * spare)P", systemImage: "tray.full")
+                                            }
+                                        }
+                                    } else {
+                                        Text("중복 카드만 환불할 수 있어요")
                                     }
                                 }
                         } else {
@@ -764,6 +786,50 @@ private struct CollectionBrowser: View {
             }
         }
         .onAppear { if team == nil { team = favorite } }
+        .confirmationDialog(
+            "중복 카드를 모두 환불할까요?",
+            isPresented: $isConfirmingRefund,
+            titleVisibility: .visible
+        ) {
+            Button("환불 +\(store.totalRefund)P") { refunded = store.refundAllSpares() }
+            Button("그만두기", role: .cancel) {}
+        } message: {
+            Text("도감이 비지 않게 카드마다 한 장은 남깁니다. 응원 라인업에 넣은 카드도 그대로 남습니다.")
+        }
+        .alert("환불", isPresented: Binding(get: { refunded != nil }, set: { if !$0 { refunded = nil } })) {
+            Button("확인") { refunded = nil }
+        } message: {
+            Text(refunded.map { "\($0) 포인트를 받았어요." } ?? "")
+        }
+    }
+
+    /// 중복 카드 환불 (등급이 높을수록 많이 돌려받는다)
+    @ViewBuilder
+    private var refundBar: some View {
+        let total = store.totalRefund
+        if total > 0 {
+            Button {
+                isConfirmingRefund = true
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "arrow.uturn.left.circle.fill")
+                        .foregroundStyle(.pink)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("중복 카드 \(store.collection.spares.reduce(0) { $0 + store.spareCount(of: $1.id) })장 환불")
+                            .font(.subheadline.weight(.bold))
+                        Text("5성 150P · 4성 60P · 3성 25P · 2성 10P · 1성 5P")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                    Text("+\(total)P")
+                        .font(.subheadline.weight(.black).monospacedDigit())
+                        .foregroundStyle(.pink)
+                }
+                .cardStyle(padding: 12)
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private var filters: some View {

@@ -54,6 +54,12 @@ public struct CardWallet: Codable, Hashable, Sendable {
         insert(key: "\(reward.rawValue)-\(key)", points: reward.points)
     }
 
+    /// 열쇠 없이 포인트를 넣는다 (중복 카드 환불처럼 여러 번 할 수 있는 것)
+    mutating func insert(points amount: Int) {
+        guard amount > 0 else { return }
+        points += amount
+    }
+
     /// 처음 보는 열쇠면 포인트를 넣는다 (같은 적립을 두 번 주지 않는다)
     @discardableResult
     mutating func insert(key: String, points amount: Int) -> Bool {
@@ -379,5 +385,56 @@ public extension CardCollection {
     /// 이 카드가 라인업 몇 번 칸에 들어가 있는지 (없으면 nil)
     func lineupSlot(of cardId: String) -> Int? {
         lineupCards.firstIndex { $0?.id == cardId }
+    }
+}
+
+public extension CardGrade {
+    /// 중복 카드를 되팔 때 돌려받는 포인트.
+    /// 카드팩 값보다 한참 낮게 둬서, 뽑고 되파는 것으로 포인트가 늘어나지 않게 한다.
+    var refundPoints: Int {
+        switch self {
+        case .one: 5
+        case .two: 10
+        case .three: 25
+        case .four: 60
+        case .five: 150
+        }
+    }
+}
+
+public extension CardCollection {
+    /// 되팔 수 있는 장수 (도감에 한 장은 남긴다)
+    func spareCount(of id: String) -> Int {
+        max(count(of: id) - 1, 0)
+    }
+
+    /// 중복으로 가진 카드
+    var spares: [PlayerCard] {
+        owned.filter { spareCount(of: $0.id) > 0 }
+    }
+
+    /// 중복을 모두 되팔면 받는 포인트
+    var totalRefund: Int {
+        spares.reduce(0) { $0 + $1.grade.refundPoints * spareCount(of: $1.id) }
+    }
+
+    /// 중복 카드를 되팔고 받은 포인트. 중복이 없으면 nil.
+    @discardableResult
+    mutating func refund(_ cardId: String, count: Int = 1) -> Int? {
+        guard count >= 1, let card = cards[cardId], spareCount(of: cardId) >= count else { return nil }
+        let points = card.grade.refundPoints * count
+        counts[cardId] = self.count(of: cardId) - count
+        wallet.insert(points: points)
+        return points
+    }
+
+    /// 중복 카드를 모두 되팔고 받은 포인트
+    @discardableResult
+    mutating func refundAllSpares() -> Int {
+        var total = 0
+        for card in spares {
+            total += refund(card.id, count: spareCount(of: card.id)) ?? 0
+        }
+        return total
     }
 }

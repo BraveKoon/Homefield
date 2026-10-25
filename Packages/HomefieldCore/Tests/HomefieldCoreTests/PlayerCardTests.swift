@@ -686,3 +686,93 @@ final class LineupBonusTests: XCTestCase {
         XCTAssertEqual(Set(CardReward.recurring), [.dailyVisit, .watchGame, .checkIn])
     }
 }
+
+final class CardRefundTests: XCTestCase {
+    private func card(_ name: String, grade: CardGrade) -> PlayerCard {
+        PlayerCard(
+            playerId: name,
+            name: name,
+            teamCode: "LG",
+            season: 2026,
+            kind: .batter,
+            grade: grade,
+            rating: 0.5
+        )
+    }
+
+    func testOnlyDuplicatesCanBeRefunded() {
+        let only = card("홍길동", grade: .five)
+        var collection = CardCollection()
+        collection.add(only)
+
+        // 한 장뿐이면 되팔 수 없다 (도감에 남긴다)
+        XCTAssertEqual(collection.spareCount(of: only.id), 0)
+        XCTAssertNil(collection.refund(only.id))
+        XCTAssertEqual(collection.count(of: only.id), 1)
+        XCTAssertEqual(collection.totalRefund, 0)
+        XCTAssertTrue(collection.spares.isEmpty)
+
+        // 두 장이면 한 장을 되팔 수 있다
+        collection.add(only)
+        XCTAssertEqual(collection.spareCount(of: only.id), 1)
+        XCTAssertEqual(collection.totalRefund, CardGrade.five.refundPoints)
+        XCTAssertEqual(collection.refund(only.id), CardGrade.five.refundPoints)
+        XCTAssertEqual(collection.wallet.points, CardGrade.five.refundPoints)
+        XCTAssertEqual(collection.count(of: only.id), 1)
+        XCTAssertNil(collection.refund(only.id))
+    }
+
+    func testRefundPointsFollowGrade() {
+        XCTAssertEqual(CardGrade.one.refundPoints, 5)
+        for (low, high) in zip(CardGrade.allCases, CardGrade.allCases.dropFirst()) {
+            XCTAssertLessThan(low.refundPoints, high.refundPoints, "\(high) 가 더 값지다")
+        }
+        // 카드팩을 사서 되파는 것으로 포인트가 늘어나면 안 된다
+        let premium = CardPackKind.premium
+        let expected = premium.odds.reduce(0.0) { $0 + $1.value * Double($1.key.refundPoints) }
+            * Double(premium.cardCount)
+        XCTAssertLessThan(expected, Double(premium.cost), "고급 카드팩 값보다 환불이 적어야 한다")
+        XCTAssertLessThan(CardGrade.four.refundPoints, CardPackKind.four.cost)
+        XCTAssertLessThan(CardGrade.five.refundPoints, CardPackKind.five.cost)
+    }
+
+    func testRefundSeveralCopiesAndAllSpares() {
+        let star = card("김하늘", grade: .four)
+        let common = card("박바다", grade: .one)
+        var collection = CardCollection()
+        for _ in 0..<4 { collection.add(star) }
+        for _ in 0..<3 { collection.add(common) }
+
+        // 한 번에 여러 장
+        XCTAssertEqual(collection.refund(star.id, count: 2), CardGrade.four.refundPoints * 2)
+        XCTAssertEqual(collection.count(of: star.id), 2)
+        // 가진 장수보다 많이 되팔 수는 없다
+        XCTAssertNil(collection.refund(star.id, count: 5))
+        XCTAssertNil(collection.refund(star.id, count: 0))
+        XCTAssertNil(collection.refund("없는카드"))
+
+        let before = collection.wallet.points
+        let total = collection.totalRefund
+        XCTAssertEqual(total, CardGrade.four.refundPoints + CardGrade.one.refundPoints * 2)
+        XCTAssertEqual(collection.refundAllSpares(), total)
+        XCTAssertEqual(collection.wallet.points, before + total)
+        // 도감은 그대로 (한 장씩 남는다)
+        XCTAssertEqual(collection.count(of: star.id), 1)
+        XCTAssertEqual(collection.count(of: common.id), 1)
+        XCTAssertEqual(collection.owned.count, 2)
+        XCTAssertEqual(collection.refundAllSpares(), 0)
+    }
+
+    func testRefundKeepsLineup() {
+        let star = card("김하늘", grade: .five)
+        var collection = CardCollection()
+        collection.add(star)
+        collection.add(star)
+        collection.setLineup(star.id, at: 2)
+
+        collection.refundAllSpares()
+        // 라인업에 넣은 카드는 남아 있다
+        XCTAssertEqual(collection.lineupCards[2]?.id, star.id)
+        XCTAssertEqual(collection.count(of: star.id), 1)
+    }
+}
