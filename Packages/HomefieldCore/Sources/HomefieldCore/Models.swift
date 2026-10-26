@@ -48,6 +48,9 @@ public struct GameSummary: Identifiable, Hashable, Codable, Sendable {
     public var stadium: String?
     /// 이닝별 점수와 R·H·E (제공자가 줄 때만)
     public var lineScore: LineScore?
+    /// 선발 예고 (제공자가 줄 때만)
+    public var homeStarter: String?
+    public var awayStarter: String?
 
     public init(
         id: String,
@@ -59,7 +62,9 @@ public struct GameSummary: Identifiable, Hashable, Codable, Sendable {
         statusText: String? = nil,
         startTime: Date? = nil,
         stadium: String? = nil,
-        lineScore: LineScore? = nil
+        lineScore: LineScore? = nil,
+        homeStarter: String? = nil,
+        awayStarter: String? = nil
     ) {
         self.id = id
         self.home = home
@@ -71,6 +76,13 @@ public struct GameSummary: Identifiable, Hashable, Codable, Sendable {
         self.startTime = startTime
         self.stadium = stadium
         self.lineScore = lineScore
+        self.homeStarter = homeStarter
+        self.awayStarter = awayStarter
+    }
+
+    /// 그 팀의 선발 예고
+    public func starter(for side: TeamSide) -> String? {
+        side == .home ? homeStarter : awayStarter
     }
 
     public func team(for side: TeamSide) -> Team {
