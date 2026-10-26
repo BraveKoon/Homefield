@@ -61,6 +61,13 @@ struct GameListView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
+                        RotationView()
+                    } label: {
+                        Label("선발", systemImage: "figure.baseball")
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
                         StandingsView()
                     } label: {
                         Label("순위", systemImage: "list.number")
@@ -263,6 +270,13 @@ struct GameCard: View {
     let game: GameSummary
     var isFavorite = false
 
+    /// "선발 임찬규 · 올러" (일정에 예고가 있을 때만)
+    private var starters: String? {
+        let names = [game.awayStarter, game.homeStarter].compactMap { $0 }
+        guard !names.isEmpty else { return nil }
+        return "선발 " + names.joined(separator: " · ")
+    }
+
     var body: some View {
         VStack(spacing: 12) {
             HStack {
@@ -289,6 +303,14 @@ struct GameCard: View {
                     .font(.caption.bold())
                     .foregroundStyle(.secondary)
                 team(game.home, score: game.homeScore, winning: (game.homeScore ?? 0) > (game.awayScore ?? 0))
+            }
+            if let starters {
+                Label(starters, systemImage: "figure.baseball")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(16)

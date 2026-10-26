@@ -42,6 +42,7 @@
 		E0D19EA0CA2DEC10AE3E930E /* GameListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D053340E166A4F1A5BF84104 /* GameListView.swift */; };
 		E51D8901121E5A550033057A /* MusicDeck.swift in Sources */ = {isa = PBXBuildFile; fileRef = B08C14223DA04A9F63BDB1F2 /* MusicDeck.swift */; };
 		E6BA8F072F19A3503D0D6D21 /* StandingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8D3D3B298855B5AF9541D7 /* StandingsView.swift */; };
+		E9033429962E2F29E10D69B9 /* RotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E05D3F96C4B0C899039E8F7 /* RotationView.swift */; };
 		E95DD2DE66C84E9125705FE3 /* AttendanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04E7BBF698CE61F7416A0B9C /* AttendanceView.swift */; };
 		E9ED0AFAF619313EB3667F97 /* HomefieldWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC5E31A9860CD61006645D3 /* HomefieldWidgetsBundle.swift */; };
 		EF68ED2BAAFFE0C9D04D1D94 /* AppleMusicSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B47E5624AF0AAA5216B492B8 /* AppleMusicSearchView.swift */; };
@@ -77,6 +78,7 @@
 /* Begin PBXFileReference section */
 		04E7BBF698CE61F7416A0B9C /* AttendanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceView.swift; sourceTree = "<group>"; };
 		0F96DC396223B94BEED9E9B1 /* SharedSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedSettings.swift; sourceTree = "<group>"; };
+		1E05D3F96C4B0C899039E8F7 /* RotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotationView.swift; sourceTree = "<group>"; };
 		232CF63C1BC09B67169F1B7E /* PlayerDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerDetailView.swift; sourceTree = "<group>"; };
 		31D4D1A2DF40A9B77B247DD2 /* HomefieldWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HomefieldWidgets.entitlements; sourceTree = "<group>"; };
 		32D268EB7B26BE846BF9D340 /* PlayerCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerCardView.swift; sourceTree = "<group>"; };
@@ -150,6 +152,7 @@
 				32D268EB7B26BE846BF9D340 /* PlayerCardView.swift */,
 				232CF63C1BC09B67169F1B7E /* PlayerDetailView.swift */,
 				DC827045E0DC50DC290D9CF7 /* RemoteImage.swift */,
+				1E05D3F96C4B0C899039E8F7 /* RotationView.swift */,
 				657F724A45DB4F1155FC7256 /* SettingsView.swift */,
 				3633B3D940EB489FA4822CD9 /* SongLibraryView.swift */,
 				8B8D3D3B298855B5AF9541D7 /* StandingsView.swift */,
@@ -426,6 +429,7 @@
 				523DF445899F3F22BB902698 /* PlayerCardView.swift in Sources */,
 				068AC986E43A8908EFAEB484 /* PlayerDetailView.swift in Sources */,
 				30EE2CF0EC8C0169EF2B8053 /* RemoteImage.swift in Sources */,
+				E9033429962E2F29E10D69B9 /* RotationView.swift in Sources */,
 				056A69794F4A3268FF73BBAF /* SettingsView.swift in Sources */,
 				DFA6BA1F0AF020052558864F /* SharedSettings.swift in Sources */,
 				0856EA98D0034B2FA3D12256 /* SongLibrary.swift in Sources */,
@@ -532,7 +536,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.5;
+				MARKETING_VERSION = 1.5.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -616,7 +620,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.5;
+				MARKETING_VERSION = 1.5.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

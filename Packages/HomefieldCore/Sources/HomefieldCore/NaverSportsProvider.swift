@@ -19,10 +19,22 @@ public struct NaverSportsProvider: GameDataProvider {
         self.session = session
     }
 
+    /// 선발 예고까지 달라고 하는 항목. 서버가 받아 주지 않으면 기본 항목으로 한 번 더 부른다.
+    static let scheduleFields = "basic,homeStarterName,awayStarterName"
+
     public func games(on date: Date) async throws -> [GameSummary] {
+        do {
+            return try await games(on: date, fields: Self.scheduleFields)
+        } catch GameDataError.badStatus {
+            // 선발 예고 항목을 모르는 서버면 선발 없이라도 일정을 보여 준다
+            return try await games(on: date, fields: "basic")
+        }
+    }
+
+    private func games(on date: Date, fields: String) async throws -> [GameSummary] {
         let day = NaverMapping.dayFormatter.string(from: date)
         let url = makeURL("schedule/games", query: [
-            "fields": "basic",
+            "fields": fields,
             "upperCategoryId": "kbaseball",
             "categoryId": "kbo",
             "fromDate": day,
@@ -201,7 +213,9 @@ public enum NaverMapping {
             statusText: game.statusInfo,
             startTime: game.gameDateTime.flatMap(dateTimeFormatter.date(from:)),
             stadium: game.stadium,
-            lineScore: lineScore(from: game)
+            lineScore: lineScore(from: game),
+            homeStarter: game.homeStarterName?.nonEmpty,
+            awayStarter: game.awayStarterName?.nonEmpty
         )
     }
 
@@ -390,6 +404,17 @@ struct NaverGame: Decodable {
     let awayTeamScoreByInning: [LenientString]?
     let homeTeamRheb: [LenientInt]?
     let awayTeamRheb: [LenientInt]?
+    /// 선발 예고 (fields 에 넣어야 온다)
+    let homeStarterName: String?
+    let awayStarterName: String?
+}
+
+extension String {
+    /// 빈 문자열은 없는 것으로 본다
+    var nonEmpty: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
 }
 
 /// 순위 배열이 들어 있는 키 이름이 바뀌어도 읽을 수 있게, 결과 안에서 teamId·ranking 이 있는 첫 배열을 쓴다
