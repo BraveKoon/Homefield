@@ -16,7 +16,7 @@ struct CardsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 18) {
                     WalletHeader(points: store.points, collection: store.collection, pool: store.pool)
 
                     if store.pool == nil {
@@ -65,7 +65,7 @@ struct CardsView: View {
                         CollectionBrowser(store: store, favorite: settings.favoriteTeamCode)
                     }
                 }
-                .padding(16)
+                .padding(AppStyle.screenPadding)
             }
             .background { ThemedBackground() }
             .navigationTitle("카드")
@@ -234,7 +234,7 @@ private struct WalletHeader: View {
             TeamTheme.default.gradient
                 .overlay(Color.black.opacity(0.15))
         }
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppStyle.cardRadius, style: .continuous))
     }
 
     private func icon(for reward: CardReward) -> String {
@@ -353,7 +353,7 @@ private struct PackArt: View {
                 .foregroundStyle(kind.topGrade == .five ? .black : .white)
         }
         .frame(width: 46, height: 62)
-        .shadow(color: kind.topGrade.color.opacity(0.4), radius: 5, y: 2)
+        .shadow(color: kind.topGrade.color.opacity(0.25), radius: 4, y: 2)
     }
 }
 
@@ -778,6 +778,7 @@ private struct CollectionBrowser: View {
                         }
                     }
                 }
+                .animation(.appear, value: cards.count)
                 if cards.isEmpty {
                     Text("조건에 맞는 카드가 없어요.")
                         .font(.footnote)
@@ -859,7 +860,7 @@ private struct CollectionBrowser: View {
                 .font(.caption.weight(.bold))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(selected ? AnyShapeStyle(color) : AnyShapeStyle(.regularMaterial), in: Capsule())
+                .background(selected ? AnyShapeStyle(color) : AnyShapeStyle(.thinMaterial), in: Capsule())
                 .foregroundStyle(selected ? .white : .primary)
         }
         .buttonStyle(.plain)
@@ -879,7 +880,7 @@ private struct LockedCard: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: width * 0.09, style: .continuous)
-            .fill(.regularMaterial)
+            .fill(.thinMaterial)
             .frame(width: width, height: width * 1.45)
             .overlay {
                 VStack(spacing: 6) {

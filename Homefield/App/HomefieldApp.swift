@@ -51,7 +51,7 @@ struct RootView: View {
         .tint(theme.primary)
         .environment(\.teamTheme, theme)
         .environment(\.isAutumn, settings.isAutumn)
-        .animation(.default, value: settings.favoriteTeamCode)
+        .animation(.appear, value: settings.favoriteTeamCode)
         .fullScreenCover(isPresented: Binding(
             get: { !settings.hasCompletedOnboarding },
             set: { if !$0 { settings.hasCompletedOnboarding = true } }

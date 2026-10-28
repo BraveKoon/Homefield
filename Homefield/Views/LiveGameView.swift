@@ -35,8 +35,8 @@ struct LiveGameView: View {
                 Section {
                     Scoreboard(game: session.game, state: session.gameState)
                         .listRowInsets(EdgeInsets())
-                        .animation(.snappy, value: session.game.homeScore)
-                        .animation(.snappy, value: session.game.awayScore)
+                        .animation(.value, value: session.game.homeScore)
+                        .animation(.value, value: session.game.awayScore)
                     if let lineScore = session.game.lineScore {
                         LineScoreView(
                             game: session.game,
@@ -96,12 +96,15 @@ struct LiveGameView: View {
                     ForEach(session.halves) { half in
                         DisclosureGroup(isExpanded: expansion(for: half.id)) {
                             ForEach(RelayItem.items(for: half.lines, isCurrentHalf: half.id == session.currentHalfKey)) { item in
-                                switch item {
-                                case .line(let line):
-                                    RelayLineRow(line: line)
-                                case .pitches(let id, let lines, let live):
-                                    PitchGroupRow(lines: lines, isExpanded: pitchExpansion(for: id, live: live))
+                                Group {
+                                    switch item {
+                                    case .line(let line):
+                                        RelayLineRow(line: line)
+                                    case .pitches(let id, let lines, let live):
+                                        PitchGroupRow(lines: lines, isExpanded: pitchExpansion(for: id, live: live))
+                                    }
                                 }
+                                .transition(.move(edge: .top).combined(with: .opacity))
                             }
                         } label: {
                             HStack(spacing: 8) {
@@ -122,6 +125,7 @@ struct LiveGameView: View {
                                 Spacer()
                                 Text("\(half.lines.filter { !$0.isPitch }.count)")
                                     .font(.caption.monospacedDigit().bold())
+                                    .contentTransition(.numericText())
                                     .foregroundStyle(.secondary)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 2)
@@ -133,6 +137,7 @@ struct LiveGameView: View {
             }
         }
         .themedBackground()
+        .animation(.value, value: session?.log.count ?? 0)
         .onChange(of: session?.currentHalfKey) { _, newKey in
             // 이닝이 끝나면 지난 이닝은 접고 새 이닝을 펼친다
             if let newKey { expandedHalves = [newKey] }
@@ -249,7 +254,7 @@ private struct PitchGroupRow: View {
     @Binding var isExpanded: Bool
 
     var body: some View {
-        DisclosureGroup(isExpanded: $isExpanded.animation(.snappy)) {
+        DisclosureGroup(isExpanded: $isExpanded.animation(.tap)) {
             ForEach(lines) { line in
                 RelayLineRow(line: line)
             }
@@ -448,7 +453,7 @@ private struct PregameLockedView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 18)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: AppStyle.cardRadius, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("경기 전. \(detail)")
     }

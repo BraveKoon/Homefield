@@ -55,7 +55,7 @@ struct PlayerCardView: View {
                     .padding(width * 0.04)
             }
         }
-        .shadow(color: card.grade.color.opacity(card.grade == .five ? 0.7 : 0.35), radius: width * 0.07, y: width * 0.03)
+        .shadow(color: card.grade.color.opacity(card.grade == .five ? 0.45 : 0.22), radius: width * 0.05, y: width * 0.02)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(card.grade.displayName) \(card.name), \(TeamTheme.shortName(for: card.teamCode))")
     }
