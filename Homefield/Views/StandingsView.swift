@@ -30,7 +30,7 @@ struct StandingsView: View {
                         }
                     }
                     .padding(.vertical, 6)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: AppStyle.cardRadius, style: .continuous))
 
                     if let updatedAt {
                         Text("네이버 스포츠 기준 · \(updatedAt.formatted(date: .omitted, time: .shortened)) 업데이트 · 당겨서 새로고침")
@@ -44,7 +44,7 @@ struct StandingsView: View {
                         .padding(.vertical, 40)
                 }
             }
-            .padding(16)
+            .padding(AppStyle.screenPadding)
         }
         .background { ThemedBackground() }
         .overlay {
@@ -75,7 +75,7 @@ struct StandingsView: View {
         defer { isLoading = false }
         do {
             let loaded = try await NaverSportsProvider().standings(season: season)
-            withAnimation { standings = loaded }
+            withAnimation(.appear) { standings = loaded }
             updatedAt = Date()
             errorMessage = nil
         } catch is CancellationError {

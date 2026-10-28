@@ -1,35 +1,38 @@
 import HomefieldCore
 import SwiftUI
 
-/// 응원팀 색이 위에서 은은하게 내려오고, 야구공 실밥 무늬가 깔린 배경
+/// 위에서 응원팀 색이 옅게 내려오는 배경. 실밥 무늬는 질감으로만 아주 옅게 깐다.
 struct ThemedBackground: View {
     @Environment(\.teamTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isAutumn) private var isAutumn
 
+    private var isDark: Bool { colorScheme == .dark }
+
     var body: some View {
         ZStack {
             Color(.systemGroupedBackground)
             LinearGradient(
-                colors: [theme.primary.opacity(colorScheme == .dark ? 0.55 : 0.32), theme.secondary.opacity(0.10), .clear],
+                colors: [theme.primary.opacity(isDark ? 0.34 : 0.18), .clear],
                 startPoint: .top,
-                endPoint: UnitPoint(x: 0.5, y: 0.55)
+                endPoint: UnitPoint(x: 0.5, y: 0.42)
             )
             if isAutumn {
-                // 가을야구: 아래에서 노을빛이 올라오고 단풍잎이 떨어진다
+                // 가을야구: 아래쪽에만 노을빛을 옅게
                 LinearGradient(
-                    colors: [.clear, AutumnStyle.gold.opacity(0.10), AutumnStyle.orange.opacity(colorScheme == .dark ? 0.30 : 0.22)],
-                    startPoint: UnitPoint(x: 0.5, y: 0.35),
+                    colors: [.clear, AutumnStyle.orange.opacity(isDark ? 0.16 : 0.12)],
+                    startPoint: UnitPoint(x: 0.5, y: 0.6),
                     endPoint: .bottom
                 )
             }
             StitchPattern()
-                .foregroundStyle(theme.primary.opacity(colorScheme == .dark ? 0.10 : 0.07))
+                .foregroundStyle(theme.primary.opacity(isDark ? 0.05 : 0.035))
             if isAutumn {
-                FallingLeaves(count: 12, opacity: colorScheme == .dark ? 0.45 : 0.55)
+                FallingLeaves(count: 7, opacity: isDark ? 0.3 : 0.34, scale: 0.9)
             }
         }
         .ignoresSafeArea()
+        .gentleAnimation(.easeInOut(duration: 0.3))
     }
 }
 
@@ -74,11 +77,15 @@ extension View {
     }
 
     /// 배경 위에 떠 있는 카드
-    func cardStyle(padding: CGFloat = 16) -> some View {
-        self.padding(padding)
+    func cardStyle(padding: CGFloat = AppStyle.cardPadding) -> some View {
+        let shape = RoundedRectangle(cornerRadius: AppStyle.cardRadius, style: .continuous)
+        return self.padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .shadow(color: .black.opacity(0.08), radius: 10, y: 4)
+            .background(.thinMaterial, in: shape)
+            .overlay {
+                shape.strokeBorder(Color.primary.opacity(0.06), lineWidth: AppStyle.hairline)
+            }
+            .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
     }
 }
 
@@ -105,8 +112,8 @@ struct TeamBadge: View {
         .frame(width: size, height: size)
         .background(Circle().fill(.white))
         .clipShape(Circle())
-        .overlay(Circle().stroke(theme.primary.opacity(0.35), lineWidth: size > 36 ? 1.5 : 1))
-        .shadow(color: theme.primary.opacity(0.35), radius: size * 0.12, y: size * 0.05)
+        .overlay(Circle().strokeBorder(theme.primary.opacity(0.18), lineWidth: 1))
+        .shadow(color: .black.opacity(0.10), radius: size * 0.08, y: size * 0.03)
         .overlay(alignment: .bottomTrailing) {
             if isAutumn && size >= 30 { AutumnLeafBadge(size: size) }
         }
@@ -124,7 +131,7 @@ struct TeamPickerGrid: View {
                 let selected = selection == team.code
                 let theme = TeamTheme.forTeam(team.code)
                 Button {
-                    withAnimation(.spring(duration: 0.35)) { selection = team.code }
+                    withAnimation(.appear) { selection = team.code }
                 } label: {
                     HStack(spacing: 10) {
                         TeamBadge(code: team.code, size: 40)
@@ -137,16 +144,16 @@ struct TeamPickerGrid: View {
                     .padding(12)
                     .foregroundStyle(selected ? .white : .primary)
                     .background {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(selected ? AnyShapeStyle(theme.gradient) : AnyShapeStyle(.regularMaterial))
+                        RoundedRectangle(cornerRadius: AppStyle.smallRadius, style: .continuous)
+                            .fill(selected ? AnyShapeStyle(theme.gradient) : AnyShapeStyle(.thinMaterial))
                     }
                     .overlay {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(selected ? Color.white.opacity(0.8) : theme.primary.opacity(0.25), lineWidth: selected ? 2 : 1)
+                        RoundedRectangle(cornerRadius: AppStyle.smallRadius, style: .continuous)
+                            .strokeBorder(selected ? Color.white.opacity(0.55) : Color.primary.opacity(0.07), lineWidth: selected ? 1.5 : AppStyle.hairline)
                     }
-                    .scaleEffect(selected ? 1.03 : 1)
+                    .scaleEffect(selected ? 1.02 : 1)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }

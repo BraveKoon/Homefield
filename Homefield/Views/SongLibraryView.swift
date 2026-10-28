@@ -120,8 +120,8 @@ private struct TeamCard: View {
                     .offset(x: 14, y: 14)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: theme.primary.opacity(0.3), radius: 8, y: 4)
+        .clipShape(RoundedRectangle(cornerRadius: AppStyle.cardRadius, style: .continuous))
+        .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
     }
 }
 

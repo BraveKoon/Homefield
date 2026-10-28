@@ -32,7 +32,7 @@ struct BatchImportView: View {
             if working {
                 ProgressView("가져오는 중…")
                     .padding()
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: AppStyle.smallRadius, style: .continuous))
             }
         }
         .fileImporter(

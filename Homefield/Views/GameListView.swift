@@ -12,7 +12,7 @@ struct GameListView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: AppStyle.stackSpacing) {
                     DayStrip(date: $date)
 
                     if settings.isAutumn {
@@ -31,11 +31,12 @@ struct GameListView: View {
                             .cardStyle(padding: 12)
                     }
 
-                    ForEach(games) { game in
+                    ForEach(Array(games.enumerated()), id: \.element.id) { index, game in
                         NavigationLink(value: game) {
                             GameCard(game: game, isFavorite: involvesFavorite(game))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
+                        .appearing(index)
                     }
 
                     if !isLoading && games.isEmpty && errorMessage == nil {
@@ -49,11 +50,13 @@ struct GameListView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 40)
                         .cardStyle()
+                        .transition(.opacity)
                     }
                 }
-                .padding(16)
+                .padding(AppStyle.screenPadding)
             }
             .background { ThemedBackground() }
+            .gentleAnimation()
             .overlay {
                 if isLoading && games.isEmpty { ProgressView() }
             }
@@ -238,7 +241,7 @@ private struct DayStrip: View {
         let isToday = Self.calendar.isDateInToday(day)
         let weekendColor: Color = weekdayIndex == 0 ? .red : (weekdayIndex == 6 ? .blue : .primary)
         return Button {
-            withAnimation(.snappy) { date = day }
+            withAnimation(.tap) { date = day }
         } label: {
             VStack(spacing: 2) {
                 Text(isToday ? "오늘" : Self.weekdaySymbols[weekdayIndex])
@@ -249,19 +252,23 @@ private struct DayStrip: View {
                     .foregroundStyle(selected ? .white : weekendColor)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
+            .frame(height: 54)
             .background {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(selected ? AnyShapeStyle(theme.gradient) : AnyShapeStyle(.regularMaterial))
-            }
-            .overlay {
-                if isToday && !selected {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(theme.primary.opacity(0.6), lineWidth: 1.5)
+                let shape = RoundedRectangle(cornerRadius: AppStyle.smallRadius, style: .continuous)
+                if selected {
+                    shape.fill(theme.gradient)
+                } else {
+                    shape.fill(.thinMaterial)
+                        .overlay {
+                            shape.strokeBorder(
+                                isToday ? theme.primary.opacity(0.45) : Color.primary.opacity(0.06),
+                                lineWidth: isToday ? 1.2 : AppStyle.hairline
+                            )
+                        }
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -269,6 +276,10 @@ private struct DayStrip: View {
 struct GameCard: View {
     let game: GameSummary
     var isFavorite = false
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: AppStyle.cardRadius, style: .continuous)
+    }
 
     /// "선발 임찬규 · 올러" (일정에 예고가 있을 때만)
     private var starters: String? {
@@ -313,19 +324,20 @@ struct GameCard: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(16)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .padding(AppStyle.cardPadding)
+        .background(.thinMaterial, in: shape)
         .overlay {
             if isFavorite {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .stroke(LinearGradient(
-                        colors: [TeamTheme.forTeam(game.away.code).primary, TeamTheme.forTeam(game.home.code).primary],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ), lineWidth: 2)
+                shape.strokeBorder(LinearGradient(
+                    colors: [TeamTheme.forTeam(game.away.code).primary, TeamTheme.forTeam(game.home.code).primary],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                ), lineWidth: 1.5)
+            } else {
+                shape.strokeBorder(Color.primary.opacity(0.06), lineWidth: AppStyle.hairline)
             }
         }
-        .shadow(color: .black.opacity(0.08), radius: 10, y: 4)
+        .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
     }
 
     private func team(_ team: Team, score: Int?, winning: Bool) -> some View {
@@ -377,15 +389,15 @@ private struct AutumnBanner: View {
             Text("🍂").font(.title2).opacity(0.8)
         }
         .foregroundStyle(.white)
-        .padding(16)
+        .padding(AppStyle.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             ZStack {
                 AutumnStyle.warmGradient
                 FallingLeaves(count: 6, animated: false, opacity: 0.25, scale: 0.8)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: AppStyle.cardRadius, style: .continuous))
         }
-        .shadow(color: AutumnStyle.maple.opacity(0.35), radius: 10, y: 4)
+        .shadow(color: AutumnStyle.maple.opacity(0.22), radius: 7, y: 3)
     }
 }

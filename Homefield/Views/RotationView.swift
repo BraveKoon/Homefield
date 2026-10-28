@@ -12,7 +12,7 @@ struct RotationView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: AppStyle.stackSpacing) {
                 teamPicker
 
                 if let starters, !starters.isEmpty {
@@ -29,7 +29,7 @@ struct RotationView: View {
                                     StartRow(start: start)
                                 }
                             }
-                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: AppStyle.cardRadius, style: .continuous))
                         }
                     }
                 } else if !isLoading {
@@ -53,9 +53,10 @@ struct RotationView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
-            .padding(16)
+            .padding(AppStyle.screenPadding)
         }
         .background { ThemedBackground() }
+        .gentleAnimation()
         .overlay {
             if isLoading && starters == nil { ProgressView() }
         }
@@ -111,7 +112,7 @@ struct RotationView: View {
         let collected = await StarterCollector(provider: settings.makeProvider())
             .collect(teamCode: current)
         guard !Task.isCancelled else { return }
-        withAnimation { starters = collected }
+        withAnimation(.appear) { starters = collected }
     }
 }
 
