@@ -18,6 +18,7 @@
 		30EE2CF0EC8C0169EF2B8053 /* RemoteImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC827045E0DC50DC290D9CF7 /* RemoteImage.swift */; };
 		334E351CE173F6275BA8B76F /* HomefieldApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 828BE906D2D6C931808FCCE1 /* HomefieldApp.swift */; };
 		35087BF99F96EA5DB236BDB1 /* GameLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED08E6D405D1B8D62B3679AD /* GameLiveActivity.swift */; };
+		368B050EDD4FBE583FA87FF7 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F8C769BBC6CFD2D6A6FA7A8 /* DesignSystem.swift */; };
 		4048F3711E1BC178044FC500 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 53B22290F4B62BC14E1F4B8F /* Assets.xcassets */; };
 		4406423AD173EEA7D5CAF1CA /* ThemeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4F2F4EDD449239E513D52AF /* ThemeViews.swift */; };
 		4F7B7CA79348A9890A470763 /* BatchImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD941AD01ECEA4305AA4B711 /* BatchImporter.swift */; };
@@ -101,6 +102,7 @@
 		828BE906D2D6C931808FCCE1 /* HomefieldApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomefieldApp.swift; sourceTree = "<group>"; };
 		8AA95021AF14DBE29F10C03C /* TeamGameWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamGameWidget.swift; sourceTree = "<group>"; };
 		8B8D3D3B298855B5AF9541D7 /* StandingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandingsView.swift; sourceTree = "<group>"; };
+		8F8C769BBC6CFD2D6A6FA7A8 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		94D0AAA6FC5A6530B326E690 /* SongLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibrary.swift; sourceTree = "<group>"; };
 		B08C14223DA04A9F63BDB1F2 /* MusicDeck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicDeck.swift; sourceTree = "<group>"; };
 		B25D1558C74EF0BFA73DF59A /* GameStateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameStateViews.swift; sourceTree = "<group>"; };
@@ -146,6 +148,7 @@
 				B47E5624AF0AAA5216B492B8 /* AppleMusicSearchView.swift */,
 				F88404A98D4781471534A305 /* BatchImportView.swift */,
 				B852488377572C038C748C34 /* CardsView.swift */,
+				8F8C769BBC6CFD2D6A6FA7A8 /* DesignSystem.swift */,
 				D053340E166A4F1A5BF84104 /* GameListView.swift */,
 				B25D1558C74EF0BFA73DF59A /* GameStateViews.swift */,
 				363EE5EA2EA56C30F27C8D24 /* LiveGameView.swift */,
@@ -417,6 +420,7 @@
 				4F7B7CA79348A9890A470763 /* BatchImporter.swift in Sources */,
 				B2DE8AF42818BB143D036823 /* CardStore.swift in Sources */,
 				818F538C9165B760B5C096E9 /* CardsView.swift in Sources */,
+				368B050EDD4FBE583FA87FF7 /* DesignSystem.swift in Sources */,
 				0CBD853FECEB5E90B9C0FE2A /* GameActivityAttributes.swift in Sources */,
 				E0D19EA0CA2DEC10AE3E930E /* GameListView.swift in Sources */,
 				6D50328E89BF0FE7B7A737A3 /* GameStateViews.swift in Sources */,
