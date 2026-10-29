@@ -24,19 +24,25 @@
 		4F7B7CA79348A9890A470763 /* BatchImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD941AD01ECEA4305AA4B711 /* BatchImporter.swift */; };
 		517D574762A8331BA07CF101 /* HomefieldCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8B12B7181B7BBEC38FE7A7D2 /* HomefieldCore */; };
 		523DF445899F3F22BB902698 /* PlayerCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32D268EB7B26BE846BF9D340 /* PlayerCardView.swift */; };
+		57AFAE3BF2882727C7A6268C /* SyncSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2D32289E53DC85C3BE6C2FF /* SyncSnapshot.swift */; };
+		5A620494F32C85107D6A05A9 /* SupabaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1861636B8C0F48DBB7CAA5F /* SupabaseConfig.swift */; };
 		5F4911FDEB0D180EED04B16B /* BackgroundKeeper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 589CB875B741E4A30913A615 /* BackgroundKeeper.swift */; };
 		651BA9A3EA05060F52EE3B0D /* LiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E37C5FC5A71A8187A0A2B61 /* LiveActivityController.swift */; };
 		69B87C2C922189D597431CD3 /* SharedSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F96DC396223B94BEED9E9B1 /* SharedSettings.swift */; };
 		6D50328E89BF0FE7B7A737A3 /* GameStateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25D1558C74EF0BFA73DF59A /* GameStateViews.swift */; };
 		6D5FE78412DED5E1281E75D9 /* TeamGameWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AA95021AF14DBE29F10C03C /* TeamGameWidget.swift */; };
+		744E6B72DD54F36F5CA03259 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED08189F0D16DFAA5960F209 /* AccountView.swift */; };
 		818F538C9165B760B5C096E9 /* CardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B852488377572C038C748C34 /* CardsView.swift */; };
+		AD8A3170190339A72DBB87CC /* AccountStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0E0C6F19B8698514D5C22C1 /* AccountStore.swift */; };
 		B2DE8AF42818BB143D036823 /* CardStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 358CA7D0B983D7B5409C8664 /* CardStore.swift */; };
+		B72CB8A7ADABCBF6ECF2A4F2 /* SessionKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CDAC87028862C1560CE4C82 /* SessionKeychain.swift */; };
 		B9A77CAD4C5668180555AB35 /* AudioDirector.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E9A4E4E97F1CE11E4A5AB3 /* AudioDirector.swift */; };
 		BC841BB703886D4FCA7EE890 /* LiveGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 363EE5EA2EA56C30F27C8D24 /* LiveGameView.swift */; };
 		BE37DDC80F6FC36A1CB91F39 /* LiveGameSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3F4B746485ED6231E2AD3A5 /* LiveGameSession.swift */; };
 		BE57184B15ACDCEEE1AA8FB0 /* HomefieldWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7CE8E9B7CEE01B9474A2D458 /* HomefieldWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CBB58CE35DC6C9C513ABA28D /* SongLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3633B3D940EB489FA4822CD9 /* SongLibraryView.swift */; };
 		CF64854B2048AB73B12FD426 /* HomefieldCore in Frameworks */ = {isa = PBXBuildFile; productRef = D144D72B11028824B3E5B1BB /* HomefieldCore */; };
+		D2A198CFB04C81B9F15786CE /* SupabaseAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60F12FC20B8E8C0926560FDF /* SupabaseAPI.swift */; };
 		D35C2D519E1BA99F79FE2C17 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E2C891CE7A8324FF9E81B9 /* AppSettings.swift */; };
 		D75897F33FE2D49FCD748E53 /* Narrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 817BCD2DAF8E8E08AD7547D8 /* Narrator.swift */; };
 		DFA6BA1F0AF020052558864F /* SharedSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F96DC396223B94BEED9E9B1 /* SharedSettings.swift */; };
@@ -81,6 +87,7 @@
 		0F96DC396223B94BEED9E9B1 /* SharedSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedSettings.swift; sourceTree = "<group>"; };
 		1E05D3F96C4B0C899039E8F7 /* RotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotationView.swift; sourceTree = "<group>"; };
 		232CF63C1BC09B67169F1B7E /* PlayerDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerDetailView.swift; sourceTree = "<group>"; };
+		2CDAC87028862C1560CE4C82 /* SessionKeychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionKeychain.swift; sourceTree = "<group>"; };
 		31D4D1A2DF40A9B77B247DD2 /* HomefieldWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HomefieldWidgets.entitlements; sourceTree = "<group>"; };
 		32D268EB7B26BE846BF9D340 /* PlayerCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerCardView.swift; sourceTree = "<group>"; };
 		358CA7D0B983D7B5409C8664 /* CardStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStore.swift; sourceTree = "<group>"; };
@@ -91,6 +98,7 @@
 		56E2C891CE7A8324FF9E81B9 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		577415853449EF7CBAF369FF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		589CB875B741E4A30913A615 /* BackgroundKeeper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundKeeper.swift; sourceTree = "<group>"; };
+		60F12FC20B8E8C0926560FDF /* SupabaseAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseAPI.swift; sourceTree = "<group>"; };
 		657F724A45DB4F1155FC7256 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		6EC5E31A9860CD61006645D3 /* HomefieldWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomefieldWidgetsBundle.swift; sourceTree = "<group>"; };
 		71ED6E976FC3894E112BE678 /* GameActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameActivityAttributes.swift; sourceTree = "<group>"; };
@@ -112,10 +120,14 @@
 		C4F2F4EDD449239E513D52AF /* ThemeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeViews.swift; sourceTree = "<group>"; };
 		C4FDA0AAE05C664BD773726A /* Homefield.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Homefield.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D053340E166A4F1A5BF84104 /* GameListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameListView.swift; sourceTree = "<group>"; };
+		D1861636B8C0F48DBB7CAA5F /* SupabaseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfig.swift; sourceTree = "<group>"; };
+		D2D32289E53DC85C3BE6C2FF /* SyncSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSnapshot.swift; sourceTree = "<group>"; };
 		D6E9A4E4E97F1CE11E4A5AB3 /* AudioDirector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDirector.swift; sourceTree = "<group>"; };
 		DC827045E0DC50DC290D9CF7 /* RemoteImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteImage.swift; sourceTree = "<group>"; };
 		DDFD1363B7D6D2BC8BA3FABA /* HomefieldCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = HomefieldCore; path = Packages/HomefieldCore; sourceTree = SOURCE_ROOT; };
+		E0E0C6F19B8698514D5C22C1 /* AccountStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountStore.swift; sourceTree = "<group>"; };
 		E3F4B746485ED6231E2AD3A5 /* LiveGameSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveGameSession.swift; sourceTree = "<group>"; };
+		ED08189F0D16DFAA5960F209 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
 		ED08E6D405D1B8D62B3679AD /* GameLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameLiveActivity.swift; sourceTree = "<group>"; };
 		EE468CA38FAC31882F4A4341 /* AttendanceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceStore.swift; sourceTree = "<group>"; };
 		F88404A98D4781471534A305 /* BatchImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchImportView.swift; sourceTree = "<group>"; };
@@ -145,6 +157,7 @@
 		030B9D39A40C7E6A100953B0 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				ED08189F0D16DFAA5960F209 /* AccountView.swift */,
 				B47E5624AF0AAA5216B492B8 /* AppleMusicSearchView.swift */,
 				F88404A98D4781471534A305 /* BatchImportView.swift */,
 				B852488377572C038C748C34 /* CardsView.swift */,
@@ -259,6 +272,18 @@
 			);
 			sourceTree = "<group>";
 		};
+		9907EA7E4C202FC5CFA08186 /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				E0E0C6F19B8698514D5C22C1 /* AccountStore.swift */,
+				2CDAC87028862C1560CE4C82 /* SessionKeychain.swift */,
+				60F12FC20B8E8C0926560FDF /* SupabaseAPI.swift */,
+				D1861636B8C0F48DBB7CAA5F /* SupabaseConfig.swift */,
+				D2D32289E53DC85C3BE6C2FF /* SyncSnapshot.swift */,
+			);
+			path = Sync;
+			sourceTree = "<group>";
+		};
 		B6787812A002A6146683CE04 /* Homefield */ = {
 			isa = PBXGroup;
 			children = (
@@ -272,6 +297,7 @@
 				138A6D97F57A4B2BBA0168C9 /* Live */,
 				4F0AC898AC4D6A160CF17D29 /* Settings */,
 				7D1046D38A94100DC23B320D /* Songs */,
+				9907EA7E4C202FC5CFA08186 /* Sync */,
 				030B9D39A40C7E6A100953B0 /* Views */,
 			);
 			path = Homefield;
@@ -409,6 +435,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AD8A3170190339A72DBB87CC /* AccountStore.swift in Sources */,
+				744E6B72DD54F36F5CA03259 /* AccountView.swift in Sources */,
 				D35C2D519E1BA99F79FE2C17 /* AppSettings.swift in Sources */,
 				EF68ED2BAAFFE0C9D04D1D94 /* AppleMusicSearchView.swift in Sources */,
 				11BE5F7E7BE9056945D8EEEC /* AttendanceStore.swift in Sources */,
@@ -434,11 +462,15 @@
 				068AC986E43A8908EFAEB484 /* PlayerDetailView.swift in Sources */,
 				30EE2CF0EC8C0169EF2B8053 /* RemoteImage.swift in Sources */,
 				E9033429962E2F29E10D69B9 /* RotationView.swift in Sources */,
+				B72CB8A7ADABCBF6ECF2A4F2 /* SessionKeychain.swift in Sources */,
 				056A69794F4A3268FF73BBAF /* SettingsView.swift in Sources */,
 				DFA6BA1F0AF020052558864F /* SharedSettings.swift in Sources */,
 				0856EA98D0034B2FA3D12256 /* SongLibrary.swift in Sources */,
 				CBB58CE35DC6C9C513ABA28D /* SongLibraryView.swift in Sources */,
 				E6BA8F072F19A3503D0D6D21 /* StandingsView.swift in Sources */,
+				D2A198CFB04C81B9F15786CE /* SupabaseAPI.swift in Sources */,
+				5A620494F32C85107D6A05A9 /* SupabaseConfig.swift in Sources */,
+				57AFAE3BF2882727C7A6268C /* SyncSnapshot.swift in Sources */,
 				F18C553088DA5E2EAE670CC8 /* TeamTheme.swift in Sources */,
 				4406423AD173EEA7D5CAF1CA /* ThemeViews.swift in Sources */,
 			);
