@@ -57,6 +57,8 @@ final class AppSettings {
     }
 
     private let defaults: UserDefaults
+    /// 저장할 때마다 불린다 (계정 동기화가 바뀐 것을 알아챈다)
+    @ObservationIgnored var onChange: (@MainActor () -> Void)?
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -117,6 +119,7 @@ final class AppSettings {
         defaults.set(hasCompletedOnboarding, forKey: Keys.hasCompletedOnboarding)
         defaults.set(liveActivityEnabled, forKey: Keys.liveActivityEnabled)
         defaults.set(autumnMode.rawValue, forKey: Keys.autumnMode)
+        onChange?()
     }
 
     private enum Keys {

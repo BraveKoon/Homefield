@@ -56,6 +56,8 @@ final class AttendanceStore {
 
     @ObservationIgnored private let storeURL: URL
     @ObservationIgnored private let locator = LocationVerifier()
+    /// 저장할 때마다 불린다 (계정 동기화가 바뀐 것을 알아챈다)
+    @ObservationIgnored var onChange: (@MainActor () -> Void)?
 
     init(fileManager: FileManager = .default) {
         let support = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -132,7 +134,14 @@ final class AttendanceStore {
         checkIns = stored.sorted { $0.date > $1.date }
     }
 
+    /// 계정에서 받은 직관 기록으로 바꾼다
+    func replace(checkIns newCheckIns: [CheckIn]) {
+        checkIns = newCheckIns.sorted { $0.date > $1.date }
+        save()
+    }
+
     private func save() {
+        defer { onChange?() }
         guard let data = try? JSONEncoder().encode(checkIns) else { return }
         try? data.write(to: storeURL, options: .atomic)
     }

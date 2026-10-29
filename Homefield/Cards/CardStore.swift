@@ -17,6 +17,8 @@ final class CardStore {
     private(set) var lastBonus: LineupBonus.Award?
 
     @ObservationIgnored private let storeURL: URL
+    /// 저장할 때마다 불린다 (계정 동기화가 바뀐 것을 알아챈다)
+    @ObservationIgnored var onChange: (@MainActor () -> Void)?
 
     init(fileManager: FileManager = .default) {
         let support = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -166,7 +168,14 @@ final class CardStore {
             ?? collection.lineupCard(teamCode: player.teamCode, name: player.name)
     }
 
+    /// 계정에서 받은 카드·포인트·라인업으로 바꾼다
+    func replace(with collection: CardCollection) {
+        self.collection = collection
+        save()
+    }
+
     private func save() {
+        defer { onChange?() }
         guard let data = try? JSONEncoder().encode(collection) else { return }
         try? data.write(to: storeURL, options: .atomic)
     }

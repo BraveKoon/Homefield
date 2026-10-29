@@ -40,6 +40,11 @@
    - Project URL (`https://xxxx.supabase.co`)
    - anon (public) key
 
+### 앱에 들어가는 값
+
+Project URL 과 anon 키는 `Homefield/Sync/SupabaseConfig.swift` 에 있다. 프로젝트를 새로 만들면 이 파일의 두 값만 바꾼다.
+Sign in with Apple entitlement(`com.apple.developer.applesignin`)는 `project.yml` 의 앱 타깃 entitlements 에 넣는다.
+
 ### 3. 앱 심사를 내기 전에 해야 하는 것
 
 - **개인정보 처리방침 수정**: 지금 방침은 "개인정보를 수집하지 않고 로그인 기능이 없다"고 되어 있다.
