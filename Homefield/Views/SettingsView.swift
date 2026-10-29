@@ -26,6 +26,8 @@ struct SettingsView: View {
                     .listRowBackground(FavoriteTeamHeader.background(for: settings.favoriteTeamCode))
                 }
 
+                AccountSection()
+
                 Section {
                     Picker(selection: $settings.songScope) {
                         ForEach(AppSettings.SongScope.allCases) { scope in
@@ -111,6 +113,7 @@ struct SettingsView: View {
                 }
             }
             .themedBackground()
+            .modifier(AccountDialogs())
             .navigationTitle("설정")
         }
     }

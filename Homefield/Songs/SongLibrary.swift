@@ -65,6 +65,8 @@ final class SongLibrary {
     private(set) var careers: [String: KBOPlayerCareer] = [:]
 
     private let storeURL: URL
+    /// 저장할 때마다 불린다 (계정 동기화가 바뀐 것을 알아챈다)
+    @ObservationIgnored var onChange: (@MainActor () -> Void)?
     let songsDirectory: URL
     let photosDirectory: URL
 
@@ -444,5 +446,30 @@ final class SongLibrary {
         )
         guard let data = try? JSONEncoder().encode(stored) else { return }
         try? data.write(to: storeURL, options: .atomic)
+        onChange?()
+    }
+
+    /// 계정에서 받은 응원가 지정으로 바꾼다.
+    /// Apple Music 곡 지정만 이어지므로, 이 기기에 있는 음악 파일 지정은 그대로 둔다.
+    func applySynced(assignments remote: [String: SongAssignment], teamCheers remoteTeamCheers: [String: SongSource]) {
+        func localFile(_ source: SongSource?) -> SongSource? {
+            if case .localFile? = source { return source }
+            return nil
+        }
+        var merged: [String: SongAssignment] = [:]
+        for key in Set(remote.keys).union(assignments.keys) {
+            let walkUp = remote[key]?.walkUp ?? localFile(assignments[key]?.walkUp)
+            let cheer = remote[key]?.cheer ?? localFile(assignments[key]?.cheer)
+            if walkUp != nil || cheer != nil {
+                merged[key] = SongAssignment(walkUp: walkUp, cheer: cheer)
+            }
+        }
+        var mergedTeamCheers = remoteTeamCheers
+        for (code, source) in teamCheers where mergedTeamCheers[code] == nil {
+            if let file = localFile(source) { mergedTeamCheers[code] = file }
+        }
+        assignments = merged
+        teamCheers = mergedTeamCheers
+        save()
     }
 }

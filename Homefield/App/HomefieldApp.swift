@@ -8,6 +8,7 @@ struct HomefieldApp: App {
     @State private var director: AudioDirector
     @State private var attendance: AttendanceStore
     @State private var cards: CardStore
+    @State private var account: AccountStore
 
     init() {
         let settings = AppSettings()
@@ -15,8 +16,11 @@ struct HomefieldApp: App {
         _settings = State(initialValue: settings)
         _library = State(initialValue: library)
         _director = State(initialValue: AudioDirector(settings: settings, library: library))
-        _attendance = State(initialValue: AttendanceStore())
-        _cards = State(initialValue: CardStore())
+        let attendance = AttendanceStore()
+        let cards = CardStore()
+        _attendance = State(initialValue: attendance)
+        _cards = State(initialValue: cards)
+        _account = State(initialValue: AccountStore(settings: settings, cards: cards, attendance: attendance, library: library))
     }
 
     var body: some Scene {
@@ -27,12 +31,15 @@ struct HomefieldApp: App {
                 .environment(director)
                 .environment(attendance)
                 .environment(cards)
+                .environment(account)
         }
     }
 }
 
 struct RootView: View {
     @Environment(AppSettings.self) private var settings
+    @Environment(AccountStore.self) private var account
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         let theme = TeamTheme.forTeam(settings.favoriteTeamCode)
@@ -50,6 +57,11 @@ struct RootView: View {
         .environment(\.isAutumn, settings.isAutumn)
         .animation(.appear, value: settings.favoriteTeamCode)
         .animation(.appear, value: settings.hasCompletedOnboarding)
+        // 앱을 열 때와 다시 앞으로 올 때 계정과 맞춘다 (로그인하지 않았으면 아무 일도 하지 않는다)
+        .task { await account.sync() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await account.sync() } }
+        }
     }
 
     private var tabs: some View {
