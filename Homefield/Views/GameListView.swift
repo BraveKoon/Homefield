@@ -56,7 +56,7 @@ struct GameListView: View {
                 .padding(AppStyle.screenPadding)
             }
             .background { ThemedBackground() }
-            .gentleAnimation()
+            .animation(.appear, value: games.map(\.id))
             .overlay {
                 if isLoading && games.isEmpty { ProgressView() }
             }

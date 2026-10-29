@@ -56,7 +56,6 @@ struct RotationView: View {
             .padding(AppStyle.screenPadding)
         }
         .background { ThemedBackground() }
-        .gentleAnimation()
         .overlay {
             if isLoading && starters == nil { ProgressView() }
         }

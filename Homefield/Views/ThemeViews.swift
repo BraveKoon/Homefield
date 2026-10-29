@@ -32,7 +32,7 @@ struct ThemedBackground: View {
             }
         }
         .ignoresSafeArea()
-        .gentleAnimation(.easeInOut(duration: 0.3))
+        .animation(.easeInOut(duration: 0.3), value: isAutumn)
     }
 }
 

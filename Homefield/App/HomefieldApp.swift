@@ -36,6 +36,23 @@ struct RootView: View {
 
     var body: some View {
         let theme = TeamTheme.forTeam(settings.favoriteTeamCode)
+        // 첫 실행 화면은 시트로 띄우지 않고 화면 자체를 바꾼다.
+        // Mac(Catalyst)에서는 시트를 띄우는 시점에 환경 값이 아직 없어 바로 죽는다.
+        Group {
+            if settings.hasCompletedOnboarding {
+                tabs
+            } else {
+                OnboardingView()
+            }
+        }
+        .tint(theme.primary)
+        .environment(\.teamTheme, theme)
+        .environment(\.isAutumn, settings.isAutumn)
+        .animation(.appear, value: settings.favoriteTeamCode)
+        .animation(.appear, value: settings.hasCompletedOnboarding)
+    }
+
+    private var tabs: some View {
         TabView {
             GameListView()
                 .tabItem { Label("경기", systemImage: "baseball") }
@@ -47,16 +64,6 @@ struct RootView: View {
                 .tabItem { Label("응원가", systemImage: "music.note.list") }
             SettingsView()
                 .tabItem { Label("설정", systemImage: "gearshape") }
-        }
-        .tint(theme.primary)
-        .environment(\.teamTheme, theme)
-        .environment(\.isAutumn, settings.isAutumn)
-        .animation(.appear, value: settings.favoriteTeamCode)
-        .fullScreenCover(isPresented: Binding(
-            get: { !settings.hasCompletedOnboarding },
-            set: { if !$0 { settings.hasCompletedOnboarding = true } }
-        )) {
-            OnboardingView()
         }
     }
 }
