@@ -7,7 +7,7 @@ struct GameLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: GameActivityAttributes.self) { context in
             LockScreenGameView(attributes: context.attributes, state: context.state)
-                .activityBackgroundTint(TeamTheme.forTeam(context.attributes.favoriteCode ?? context.attributes.homeCode).primary.deep)
+                .activityBackgroundTint(Color.black.opacity(0.75))
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             let attributes = context.attributes
@@ -66,8 +66,7 @@ struct GameLiveActivity: Widget {
 
 // MARK: - 잠금화면
 
-/// 잠금화면: 한 장짜리 점수판.
-/// 1줄 팀·점수·주자, 2줄 투수·이닝·타자, 3줄 투구 수·볼카운트·타율, 맨 아래 최근 중계 한 줄.
+/// 잠금화면: 위는 점수판(팀·점수·이닝), 가운데는 볼카운트·주자·투타, 아래는 최근 중계
 struct LockScreenGameView: View {
     let attributes: GameActivityAttributes
     let state: GameActivityAttributes.ContentState
@@ -77,121 +76,119 @@ struct LockScreenGameView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            VStack(spacing: 7) {
-                scoreRow
-                matchupRow
-                if state.isLive {
-                    detailRow
+        VStack(spacing: 10) {
+            header
+
+            HStack(alignment: .center, spacing: 0) {
+                TeamColumn(code: attributes.awayCode, name: attributes.awayName)
+                VStack(spacing: 4) {
+                    HStack(spacing: 10) {
+                        ScoreText(score: state.awayScore, winning: (state.awayScore ?? 0) > (state.homeScore ?? 0))
+                        Text(":")
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.5))
+                        ScoreText(score: state.homeScore, winning: (state.homeScore ?? 0) > (state.awayScore ?? 0))
+                    }
+                    StatusPill(title: state.title, isLive: state.isLive)
+                }
+                .frame(minWidth: 130)
+                TeamColumn(code: attributes.homeCode, name: attributes.homeName)
+            }
+
+            if state.isLive {
+                Divider().overlay(.white.opacity(0.15))
+                HStack(spacing: 12) {
+                    CountDots(balls: state.balls, strikes: state.strikes, outs: state.outs, dotSize: 8)
+                    MatchupLine(pitcher: state.pitcher, batter: state.batter)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    BasesDiamond(bases: state.bases, size: 34)
                 }
             }
-            .padding(.horizontal, 18)
-            .padding(.top, 14)
-            .padding(.bottom, 10)
 
-            if let latest = state.recentPlays.first {
-                Text(latest)
-                    .font(.system(size: 12, weight: .semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 10)
-                    .background(Color.black.opacity(0.24), in: Capsule())
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 11)
+            if !state.recentPlays.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(Array(state.recentPlays.prefix(2).enumerated()), id: \.offset) { index, play in
+                        PlayLine(text: play, highlighted: index == 0)
+                    }
+                }
             }
         }
         .foregroundStyle(.white)
-        .background(LinearGradient(colors: [accent.deep, accent.deep.opacity(0.85)], startPoint: .top, endPoint: .bottom))
-    }
-
-    /// 키움  0  ◇◆◇  0  SSG
-    private var scoreRow: some View {
-        HStack(spacing: 0) {
-            Text(TeamTheme.shortName(for: attributes.awayCode))
-                .font(.system(size: 17, weight: .heavy))
-                .frame(maxWidth: .infinity, alignment: .leading)
-            score(state.awayScore)
-            BasesDiamond(bases: state.bases, size: 40, occupiedColor: .white)
-                .padding(.horizontal, 16)
-            score(state.homeScore)
-            Text(TeamTheme.shortName(for: attributes.homeCode))
-                .font(.system(size: 17, weight: .heavy))
-                .frame(maxWidth: .infinity, alignment: .trailing)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background {
+            ZStack {
+                LinearGradient(
+                    colors: [accent.opacity(0.95), Color.black.opacity(0.9)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                // 응원팀 짧은 이름을 크게 흐리게 깔아 둔다 (로고 대신)
+                Text(TeamTheme.shortName(for: attributes.favoriteCode ?? attributes.homeCode))
+                    .font(.system(size: 90, weight: .black, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.06))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .offset(x: 10, y: -12)
+                if AutumnStyle.isActive {
+                    FallingLeaves(count: 6, animated: false, opacity: 0.35, scale: 0.7)
+                }
+            }
         }
-        .lineLimit(1)
     }
 
-    private func score(_ value: Int?) -> some View {
-        Text(value.map(String.init) ?? "-")
-            .font(.system(size: 26, weight: .heavy, design: .rounded).monospacedDigit())
-            .contentTransition(.numericText())
-            .frame(minWidth: 22)
-    }
-
-    /// 투수 | 1회말 | 타자
-    private var matchupRow: some View {
-        HStack(spacing: 8) {
-            Text(state.pitcher ?? "")
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Text(state.isLive ? state.title : state.status)
-                .font(.system(size: 11, weight: .bold))
-                .padding(.horizontal, 9)
-                .padding(.vertical, 3)
-                .background(Color.white.opacity(0.18), in: Capsule())
-                .fixedSize()
-            Text(state.batter ?? "")
-                .frame(maxWidth: .infinity, alignment: .trailing)
+    private var header: some View {
+        HStack(spacing: 6) {
+            if AutumnStyle.isActive {
+                Text("🍁").font(.caption2)
+            }
+            if let favorite = attributes.favoriteCode {
+                TeamDot(code: favorite, size: 16)
+                Text("MY TEAM")
+                    .font(.caption2.weight(.black))
+                    .tracking(1)
+            } else {
+                Image(systemName: "baseball.fill").font(.caption2)
+                Text("홈구장")
+                    .font(.caption2.weight(.black))
+            }
+            Spacer()
+            if let stadium = attributes.stadium {
+                Label(stadium, systemImage: "mappin.and.ellipse")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.75))
+            }
         }
-        .font(.system(size: 13, weight: .semibold))
-        .lineLimit(1)
-        .minimumScaleFactor(0.8)
-    }
-
-    /// 10구 | B ●●● S ●● OUT ●● | .356
-    private var detailRow: some View {
-        HStack(spacing: 8) {
-            Text(state.pitchCount.map { "\($0)구" } ?? "")
-                .frame(maxWidth: .infinity, alignment: .leading)
-            InlineCount(balls: state.balls, strikes: state.strikes, outs: state.outs)
-                .fixedSize()
-            Text(state.batterAverage ?? "")
-                .frame(maxWidth: .infinity, alignment: .trailing)
-        }
-        .font(.system(size: 11, weight: .medium).monospacedDigit())
-        .foregroundStyle(.white.opacity(0.7))
-        .lineLimit(1)
     }
 }
 
-/// B ●●● S ●● OUT ●● 를 한 줄로
-private struct InlineCount: View {
-    let balls: Int
-    let strikes: Int
-    let outs: Int
+// MARK: - 부품
+
+/// 팀 배지 + 이름 (잠금화면)
+private struct TeamColumn: View {
+    let code: String
+    let name: String
 
     var body: some View {
-        HStack(spacing: 9) {
-            group("B", filled: balls, total: 3, color: Color(hex: 0x3DDC84))
-            group("S", filled: strikes, total: 2, color: Color(hex: 0xFFD23F))
-            group("OUT", filled: outs, total: 2, color: Color(hex: 0xFF5A5A))
+        VStack(spacing: 6) {
+            TeamDot(code: code, size: 42)
+            Text(name)
+                .font(.footnote.weight(.bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("볼 \(balls), 스트라이크 \(strikes), 아웃 \(outs)")
+        .frame(maxWidth: .infinity)
     }
+}
 
-    private func group(_ label: String, filled: Int, total: Int, color: Color) -> some View {
-        HStack(spacing: 3) {
-            Text(label)
-                .font(.system(size: 10, weight: .heavy))
-                .foregroundStyle(.white.opacity(0.85))
-            ForEach(0..<total, id: \.self) { index in
-                Circle()
-                    .fill(index < filled ? color : Color.white.opacity(0.22))
-                    .frame(width: 5, height: 5)
-            }
-        }
+private struct ScoreText: View {
+    let score: Int?
+    let winning: Bool
+
+    var body: some View {
+        Text(score.map(String.init) ?? "-")
+            .font(.system(size: 40, weight: .black, design: .rounded).monospacedDigit())
+            .foregroundStyle(winning ? .white : .white.opacity(0.7))
+            .contentTransition(.numericText())
     }
 }
 
@@ -312,8 +309,6 @@ private struct PlayLine: View {
 struct BasesDiamond: View {
     let bases: [Bool]
     var size: CGFloat = 30
-    /// 주자가 있는 베이스 색
-    var occupiedColor: Color = .yellow
 
     var body: some View {
         let base = size * 0.36
@@ -338,8 +333,8 @@ struct BasesDiamond: View {
 
     private func diamond(_ occupied: Bool, _ side: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: side * 0.15)
-            .fill(occupied ? occupiedColor : Color.white.opacity(0.08))
-            .overlay(RoundedRectangle(cornerRadius: side * 0.15).stroke(Color.white.opacity(occupied ? 0 : 0.6), lineWidth: 1))
+            .fill(occupied ? Color.yellow : Color.white.opacity(0.18))
+            .overlay(RoundedRectangle(cornerRadius: side * 0.15).stroke(Color.white.opacity(occupied ? 0 : 0.5), lineWidth: 1))
             .frame(width: side, height: side)
             .rotationEffect(.degrees(45))
     }
@@ -374,13 +369,6 @@ struct CountDots: View {
 }
 
 extension Color {
-    /// 잠금화면 점수판 바탕: 팀 색을 어둡게 (KIA 빨강 → 짙은 자주)
-    var deep: Color {
-        var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0, alpha: CGFloat = 0
-        guard UIColor(self).getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) else { return self }
-        return Color(hue: hue, saturation: min(saturation, 0.85), brightness: min(brightness, 0.4))
-    }
-
     /// 어두운 팀 색(두산·롯데·KT 남색·검정)도 검은 배경에서 보이도록 밝게
     var vivid: Color {
         var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0, alpha: CGFloat = 0

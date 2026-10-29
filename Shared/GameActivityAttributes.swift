@@ -20,10 +20,6 @@ struct GameActivityAttributes: ActivityAttributes {
         var batter: String?
         /// 최근 중계 문장 (최신이 먼저, 최대 3개)
         var recentPlays: [String]
-        /// 지금 타석에서 던진 공 수 ("10구"). 모르면 nil.
-        var pitchCount: Int? = nil
-        /// 타자의 시즌 타율 (".356"). 공식 기록이 없으면 nil.
-        var batterAverage: String? = nil
     }
 
     var gameId: String
