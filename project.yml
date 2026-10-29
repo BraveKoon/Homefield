@@ -33,6 +33,9 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.com.bravekoon.homefield
+        # Apple 로그인 (Apple Developer 의 App ID 에서 Sign in with Apple 을 켜 둔 상태여야 한다)
+        com.apple.developer.applesignin:
+          - Default
     info:
       path: Homefield/Info.plist
       properties:
