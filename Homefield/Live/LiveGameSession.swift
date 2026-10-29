@@ -296,8 +296,22 @@ final class LiveGameSession {
             pitcher: gameState.pitcherName,
             batter: gameState.batterName,
             // log 는 최신이 앞
-            recentPlays: Array(log.lazy.compactMap { self.headline.headline(for: $0.text) }.prefix(3))
+            recentPlays: Array(log.lazy.compactMap { self.headline.headline(for: $0.text) }.prefix(3)),
+            pitchCount: currentPitchCount,
+            batterAverage: currentBatterAverage
         )
+    }
+
+    /// 지금 타석의 투구 수 (최신 줄부터 타자 등장 전까지 가장 최근 "N구" 줄)
+    private var currentPitchCount: Int? {
+        PitchCount.current(in: log.map { (text: $0.text, isBatterIntro: $0.isBatter) })
+    }
+
+    /// 타자의 시즌 타율 (네이버 공식 기록)
+    private var currentBatterAverage: String? {
+        guard let batter = currentBatter else { return nil }
+        return library.seasonStats(teamCode: batter.teamCode, name: batter.name)?
+            .displayItems.first { $0.label == "타율" }?.value
     }
 
     /// 경기 종료: 방송 지연만큼 밀린 중계까지 반영한 최종 점수를 잠시 보여 주고 잠금화면에서 내린다
