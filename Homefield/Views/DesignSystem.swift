@@ -25,25 +25,6 @@ extension Animation {
     static let value = Animation.snappy(duration: 0.28)
 }
 
-/// 동작 줄이기를 켜면 움직임을 뺀다
-struct ReducedMotionAnimation: ViewModifier {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    let animation: Animation
-
-    func body(content: Content) -> some View {
-        content.transaction { transaction in
-            transaction.animation = reduceMotion ? nil : animation
-        }
-    }
-}
-
-extension View {
-    /// 동작 줄이기를 지키는 애니메이션
-    func gentleAnimation(_ animation: Animation = .appear) -> some View {
-        modifier(ReducedMotionAnimation(animation: animation))
-    }
-}
-
 /// 누르면 살짝 들어가는 버튼 (목록 카드에 쓴다)
 struct PressableStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
