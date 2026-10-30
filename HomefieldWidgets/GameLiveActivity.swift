@@ -66,7 +66,11 @@ struct GameLiveActivity: Widget {
 
 // MARK: - 잠금화면
 
-/// 잠금화면: 위는 점수판(팀·점수·이닝), 가운데는 볼카운트·주자·투타, 아래는 최근 중계
+/// 잠금화면: 위는 점수판(팀·점수·이닝), 가운데는 볼카운트·주자·투타, 아래는 최근 중계.
+///
+/// 잠금화면 실시간 중계는 높이가 160pt 까지라 넘치면 위아래가 잘린다.
+/// 경기 중에는 점수판 약 64 + 볼카운트 36 + 중계 한 줄 24 + 간격 10 + 위아래 여백 16 = 약 150pt 로 맞췄다.
+/// 글자 크기를 키운 사람도 넘치지 않도록 글자 크기는 기본까지만 키운다.
 struct LockScreenGameView: View {
     let attributes: GameActivityAttributes
     let state: GameActivityAttributes.ContentState
@@ -76,16 +80,14 @@ struct LockScreenGameView: View {
     }
 
     var body: some View {
-        VStack(spacing: 10) {
-            header
-
+        VStack(spacing: 5) {
             HStack(alignment: .center, spacing: 0) {
                 TeamColumn(code: attributes.awayCode, name: attributes.awayName)
-                VStack(spacing: 4) {
+                VStack(spacing: 2) {
                     HStack(spacing: 10) {
                         ScoreText(score: state.awayScore, winning: (state.awayScore ?? 0) > (state.homeScore ?? 0))
                         Text(":")
-                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
                             .foregroundStyle(.white.opacity(0.5))
                         ScoreText(score: state.homeScore, winning: (state.homeScore ?? 0) > (state.awayScore ?? 0))
                     }
@@ -96,26 +98,27 @@ struct LockScreenGameView: View {
             }
 
             if state.isLive {
-                Divider().overlay(.white.opacity(0.15))
                 HStack(spacing: 12) {
-                    CountDots(balls: state.balls, strikes: state.strikes, outs: state.outs, dotSize: 8)
+                    CountDots(balls: state.balls, strikes: state.strikes, outs: state.outs, dotSize: 6)
                     MatchupLine(pitcher: state.pitcher, batter: state.batter)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    BasesDiamond(bases: state.bases, size: 34)
+                    BasesDiamond(bases: state.bases, size: 30)
                 }
             }
 
             if !state.recentPlays.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(Array(state.recentPlays.prefix(2).enumerated()), id: \.offset) { index, play in
+                // 경기 중에는 한 줄만 (자리가 모자란다). 시작 전·종료 후에는 두 줄
+                VStack(alignment: .leading, spacing: 3) {
+                    ForEach(Array(state.recentPlays.prefix(state.isLive ? 1 : 2).enumerated()), id: \.offset) { index, play in
                         PlayLine(text: play, highlighted: index == 0)
                     }
                 }
             }
         }
         .foregroundStyle(.white)
+        .dynamicTypeSize(...DynamicTypeSize.large)
         .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.vertical, 8)
         .background {
             ZStack {
                 LinearGradient(
@@ -135,30 +138,6 @@ struct LockScreenGameView: View {
             }
         }
     }
-
-    private var header: some View {
-        HStack(spacing: 6) {
-            if AutumnStyle.isActive {
-                Text("🍁").font(.caption2)
-            }
-            if let favorite = attributes.favoriteCode {
-                TeamDot(code: favorite, size: 16)
-                Text("MY TEAM")
-                    .font(.caption2.weight(.black))
-                    .tracking(1)
-            } else {
-                Image(systemName: "baseball.fill").font(.caption2)
-                Text("홈구장")
-                    .font(.caption2.weight(.black))
-            }
-            Spacer()
-            if let stadium = attributes.stadium {
-                Label(stadium, systemImage: "mappin.and.ellipse")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.75))
-            }
-        }
-    }
 }
 
 // MARK: - 부품
@@ -169,8 +148,8 @@ private struct TeamColumn: View {
     let name: String
 
     var body: some View {
-        VStack(spacing: 6) {
-            TeamDot(code: code, size: 42)
+        VStack(spacing: 3) {
+            TeamDot(code: code, size: 32)
             Text(name)
                 .font(.footnote.weight(.bold))
                 .lineLimit(1)
@@ -186,7 +165,7 @@ private struct ScoreText: View {
 
     var body: some View {
         Text(score.map(String.init) ?? "-")
-            .font(.system(size: 40, weight: .black, design: .rounded).monospacedDigit())
+            .font(.system(size: 34, weight: .black, design: .rounded).monospacedDigit())
             .foregroundStyle(winning ? .white : .white.opacity(0.7))
             .contentTransition(.numericText())
     }
@@ -300,7 +279,7 @@ private struct PlayLine: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, highlighted ? 6 : 3)
+        .padding(.vertical, highlighted ? 4 : 2)
         .background(highlighted ? Color.white.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
