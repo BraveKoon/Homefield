@@ -18,6 +18,8 @@ struct AccountSection: View {
                 }
                 .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
                 .frame(height: 44)
+                // 둘레 카드와 토글, 탭 막대처럼 둥글게 (기본 모서리는 각져 보인다)
+                .clipShape(Capsule())
                 .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                 if case .failed(let message) = account.status {
                     Text(message)
