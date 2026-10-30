@@ -60,7 +60,7 @@ final class AppSettings {
     /// 저장할 때마다 불린다 (계정 동기화가 바뀐 것을 알아챈다)
     @ObservationIgnored var onChange: (@MainActor () -> Void)?
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = BuildFlavor.defaults) {
         self.defaults = defaults
         broadcastDelay = defaults.object(forKey: Keys.broadcastDelay) as? Double ?? 0
         walkUpDuration = defaults.object(forKey: Keys.walkUpDuration) as? Double ?? 15
@@ -82,7 +82,8 @@ final class AppSettings {
             WidgetCenter.shared.reloadTimelines(ofKind: TeamGameWidgetKind.kind)
         }
         songScope = defaults.string(forKey: Keys.songScope).flatMap(SongScope.init(rawValue:)) ?? .allTeams
-        useDemo = defaults.object(forKey: Keys.useDemo) as? Bool ?? false
+        // 데모 빌드는 늘 가상 경기만 쓴다
+        useDemo = BuildFlavor.isDemo || (defaults.object(forKey: Keys.useDemo) as? Bool ?? false)
         // 예전 버전에서 이미 응원팀을 골랐다면 다시 묻지 않는다
         hasCompletedOnboarding = defaults.object(forKey: Keys.hasCompletedOnboarding) as? Bool ?? (favorite != nil)
         let autumn = defaults.string(forKey: Keys.autumnMode).flatMap(AutumnBaseball.Mode.init(rawValue:)) ?? .auto

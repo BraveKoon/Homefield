@@ -7,6 +7,7 @@
 - 앱 코드가 바뀐 PR을 병합하면 **`main`에서 TestFlight 워크플로(`testflight.yml`)를 실행**하고 결과를 확인한다. 실패하면 로그를 보고 고친다.
 - TestFlight 업로드가 성공하면 워크플로가 `build-<번호>` GitHub 프리릴리스를 자동으로 만든다.
 - 버전 릴리스(예: v1.1)는 `project.yml` 맨 위 `settings`의 `MARKETING_VERSION`(앱·위젯 확장 공통)을 올려 병합한 뒤 `main`에서 TestFlight 워크플로를 `release_tag: v1.1` 입력으로 실행한다(태그 푸시는 세션 프록시가 막는다). 워크플로가 `v1.1` 태그와 정식 릴리스를 만든다.
+- 데모 빌드(심사·소개용 예외 빌드): `main`에서 TestFlight 워크플로를 `demo_build: true`(release_tag는 비움)로 실행한다. 컴파일 조건 `DEMO_BUILD`로 앱·위젯을 만들어 가상 팀·가상 선수(`DemoLeague`)만 나오고, 팀 로고·선수 사진을 받지 않고, 카드 포인트를 3,000으로 고정하고, 로그인·동기화를 끈다. 저장 파일과 설정은 일반 빌드와 따로 쓴다. `build-N` 프리릴리스(제목에 '데모 빌드')로만 남고, 다음 일반 빌드를 올리기 전까지 TestFlight 최신 빌드가 데모 빌드가 된다.
 - 문서만 바뀐 PR(README, docs/)은 병합만 하고 TestFlight는 돌리지 않아도 된다.
 - App Store 심사 제출은 자동으로 하지 않는다. 네이버 비공식 API 사용 문제(`docs/app-store-metadata.md`의 심사 위험 요소)가 정리되기 전까지는 저장소 주인이 직접 결정한다.
 

@@ -62,18 +62,21 @@ struct GameListView: View {
             }
             .navigationTitle("홈구장")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        RotationView()
-                    } label: {
-                        Label("선발", systemImage: "figure.baseball")
+                // 선발·순위는 실제 리그 기록이라 데모 빌드에서는 숨긴다
+                if !BuildFlavor.isDemo {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink {
+                            RotationView()
+                        } label: {
+                            Label("선발", systemImage: "figure.baseball")
+                        }
                     }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        StandingsView()
-                    } label: {
-                        Label("순위", systemImage: "list.number")
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink {
+                            StandingsView()
+                        } label: {
+                            Label("순위", systemImage: "list.number")
+                        }
                     }
                 }
             }

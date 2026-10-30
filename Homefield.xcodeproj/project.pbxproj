@@ -33,10 +33,13 @@
 		6D5FE78412DED5E1281E75D9 /* TeamGameWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AA95021AF14DBE29F10C03C /* TeamGameWidget.swift */; };
 		744E6B72DD54F36F5CA03259 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED08189F0D16DFAA5960F209 /* AccountView.swift */; };
 		818F538C9165B760B5C096E9 /* CardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B852488377572C038C748C34 /* CardsView.swift */; };
+		8582EAACE0A470DB4658392C /* BuildFlavor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4919B3745B49E33562415ED9 /* BuildFlavor.swift */; };
+		8C95CBB50F8C74EBBA9C2D27 /* BuildFlavor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4919B3745B49E33562415ED9 /* BuildFlavor.swift */; };
 		AD8A3170190339A72DBB87CC /* AccountStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0E0C6F19B8698514D5C22C1 /* AccountStore.swift */; };
 		B2DE8AF42818BB143D036823 /* CardStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 358CA7D0B983D7B5409C8664 /* CardStore.swift */; };
 		B72CB8A7ADABCBF6ECF2A4F2 /* SessionKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CDAC87028862C1560CE4C82 /* SessionKeychain.swift */; };
 		B9A77CAD4C5668180555AB35 /* AudioDirector.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E9A4E4E97F1CE11E4A5AB3 /* AudioDirector.swift */; };
+		BB71A51617A0AED55119550B /* AppTeams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 201594C56738B4C1D31563E8 /* AppTeams.swift */; };
 		BC841BB703886D4FCA7EE890 /* LiveGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 363EE5EA2EA56C30F27C8D24 /* LiveGameView.swift */; };
 		BE37DDC80F6FC36A1CB91F39 /* LiveGameSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3F4B746485ED6231E2AD3A5 /* LiveGameSession.swift */; };
 		BE57184B15ACDCEEE1AA8FB0 /* HomefieldWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7CE8E9B7CEE01B9474A2D458 /* HomefieldWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -44,6 +47,7 @@
 		CF64854B2048AB73B12FD426 /* HomefieldCore in Frameworks */ = {isa = PBXBuildFile; productRef = D144D72B11028824B3E5B1BB /* HomefieldCore */; };
 		D2A198CFB04C81B9F15786CE /* SupabaseAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60F12FC20B8E8C0926560FDF /* SupabaseAPI.swift */; };
 		D35C2D519E1BA99F79FE2C17 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E2C891CE7A8324FF9E81B9 /* AppSettings.swift */; };
+		D6A36838DD4655EC10EB1ECD /* AppTeams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 201594C56738B4C1D31563E8 /* AppTeams.swift */; };
 		D75897F33FE2D49FCD748E53 /* Narrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 817BCD2DAF8E8E08AD7547D8 /* Narrator.swift */; };
 		DFA6BA1F0AF020052558864F /* SharedSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F96DC396223B94BEED9E9B1 /* SharedSettings.swift */; };
 		E0D19EA0CA2DEC10AE3E930E /* GameListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D053340E166A4F1A5BF84104 /* GameListView.swift */; };
@@ -86,6 +90,7 @@
 		04E7BBF698CE61F7416A0B9C /* AttendanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceView.swift; sourceTree = "<group>"; };
 		0F96DC396223B94BEED9E9B1 /* SharedSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedSettings.swift; sourceTree = "<group>"; };
 		1E05D3F96C4B0C899039E8F7 /* RotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotationView.swift; sourceTree = "<group>"; };
+		201594C56738B4C1D31563E8 /* AppTeams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTeams.swift; sourceTree = "<group>"; };
 		232CF63C1BC09B67169F1B7E /* PlayerDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerDetailView.swift; sourceTree = "<group>"; };
 		2CDAC87028862C1560CE4C82 /* SessionKeychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionKeychain.swift; sourceTree = "<group>"; };
 		31D4D1A2DF40A9B77B247DD2 /* HomefieldWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HomefieldWidgets.entitlements; sourceTree = "<group>"; };
@@ -93,6 +98,7 @@
 		358CA7D0B983D7B5409C8664 /* CardStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStore.swift; sourceTree = "<group>"; };
 		3633B3D940EB489FA4822CD9 /* SongLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryView.swift; sourceTree = "<group>"; };
 		363EE5EA2EA56C30F27C8D24 /* LiveGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveGameView.swift; sourceTree = "<group>"; };
+		4919B3745B49E33562415ED9 /* BuildFlavor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildFlavor.swift; sourceTree = "<group>"; };
 		531513B24FF5100A973F43B7 /* TeamTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamTheme.swift; sourceTree = "<group>"; };
 		53B22290F4B62BC14E1F4B8F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		56E2C891CE7A8324FF9E81B9 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
@@ -253,7 +259,9 @@
 		86AAD20C6FC2C3BE7373AD35 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				201594C56738B4C1D31563E8 /* AppTeams.swift */,
 				FCF0D085603EDDAD3D1C333E /* AutumnDecor.swift */,
+				4919B3745B49E33562415ED9 /* BuildFlavor.swift */,
 				71ED6E976FC3894E112BE678 /* GameActivityAttributes.swift */,
 				0F96DC396223B94BEED9E9B1 /* SharedSettings.swift */,
 				531513B24FF5100A973F43B7 /* TeamTheme.swift */,
@@ -421,7 +429,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D6A36838DD4655EC10EB1ECD /* AppTeams.swift in Sources */,
 				10DE6A4D14EA508924FBC91A /* AutumnDecor.swift in Sources */,
+				8582EAACE0A470DB4658392C /* BuildFlavor.swift in Sources */,
 				F22C6655DFC59A787AC233D5 /* GameActivityAttributes.swift in Sources */,
 				35087BF99F96EA5DB236BDB1 /* GameLiveActivity.swift in Sources */,
 				E9ED0AFAF619313EB3667F97 /* HomefieldWidgetsBundle.swift in Sources */,
@@ -438,6 +448,7 @@
 				AD8A3170190339A72DBB87CC /* AccountStore.swift in Sources */,
 				744E6B72DD54F36F5CA03259 /* AccountView.swift in Sources */,
 				D35C2D519E1BA99F79FE2C17 /* AppSettings.swift in Sources */,
+				BB71A51617A0AED55119550B /* AppTeams.swift in Sources */,
 				EF68ED2BAAFFE0C9D04D1D94 /* AppleMusicSearchView.swift in Sources */,
 				11BE5F7E7BE9056945D8EEEC /* AttendanceStore.swift in Sources */,
 				E95DD2DE66C84E9125705FE3 /* AttendanceView.swift in Sources */,
@@ -446,6 +457,7 @@
 				5F4911FDEB0D180EED04B16B /* BackgroundKeeper.swift in Sources */,
 				056ED8024C4DFC1BE037CE0C /* BatchImportView.swift in Sources */,
 				4F7B7CA79348A9890A470763 /* BatchImporter.swift in Sources */,
+				8C95CBB50F8C74EBBA9C2D27 /* BuildFlavor.swift in Sources */,
 				B2DE8AF42818BB143D036823 /* CardStore.swift in Sources */,
 				818F538C9165B760B5C096E9 /* CardsView.swift in Sources */,
 				368B050EDD4FBE583FA87FF7 /* DesignSystem.swift in Sources */,

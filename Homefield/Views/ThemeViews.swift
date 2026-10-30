@@ -127,7 +127,7 @@ struct TeamPickerGrid: View {
 
     var body: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-            ForEach(KBOTeams.all, id: \.code) { team in
+            ForEach(AppTeams.all, id: \.code) { team in
                 let selected = selection == team.code
                 let theme = TeamTheme.forTeam(team.code)
                 Button {
@@ -166,7 +166,8 @@ struct OnboardingView: View {
 
     @Environment(AppSettings.self) private var settings
     @Environment(AccountStore.self) private var account
-    @State private var step = Step.login
+    // 데모 빌드는 로그인 단계 없이 팀 고르기부터
+    @State private var step = BuildFlavor.isDemo ? Step.team : Step.login
     @State private var selection: String?
 
     var body: some View {
@@ -305,7 +306,7 @@ struct OnboardingView: View {
                 Button {
                     finish(with: selection)
                 } label: {
-                    Text(selection.map { "\(KBOTeams.name(for: $0) ?? $0) 응원하기" } ?? "팀을 골라 주세요")
+                    Text(selection.map { "\(AppTeams.name(for: $0) ?? $0) 응원하기" } ?? "팀을 골라 주세요")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 6)

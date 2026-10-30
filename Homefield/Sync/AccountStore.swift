@@ -69,8 +69,9 @@ final class AccountStore {
         let support = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         try? fileManager.createDirectory(at: support, withIntermediateDirectories: true)
         stateURL = support.appendingPathComponent("sync-state.json")
-        session = SessionKeychain.load()
-        syncState = (try? Data(contentsOf: stateURL)).flatMap { try? JSONDecoder().decode(SyncState.self, from: $0) }
+        // 데모 빌드는 로그인·동기화를 하지 않는다 (키체인에 일반 빌드의 로그인이 남아 있어도 쓰지 않는다)
+        session = BuildFlavor.isDemo ? nil : SessionKeychain.load()
+        syncState = BuildFlavor.isDemo ? nil : (try? Data(contentsOf: stateURL)).flatMap { try? JSONDecoder().decode(SyncState.self, from: $0) }
 
         settings.onChange = { [weak self] in self?.localDidChange() }
         cards.onChange = { [weak self] in self?.localDidChange() }
@@ -140,7 +141,7 @@ final class AccountStore {
 
     /// 앱을 열 때, 앞으로 올 때, 로그인 직후, '지금 동기화' 를 눌렀을 때
     func sync() async {
-        guard session != nil, pendingChoice == nil else { return }
+        guard !BuildFlavor.isDemo, session != nil, pendingChoice == nil else { return }
         guard !isSyncing else {
             needsAnotherRound = true
             return
@@ -162,7 +163,7 @@ final class AccountStore {
 
     /// 이 기기 데이터가 바뀌면 잠깐 모아 두었다가 올린다
     func localDidChange() {
-        guard session != nil, !isApplying else { return }
+        guard !BuildFlavor.isDemo, session != nil, !isApplying else { return }
         debounce?.cancel()
         debounce = Task { [weak self] in
             try? await Task.sleep(for: .seconds(3))

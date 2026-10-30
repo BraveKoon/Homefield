@@ -10,6 +10,11 @@ on:
         description: '정식 릴리스 태그 (예: v1.1). 비우면 build-N 프리릴리스'
         required: false
         default: ''
+      demo_build:
+        description: '데모 빌드 (가상 팀·선수만, 로고·사진 없음, 포인트 3,000 고정, 로그인 없음). build-N 프리릴리스로만 만든다'
+        type: boolean
+        required: false
+        default: false
 
 concurrency:
   group: testflight
@@ -28,8 +33,18 @@ jobs:
       TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       # 업로드마다 빌드 번호가 달라야 한다
       BUILD_NUMBER: ${{ github.run_number }}
+      DEMO_BUILD: ${{ inputs.demo_build }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Check inputs
+        env:
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          if [ "$DEMO_BUILD" = "true" ] && [ -n "$INPUT_RELEASE_TAG" ]; then
+            echo "::error::데모 빌드는 정식 릴리스(release_tag)로 만들 수 없습니다. release_tag 를 비우세요."
+            exit 1
+          fi
 
       # App Store Connect 는 iOS 26 SDK(Xcode 26) 이상으로 빌드한 앱만 받는다
       - name: Check Xcode
@@ -95,9 +110,15 @@ jobs:
 
       # 서명 없이 아카이브하고 내보낼 때 Apple 클라우드 배포 인증서로 서명한다.
       # (아카이브에서 자동 서명을 쓰면 러너마다 개발 인증서가 새로 만들어지고, 지울 때마다 "인증서 취소" 메일이 온다)
+      # 데모 빌드는 컴파일 조건 DEMO_BUILD 를 켜서 만든다 (앱과 위젯 모두)
       - name: Archive
         run: |
           set -o pipefail
+          extra=()
+          if [ "$DEMO_BUILD" = "true" ]; then
+            echo "데모 빌드로 만듭니다"
+            extra+=('SWIFT_ACTIVE_COMPILATION_CONDITIONS=$(inherited) DEMO_BUILD')
+          fi
           xcodebuild archive \
             -project Homefield.xcodeproj \
             -scheme Homefield \
@@ -106,7 +127,8 @@ jobs:
             -archivePath "$RUNNER_TEMP/Homefield.xcarchive" \
             DEVELOPMENT_TEAM="$TEAM_ID" \
             CODE_SIGNING_ALLOWED=NO \
-            CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            "${extra[@]}"
 
       # 서명 없는 아카이브에는 entitlements 가 안 들어가서, 내보낼 때 App Group(앱·위젯 응원팀 공유)이 빠진다.
       # 인증서 없이 되는 임시(ad-hoc) 서명으로 entitlements 를 넣은 사본을 만들어 둔다. 내보낼 때 클라우드 인증서로 다시 서명된다.
@@ -178,6 +200,10 @@ jobs:
             # 서명 없는 아카이브를 내보내지 못하면 예전 방식(자동 서명 아카이브)으로 한 번 더
             echo "::warning::서명 없는 아카이브 내보내기 실패, 자동 서명으로 다시 아카이브합니다"
             rm -rf "$RUNNER_TEMP/Homefield.xcarchive"
+            extra=()
+            if [ "$DEMO_BUILD" = "true" ]; then
+              extra+=('SWIFT_ACTIVE_COMPILATION_CONDITIONS=$(inherited) DEMO_BUILD')
+            fi
             xcodebuild archive \
               -project Homefield.xcodeproj \
               -scheme Homefield \
@@ -187,7 +213,8 @@ jobs:
               "${auth[@]}" \
               DEVELOPMENT_TEAM="$TEAM_ID" \
               CODE_SIGN_STYLE=Automatic \
-              CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
+              CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+              "${extra[@]}"
             export_archive "$RUNNER_TEMP/Homefield.xcarchive" upload
           fi
 
@@ -210,7 +237,14 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             release_tag="$GITHUB_REF_NAME"
           fi
-          if [[ -n "$release_tag" ]]; then
+          if [ "$DEMO_BUILD" = "true" ]; then
+            # 데모 빌드는 일반 빌드와 구분되게 제목에 표시하고 프리릴리스로만 남긴다
+            gh release create "build-${BUILD_NUMBER}" \
+              --target "$GITHUB_SHA" \
+              --title "홈구장 ${version} (${BUILD_NUMBER}) 데모 빌드" \
+              --notes "심사·소개용 데모 빌드입니다. 가상 팀·선수만 나오고, 팀 로고와 선수 사진이 없고, 카드 포인트가 3,000 으로 고정되며, 로그인·동기화가 꺼져 있습니다." \
+              --prerelease
+          elif [[ -n "$release_tag" ]]; then
             # 버전 릴리스: 태그가 없으면 이 커밋에 만든다 (v1.1 등)
             gh release create "$release_tag" \
               --target "$GITHUB_SHA" \

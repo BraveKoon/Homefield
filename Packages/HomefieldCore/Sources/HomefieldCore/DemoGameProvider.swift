@@ -60,7 +60,13 @@ public actor DemoGameProvider: GameDataProvider {
 
     private var revealed = 0
 
-    public init() {}
+    /// revealed: 중계를 몇 줄까지 보여 준 채로 시작할지. 위젯처럼 경기 중간 모습이 필요할 때 쓴다.
+    public init(revealed: Int = 0) {
+        self.revealed = min(max(revealed, 0), script.count)
+    }
+
+    /// 1회말 끝: 홈 3 - 원정 0
+    public static let midGameRevealed = 36
 
     public func games(on date: Date) async throws -> [GameSummary] {
         [summary()]

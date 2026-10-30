@@ -63,7 +63,7 @@ struct RotationView: View {
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await Task { await load(force: true) }.value }
         .task(id: teamCode ?? settings.favoriteTeamCode ?? "") { await load() }
-        .onAppear { if teamCode == nil { teamCode = settings.favoriteTeamCode ?? KBOTeams.all.first?.code } }
+        .onAppear { if teamCode == nil { teamCode = settings.favoriteTeamCode ?? AppTeams.all.first?.code } }
     }
 
     private var current: String? {
@@ -72,7 +72,7 @@ struct RotationView: View {
 
     private var teamPicker: some View {
         Menu {
-            ForEach(KBOTeams.all, id: \.code) { team in
+            ForEach(AppTeams.all, id: \.code) { team in
                 Button {
                     teamCode = team.code
                 } label: {
@@ -83,7 +83,7 @@ struct RotationView: View {
             HStack(spacing: 10) {
                 if let current {
                     TeamBadge(code: current, size: 34)
-                    Text(KBOTeams.name(for: current) ?? current)
+                    Text(AppTeams.name(for: current) ?? current)
                         .font(.headline)
                 }
                 Image(systemName: "chevron.up.chevron.down")

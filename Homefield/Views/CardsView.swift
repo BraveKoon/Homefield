@@ -838,7 +838,7 @@ private struct CollectionBrowser: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     chip("전체 팀", selected: team == nil) { team = nil }
-                    ForEach(KBOTeams.all, id: \.code) { item in
+                    ForEach(AppTeams.all, id: \.code) { item in
                         chip(TeamTheme.shortName(for: item.code), selected: team == item.code) { team = item.code }
                     }
                 }

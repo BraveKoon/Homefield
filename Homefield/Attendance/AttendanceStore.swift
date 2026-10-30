@@ -62,7 +62,7 @@ final class AttendanceStore {
     init(fileManager: FileManager = .default) {
         let support = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         try? fileManager.createDirectory(at: support, withIntermediateDirectories: true)
-        storeURL = support.appendingPathComponent("attendance.json")
+        storeURL = support.appendingPathComponent(BuildFlavor.storeName("attendance.json"))
         load()
     }
 

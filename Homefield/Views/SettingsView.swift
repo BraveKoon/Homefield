@@ -26,7 +26,10 @@ struct SettingsView: View {
                     .listRowBackground(FavoriteTeamHeader.background(for: settings.favoriteTeamCode))
                 }
 
-                AccountSection()
+                // 데모 빌드는 로그인·동기화를 끈다 (실제 계정 데이터를 건드리지 않는다)
+                if !BuildFlavor.isDemo {
+                    AccountSection()
+                }
 
                 Section {
                     Picker(selection: $settings.songScope) {
@@ -96,14 +99,16 @@ struct SettingsView: View {
                     }
                 }
 
-                Section {
-                    Toggle(isOn: $settings.useDemo) {
-                        SettingsLabel("데모 경기 사용", systemImage: "play.rectangle.fill", color: .gray)
+                if !BuildFlavor.isDemo {
+                    Section {
+                        Toggle(isOn: $settings.useDemo) {
+                            SettingsLabel("데모 경기 사용", systemImage: "play.rectangle.fill", color: .gray)
+                        }
+                    } header: {
+                        Text("테스트")
+                    } footer: {
+                        Text("실제 경기가 없을 때 가상 경기로 등장곡과 나레이션을 시험해 볼 수 있습니다.")
                     }
-                } header: {
-                    Text("테스트")
-                } footer: {
-                    Text("실제 경기가 없을 때 가상 경기로 등장곡과 나레이션을 시험해 볼 수 있습니다.")
                 }
 
                 Section {
