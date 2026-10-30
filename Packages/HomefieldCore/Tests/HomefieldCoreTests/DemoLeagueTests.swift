@@ -48,7 +48,8 @@ final class DemoLeagueTests: XCTestCase {
     /// 위젯용: 1회말 끝 (홈 3 - 원정 0) 모습으로 시작한다
     func testMidGameProvider() async throws {
         let provider = DemoGameProvider(revealed: DemoGameProvider.midGameRevealed)
-        let game = try XCTUnwrap(try await provider.games(on: Date()).first)
+        let games = try await provider.games(on: Date())
+        let game = try XCTUnwrap(games.first)
         XCTAssertEqual(game.status, .live)
         XCTAssertEqual(game.statusText, "1회말")
         XCTAssertEqual(game.homeScore, 3)
