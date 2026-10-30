@@ -358,7 +358,7 @@ final class CardCouponTests: XCTestCase {
     func testUnknownCodeIsRejected() {
         var wallet = CardWallet()
         // 예전 코드(0609Bangjy!)는 더 이상 쓸 수 없다
-        for code in ["", "   ", "아무코드", "BraveKoo", "BraveKoon"] {
+        for code in ["", "   ", "아무코드", "BraveKoo", "0609Bangjy!"] {
             XCTAssertThrowsError(try wallet.redeem(code: code)) { error in
                 XCTAssertEqual(error as? CardCouponError, .unknown, "\(code) 는 없는 코드")
             }
