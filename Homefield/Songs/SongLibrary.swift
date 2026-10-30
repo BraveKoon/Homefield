@@ -73,15 +73,22 @@ final class SongLibrary {
     init(fileManager: FileManager = .default) {
         let support = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let documents = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        storeURL = support.appendingPathComponent("song-library.json")
+        storeURL = support.appendingPathComponent(BuildFlavor.storeName("song-library.json"))
         songsDirectory = documents.appendingPathComponent("Songs", isDirectory: true)
         photosDirectory = documents.appendingPathComponent("Photos", isDirectory: true)
         try? fileManager.createDirectory(at: support, withIntermediateDirectories: true)
         try? fileManager.createDirectory(at: songsDirectory, withIntermediateDirectories: true)
         try? fileManager.createDirectory(at: photosDirectory, withIntermediateDirectories: true)
         load()
-        for team in KBOTeams.all where teamNames[team.code] == nil {
+        for team in AppTeams.all where teamNames[team.code] == nil {
             teamNames[team.code] = team.name
+        }
+        if BuildFlavor.isDemo {
+            // 데모 빌드: 가상 팀의 엔트리와 기록을 바로 쓴다 (실제 명단을 받지 않는다)
+            rosters = DemoLeague.rosters()
+            officialStats = DemoLeague.stats()
+            rostersUpdatedAt = Date()
+            for roster in rosters.values { register(players: roster.players) }
         }
     }
 
@@ -172,7 +179,7 @@ final class SongLibrary {
     }
 
     func teamName(for code: String) -> String {
-        teamNames[code] ?? KBOTeams.name(for: code) ?? code
+        teamNames[code] ?? AppTeams.name(for: code) ?? code
     }
 
     func players(ofTeam code: String) -> [KnownPlayer] {
@@ -183,11 +190,11 @@ final class SongLibrary {
 
     /// KBO 10개 구단만 (데모 팀 제외)
     var teamCodes: [String] {
-        KBOTeams.all.map(\.code).sorted { teamName(for: $0) < teamName(for: $1) }
+        AppTeams.all.map(\.code).sorted { teamName(for: $0) < teamName(for: $1) }
     }
 
     nonisolated static func isKBOTeam(_ code: String) -> Bool {
-        KBOTeams.all.contains { $0.code == code }
+        AppTeams.contains(code)
     }
 
     /// 곡·사진·응원 정보 중 하나라도 직접 넣은 선수
@@ -209,6 +216,7 @@ final class SongLibrary {
 
     /// 각 팀 최근 경기 엔트리로 1군 명단을 새로 받고, 팀별 시즌 기록도 함께 받는다
     func refreshRosters(force: Bool = false) async {
+        if BuildFlavor.isDemo { return }
         if isRefreshingRosters { return }
         if !force, let rostersUpdatedAt, Date().timeIntervalSince(rostersUpdatedAt) < 3 * 60 * 60 { return }
         isRefreshingRosters = true

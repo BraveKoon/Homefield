@@ -3,13 +3,16 @@ import SwiftUI
 import UIKit
 
 /// 네이버 스포츠 이미지 주소 (2026-10-05 확인: 팀 로고 PNG, 선수 사진 PNG, 없는 선수는 404)
+/// 데모 빌드는 로고와 사진을 받지 않는다.
 enum SportsImageURL {
     static func teamLogo(_ code: String) -> URL? {
-        URL(string: "https://sports-phinf.pstatic.net/team/kbo/default/\(code).png")
+        guard !BuildFlavor.isDemo else { return nil }
+        return URL(string: "https://sports-phinf.pstatic.net/team/kbo/default/\(code).png")
     }
 
     static func player(_ playerId: String) -> URL? {
-        URL(string: "https://sports-phinf.pstatic.net/player/kbo/default/\(playerId).png")
+        guard !BuildFlavor.isDemo else { return nil }
+        return URL(string: "https://sports-phinf.pstatic.net/player/kbo/default/\(playerId).png")
     }
 }
 

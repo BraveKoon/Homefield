@@ -23,10 +23,11 @@ final class CardStore {
     init(fileManager: FileManager = .default) {
         let support = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         try? fileManager.createDirectory(at: support, withIntermediateDirectories: true)
-        storeURL = support.appendingPathComponent("cards.json")
+        storeURL = support.appendingPathComponent(BuildFlavor.storeName("cards.json"))
         collection = (try? JSONDecoder().decode(CardCollection.self, from: Data(contentsOf: storeURL))) ?? CardCollection()
         // 앱을 처음 받았으면 첫 선물
         award(.welcome, key: "install")
+        pinDemoPoints()
     }
 
     var points: Int { collection.wallet.points }
@@ -41,6 +42,11 @@ final class CardStore {
 
     /// 1군 엔트리와 시즌 기록으로 그해 카드 목록을 만든다. 기록이 바뀌면 등급도 따라 바뀐다.
     func refreshPool(library: SongLibrary) {
+        if BuildFlavor.isDemo {
+            // 데모 빌드: 가상 선수 카드만 쓴다 (실제 선수 카드를 만들지 않는다)
+            pool = DemoLeague.cardPool()
+            return
+        }
         let rosters = library.rosters.filter { SongLibrary.isKBOTeam($0.key) }
         guard !rosters.isEmpty else { return }
         let players = rosters.values.flatMap(\.players)
@@ -174,7 +180,14 @@ final class CardStore {
         save()
     }
 
+    /// 데모 빌드는 포인트를 늘 3,000 으로 둔다 (쓰거나 받아도 그대로)
+    private func pinDemoPoints() {
+        guard BuildFlavor.isDemo, collection.wallet.points != BuildFlavor.demoPoints else { return }
+        collection.wallet = CardWallet(points: BuildFlavor.demoPoints, awarded: collection.wallet.awarded)
+    }
+
     private func save() {
+        pinDemoPoints()
         defer { onChange?() }
         guard let data = try? JSONEncoder().encode(collection) else { return }
         try? data.write(to: storeURL, options: .atomic)

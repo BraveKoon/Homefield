@@ -25,6 +25,7 @@ struct TeamTheme {
         "KT": TeamTheme(primary: Color(hex: 0x1B1B1B), secondary: Color(hex: 0xEB1C24)),
         "WO": TeamTheme(primary: Color(hex: 0x820024), secondary: Color(hex: 0x3A0D16)),
         "DRM": TeamTheme(primary: Color(hex: 0x1F6F4A), secondary: Color(hex: 0x0E2A1C)),
+        "VKG": TeamTheme(primary: Color(hex: 0x2F4B7C), secondary: Color(hex: 0x101B33)),
     ]
 
     /// 배지에 넣을 짧은 팀 이름
@@ -35,6 +36,7 @@ struct TeamTheme {
     private static let shortNames: [String: String] = [
         "LG": "LG", "HT": "KIA", "SS": "삼성", "OB": "두산", "LT": "롯데",
         "SK": "SSG", "HH": "한화", "NC": "NC", "KT": "KT", "WO": "키움",
+        "DRM": "드림즈", "VKG": "바이킹",
     ]
 
     /// 짙은 배경에서 쓸 그라데이션

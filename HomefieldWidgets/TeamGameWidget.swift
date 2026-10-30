@@ -6,6 +6,18 @@ import WidgetKit
 
 // MARK: - 설정 (위젯을 길게 눌러 팀을 고른다)
 
+#if DEMO_BUILD
+// 데모 빌드: 가상 팀만 고를 수 있다
+enum WidgetTeam: String, AppEnum {
+    case DRM, VKG
+
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "팀"
+
+    static var caseDisplayRepresentations: [WidgetTeam: DisplayRepresentation] = [
+        .DRM: "홈구장 드림즈", .VKG: "바이킹스",
+    ]
+}
+#else
 enum WidgetTeam: String, AppEnum {
     case LG, HT, SS, OB, LT, SK, HH, NC, KT, WO
 
@@ -16,6 +28,7 @@ enum WidgetTeam: String, AppEnum {
         .SK: "SSG 랜더스", .HH: "한화 이글스", .NC: "NC 다이노스", .KT: "KT 위즈", .WO: "키움 히어로즈",
     ]
 }
+#endif
 
 struct SelectTeamIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "응원팀 경기"
@@ -44,11 +57,21 @@ struct TeamGameEntry: WidgetKit.TimelineEntry {
     /// 가을야구 테마 (앱 설정을 따른다)
     var isAutumn: Bool = AutumnStyle.isActive
 
-    static func preview(teamCode: String = "HT") -> TeamGameEntry {
+    /// 팀을 고르지 않았을 때의 팀 (데모 빌드는 가상 팀)
+    static var defaultTeam: String { BuildFlavor.isDemo ? "DRM" : "HT" }
+
+    static func preview(teamCode: String = TeamGameEntry.defaultTeam) -> TeamGameEntry {
+        let opponent: Team
+        if BuildFlavor.isDemo {
+            let code = teamCode == "DRM" ? "VKG" : "DRM"
+            opponent = Team(code: code, name: AppTeams.name(for: code) ?? code)
+        } else {
+            opponent = Team(code: teamCode == "LG" ? "KT" : "LG", name: teamCode == "LG" ? "KT 위즈" : "LG 트윈스")
+        }
         let game = GameSummary(
             id: "preview",
-            home: Team(code: teamCode, name: KBOTeams.name(for: teamCode) ?? teamCode),
-            away: Team(code: teamCode == "LG" ? "KT" : "LG", name: teamCode == "LG" ? "KT 위즈" : "LG 트윈스"),
+            home: Team(code: teamCode, name: AppTeams.name(for: teamCode) ?? teamCode),
+            away: opponent,
             homeScore: 3,
             awayScore: 2,
             status: .live,
@@ -65,7 +88,7 @@ struct TeamGameProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: SelectTeamIntent, in context: Context) async -> TeamGameEntry {
-        if context.isPreview { return .preview(teamCode: configuration.team?.rawValue ?? SharedSettings.favoriteTeamCode ?? "HT") }
+        if context.isPreview { return .preview(teamCode: configuration.team?.rawValue ?? SharedSettings.favoriteTeamCode ?? TeamGameEntry.defaultTeam) }
         return await entry(for: configuration)
     }
 
@@ -78,11 +101,21 @@ struct TeamGameProvider: AppIntentTimelineProvider {
     }
 
     private func entry(for configuration: SelectTeamIntent) async -> TeamGameEntry {
-        guard let code = configuration.team?.rawValue ?? SharedSettings.favoriteTeamCode else {
+        let chosen = configuration.team?.rawValue ?? SharedSettings.favoriteTeamCode
+        let code: String
+        let provider: any GameDataProvider
+        if BuildFlavor.isDemo {
+            // 데모 빌드: 가상 경기(1회말 끝, 3 대 0)를 보여 준다. 일반 빌드에서 고른 실제 팀이 남아 있으면 가상 팀으로 바꾼다.
+            code = chosen.flatMap { AppTeams.contains($0) ? $0 : nil } ?? TeamGameEntry.defaultTeam
+            provider = DemoGameProvider(revealed: DemoGameProvider.midGameRevealed)
+        } else if let chosen {
+            code = chosen
+            provider = NaverSportsProvider()
+        } else {
             return TeamGameEntry(date: Date(), teamCode: nil, result: nil, logos: [:], failed: false)
         }
         do {
-            let result = try await TeamGameFinder(provider: NaverSportsProvider()).find(teamCode: code)
+            let result = try await TeamGameFinder(provider: provider).find(teamCode: code)
             let codes = result.map { [$0.game.away.code, $0.game.home.code] } ?? [code]
             return TeamGameEntry(date: Date(), teamCode: code, result: result, logos: await Self.logos(for: codes), failed: false)
         } catch {
@@ -93,7 +126,8 @@ struct TeamGameProvider: AppIntentTimelineProvider {
     /// 네이버 스포츠 팀 로고를 받아 작게 줄인다 (위젯 메모리 제한)
     private static func logos(for codes: [String]) async -> [String: Data] {
         var result: [String: Data] = [:]
-        for code in Set(codes) where KBOTeams.name(for: code) != nil {
+        // 데모 빌드는 로고를 받지 않는다
+        for code in Set(codes) where !BuildFlavor.isDemo && KBOTeams.name(for: code) != nil {
             guard let url = URL(string: "https://sports-phinf.pstatic.net/team/kbo/default/\(code).png") else { continue }
             var request = URLRequest(url: url)
             request.timeoutInterval = 10
