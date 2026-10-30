@@ -276,7 +276,7 @@ public struct CardCoupon: Hashable, Sendable {
 
 public enum CardCoupons {
     public static let all: [CardCoupon] = [
-        CardCoupon(code: "0609Bangjy!", points: 100_000),
+        CardCoupon(code: "BraveKoon", points: 100_000),
     ]
 
     /// 앞뒤 빈칸과 대소문자는 넘어가 준다 (키보드가 첫 글자를 바꿀 수 있다)

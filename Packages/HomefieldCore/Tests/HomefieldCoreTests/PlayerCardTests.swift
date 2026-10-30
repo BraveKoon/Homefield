@@ -344,12 +344,12 @@ struct SeededGenerator: RandomNumberGenerator {
 final class CardCouponTests: XCTestCase {
     func testRedeemingCodeGivesPointsOnce() throws {
         var wallet = CardWallet()
-        let coupon = try wallet.redeem(code: "0609Bangjy!")
+        let coupon = try wallet.redeem(code: "BraveKoon")
         XCTAssertEqual(coupon.points, 100_000)
         XCTAssertEqual(wallet.points, 100_000)
 
         // 같은 코드는 다시 못 쓴다
-        XCTAssertThrowsError(try wallet.redeem(code: "0609Bangjy!")) { error in
+        XCTAssertThrowsError(try wallet.redeem(code: "BraveKoon")) { error in
             XCTAssertEqual(error as? CardCouponError, .alreadyUsed)
         }
         XCTAssertEqual(wallet.points, 100_000)
@@ -357,7 +357,8 @@ final class CardCouponTests: XCTestCase {
 
     func testUnknownCodeIsRejected() {
         var wallet = CardWallet()
-        for code in ["", "   ", "아무코드", "0609Bangjy"] {
+        // 예전 코드(0609Bangjy!)는 더 이상 쓸 수 없다
+        for code in ["", "   ", "아무코드", "BraveKoo", "0609Bangjy!"] {
             XCTAssertThrowsError(try wallet.redeem(code: code)) { error in
                 XCTAssertEqual(error as? CardCouponError, .unknown, "\(code) 는 없는 코드")
             }
@@ -367,26 +368,26 @@ final class CardCouponTests: XCTestCase {
 
     func testCodeIgnoresSpacesAndCase() throws {
         var wallet = CardWallet()
-        try wallet.redeem(code: "  0609bangjy!  ")
+        try wallet.redeem(code: "  bravekoon  ")
         XCTAssertEqual(wallet.points, 100_000)
         // 대소문자만 다른 같은 코드도 이미 쓴 것으로 본다
-        XCTAssertThrowsError(try wallet.redeem(code: "0609BANGJY!"))
+        XCTAssertThrowsError(try wallet.redeem(code: "BRAVEKOON"))
     }
 
     func testRedeemedCodeSurvivesSavingAndLoading() throws {
         var collection = CardCollection()
-        try collection.wallet.redeem(code: "0609Bangjy!")
+        try collection.wallet.redeem(code: "BraveKoon")
         let data = try JSONEncoder().encode(collection)
         var loaded = try JSONDecoder().decode(CardCollection.self, from: data)
         XCTAssertEqual(loaded.wallet.points, 100_000)
-        XCTAssertThrowsError(try loaded.wallet.redeem(code: "0609Bangjy!")) { error in
+        XCTAssertThrowsError(try loaded.wallet.redeem(code: "BraveKoon")) { error in
             XCTAssertEqual(error as? CardCouponError, .alreadyUsed)
         }
     }
 
     func testPointsBuyTopPacks() throws {
         var wallet = CardWallet()
-        try wallet.redeem(code: "0609Bangjy!")
+        try wallet.redeem(code: "BraveKoon")
         for kind in CardPackKind.allCases {
             XCTAssertTrue(wallet.canAfford(kind), "\(kind.displayName) 를 살 수 있다")
         }
