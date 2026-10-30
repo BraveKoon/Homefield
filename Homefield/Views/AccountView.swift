@@ -11,14 +11,8 @@ struct AccountSection: View {
             if account.isSignedIn {
                 signedIn
             } else {
-                SignInWithAppleButton(.signIn) { request in
-                    account.prepare(request)
-                } onCompletion: { result in
-                    Task { await account.complete(result) }
-                }
-                .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                .frame(height: 44)
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                AppleSignInButton(style: colorScheme == .dark ? .white : .black)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                 if case .failed(let message) = account.status {
                     Text(message)
                         .font(.footnote)
@@ -99,5 +93,23 @@ struct AccountDialogs: ViewModifier {
             } message: {
                 Text("서버에 저장된 데이터와 계정이 지워지고 로그아웃돼요. 이 기기의 카드와 설정은 그대로 남아요.")
             }
+    }
+}
+
+/// 'Apple로 로그인' 버튼. 둘레 카드와 토글, 탭 막대처럼 둥글게 깎는다 (기본 모서리는 각져 보인다).
+struct AppleSignInButton: View {
+    @Environment(AccountStore.self) private var account
+    var style: SignInWithAppleButton.Style
+    var height: CGFloat = 44
+
+    var body: some View {
+        SignInWithAppleButton(.signIn) { request in
+            account.prepare(request)
+        } onCompletion: { result in
+            Task { await account.complete(result) }
+        }
+        .signInWithAppleButtonStyle(style)
+        .frame(height: height)
+        .clipShape(Capsule())
     }
 }

@@ -160,13 +160,117 @@ struct TeamPickerGrid: View {
     }
 }
 
-/// 처음 실행할 때 응원팀을 고른다
+/// 처음 실행할 때: Apple 로그인(또는 게스트)을 고른 뒤 응원팀을 고른다
 struct OnboardingView: View {
+    private enum Step { case login, team }
+
     @Environment(AppSettings.self) private var settings
+    @Environment(AccountStore.self) private var account
+    @State private var step = Step.login
     @State private var selection: String?
 
     var body: some View {
         let theme = TeamTheme.forTeam(selection)
+        ZStack {
+            ZStack {
+                theme.gradient
+                StitchPattern().foregroundStyle(.white.opacity(0.08))
+            }
+            .ignoresSafeArea()
+            .animation(.easeInOut(duration: 0.4), value: selection)
+
+            switch step {
+            case .login:
+                loginStep
+                    .transition(.opacity)
+            case .team:
+                teamStep(theme: theme)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.appear, value: step)
+        .modifier(AccountDialogs())
+        .onAppear {
+            selection = settings.favoriteTeamCode
+            // 이미 로그인돼 있으면(앱을 지웠다 깔았는데 세션이 남은 경우 등) 로그인 단계는 건너뛴다
+            if account.isSignedIn { step = .team }
+        }
+        // 로그인과 첫 동기화가 끝나면: 계정에 응원팀이 있으면 바로 시작, 없으면 팀 고르기
+        .onChange(of: account.status) { _, status in
+            guard step == .login, account.isSignedIn else { return }
+            switch status {
+            case .synced:
+                if settings.favoriteTeamCode != nil {
+                    settings.hasCompletedOnboarding = true
+                } else {
+                    step = .team
+                }
+            case .failed:
+                // 로그인은 됐지만 동기화를 못 했다: 일단 팀을 고르고, 동기화는 나중에 다시 한다
+                step = .team
+            default:
+                break
+            }
+        }
+    }
+
+    // MARK: 로그인
+
+    private var loginStep: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 24)
+            VStack(spacing: 10) {
+                Image(systemName: "baseball.fill")
+                    .font(.system(size: 56))
+                    .foregroundStyle(.white)
+                    .shadow(radius: 8)
+                Text("홈구장")
+                    .font(.system(size: 40, weight: .black))
+                    .foregroundStyle(.white)
+                Text("집에서도 야구장처럼.")
+                    .font(.headline)
+                    .foregroundStyle(.white.opacity(0.9))
+            }
+            Spacer(minLength: 24)
+
+            VStack(spacing: 14) {
+                Text("로그인하면 카드·포인트·응원 라인업이\n다른 기기에서도 그대로 이어져요.")
+                    .font(.footnote)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.white.opacity(0.9))
+
+                ZStack {
+                    AppleSignInButton(style: .white, height: 52)
+                        .opacity(account.status == .working ? 0.4 : 1)
+                        .disabled(account.status == .working)
+                    if account.status == .working {
+                        ProgressView().tint(.black)
+                    }
+                }
+
+                if case .failed(let message) = account.status {
+                    Text(message)
+                        .font(.footnote)
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(.white)
+                }
+
+                Button("게스트로 진행하기") {
+                    step = .team
+                }
+                .font(.footnote)
+                .foregroundStyle(.white.opacity(0.8))
+                .padding(.vertical, 6)
+                .disabled(account.status == .working)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 28)
+        }
+    }
+
+    // MARK: 응원팀 고르기
+
+    private func teamStep(theme: TeamTheme) -> some View {
         ScrollView {
             VStack(spacing: 24) {
                 VStack(spacing: 10) {
@@ -218,15 +322,6 @@ struct OnboardingView: View {
             .padding(.vertical, 12)
             .background(.ultraThinMaterial)
         }
-        .background {
-            ZStack {
-                theme.gradient
-                StitchPattern().foregroundStyle(.white.opacity(0.08))
-            }
-            .ignoresSafeArea()
-            .animation(.easeInOut(duration: 0.4), value: selection)
-        }
-        .onAppear { selection = settings.favoriteTeamCode }
     }
 
     private func finish(with code: String?) {
