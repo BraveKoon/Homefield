@@ -95,8 +95,9 @@ final class AppSettings {
         NarrationComposer(enabled: enabledPlays, phrases: customPhrases)
     }
 
-    func makeProvider() -> any GameDataProvider {
-        useDemo ? DemoGameProvider() : NaverSportsProvider()
+    /// includeNationalTeam: 일정에 대한민국 국가대표팀 경기(APBC 같은 국제 대회)도 넣을지. 경기 목록에서만 켠다.
+    func makeProvider(includeNationalTeam: Bool = false) -> any GameDataProvider {
+        useDemo ? DemoGameProvider() : NaverSportsProvider(includeNationalTeam: includeNationalTeam)
     }
 
     func shouldPlaySongs(for player: Player) -> Bool {

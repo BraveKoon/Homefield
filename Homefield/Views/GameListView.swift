@@ -100,7 +100,7 @@ struct GameListView: View {
         isLoading = true
         defer { isLoading = false }
         do {
-            let loaded = try await settings.makeProvider().games(on: date)
+            let loaded = try await settings.makeProvider(includeNationalTeam: true).games(on: date)
             withAnimation {
                 games = loaded.sorted { sortKey($0) < sortKey($1) }
             }
@@ -295,6 +295,14 @@ struct GameCard: View {
         VStack(spacing: 12) {
             HStack {
                 StatusBadge(game: game)
+                if let competition = game.competitionName {
+                    Text("국가대표 · \(competition)")
+                        .font(.caption2.weight(.heavy))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Color.accentColor.opacity(0.16), in: Capsule())
+                        .foregroundStyle(Color.accentColor)
+                }
                 if isFavorite {
                     Label("응원팀", systemImage: "heart.fill")
                         .font(.caption2.bold())

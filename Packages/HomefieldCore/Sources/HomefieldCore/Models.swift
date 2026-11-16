@@ -51,6 +51,8 @@ public struct GameSummary: Identifiable, Hashable, Codable, Sendable {
     /// 선발 예고 (제공자가 줄 때만)
     public var homeStarter: String?
     public var awayStarter: String?
+    /// 국제 대회 같은 KBO 밖 경기의 대회 분류 (예: "apbc"). KBO 경기는 nil
+    public var competition: String?
 
     public init(
         id: String,
@@ -64,7 +66,8 @@ public struct GameSummary: Identifiable, Hashable, Codable, Sendable {
         stadium: String? = nil,
         lineScore: LineScore? = nil,
         homeStarter: String? = nil,
-        awayStarter: String? = nil
+        awayStarter: String? = nil,
+        competition: String? = nil
     ) {
         self.id = id
         self.home = home
@@ -78,6 +81,16 @@ public struct GameSummary: Identifiable, Hashable, Codable, Sendable {
         self.lineScore = lineScore
         self.homeStarter = homeStarter
         self.awayStarter = awayStarter
+        self.competition = competition
+    }
+
+    /// 화면에 보일 대회 이름 (KBO 경기는 nil)
+    public var competitionName: String? {
+        guard let competition else { return nil }
+        switch competition.lowercased() {
+        case "apbc": return "APBC"
+        default: return competition.uppercased()
+        }
     }
 
     /// 그 팀의 선발 예고
