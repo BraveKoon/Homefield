@@ -10,25 +10,61 @@ import FoundationNetworking
 public struct NaverSportsProvider: GameDataProvider {
     public var baseURL: URL
     public var session: URLSession
+    /// 일정에 대한민국 야구 국가대표팀 경기(APBC 같은 국제 대회)도 함께 넣을지.
+    /// 일정을 한 번 더 불러야 해서, 경기 목록 화면처럼 필요한 곳에서만 켠다.
+    public var includeNationalTeam: Bool
 
     public init(
         baseURL: URL = URL(string: "https://api-gw.sports.naver.com")!,
-        session: URLSession = .shared
+        session: URLSession = .shared,
+        includeNationalTeam: Bool = false
     ) {
         self.baseURL = baseURL
         self.session = session
+        self.includeNationalTeam = includeNationalTeam
     }
 
     /// 선발 예고까지 달라고 하는 항목. 서버가 받아 주지 않으면 기본 항목으로 한 번 더 부른다.
     static let scheduleFields = "basic,homeStarterName,awayStarterName"
 
     public func games(on date: Date) async throws -> [GameSummary] {
+        guard includeNationalTeam else { return try await kboGames(on: date) }
+        // 국가대표 경기는 덤이라, 못 받아도 KBO 일정은 보여 준다
+        async let national = nationalTeamGames(on: date)
+        let kbo = try await kboGames(on: date)
+        let extra = await national
+        let known = Set(kbo.map(\.id))
+        let merged = kbo + extra.filter { !known.contains($0.id) }
+        // 시작 시각 순. 같은 시각이면 원래 순서를 지킨다
+        return merged.enumerated()
+            .sorted { lhs, rhs in
+                let (a, b) = (lhs.element.startTime ?? .distantFuture, rhs.element.startTime ?? .distantFuture)
+                return a == b ? lhs.offset < rhs.offset : a < b
+            }
+            .map(\.element)
+    }
+
+    private func kboGames(on date: Date) async throws -> [GameSummary] {
         do {
             return try await games(on: date, fields: Self.scheduleFields)
         } catch GameDataError.badStatus {
             // 선발 예고 항목을 모르는 서버면 선발 없이라도 일정을 보여 준다
             return try await games(on: date, fields: "basic")
         }
+    }
+
+    /// 분류(categoryId)를 지정하지 않고 그날 국내야구 전체를 받아서 대한민국 대표팀 경기만 고른다
+    private func nationalTeamGames(on date: Date) async -> [GameSummary] {
+        let day = NaverMapping.dayFormatter.string(from: date)
+        let url = makeURL("schedule/games", query: [
+            "fields": "basic",
+            "upperCategoryId": "kbaseball",
+            "fromDate": day,
+            "toDate": day,
+            "size": "100",
+        ])
+        guard let envelope: NaverEnvelope<NaverScheduleResult> = try? await get(url) else { return [] }
+        return NaverMapping.koreaNationalTeamGames(from: envelope.result?.games ?? [])
     }
 
     private func games(on date: Date, fields: String) async throws -> [GameSummary] {
@@ -132,6 +168,31 @@ public enum NaverMapping {
     public static func parseGames(_ data: Data) throws -> [GameSummary] {
         let envelope = try JSONDecoder().decode(NaverEnvelope<NaverScheduleResult>.self, from: data)
         return (envelope.result?.games ?? []).map(summary(from:))
+    }
+
+    /// 분류를 지정하지 않은 일정 응답에서 대한민국 야구 국가대표팀 경기만 고른다.
+    public static func parseKoreaNationalTeamGames(_ data: Data) throws -> [GameSummary] {
+        let envelope = try JSONDecoder().decode(NaverEnvelope<NaverScheduleResult>.self, from: data)
+        return koreaNationalTeamGames(from: envelope.result?.games ?? [])
+    }
+
+    /// 2026-11-17 실제 응답으로 확인: APBC 경기는 categoryId "apbc", 한국은 팀 코드 "KR"·이름 "대한민국".
+    /// 같은 날 응답에는 팀이 없는 방송(예: "크보오프너", categoryId "kbaseballetc")도 섞여 오므로
+    /// 두 팀이 모두 있는 경기만 쓴다. KBO 경기(categoryId "kbo")는 따로 받으므로 빼고,
+    /// 다른 나라끼리의 경기(일본 대 대만 등)도 뺀다.
+    static func koreaNationalTeamGames(from games: [NaverGame]) -> [GameSummary] {
+        games.compactMap { game -> GameSummary? in
+            let category = game.categoryId?.nonEmpty
+            guard category != "kbo" else { return nil }
+            guard let home = game.homeTeamCode?.value?.nonEmpty,
+                  let away = game.awayTeamCode?.value?.nonEmpty else { return nil }
+            let involvesKorea = home == "KR" || away == "KR"
+                || [game.homeTeamName, game.awayTeamName].contains("대한민국")
+            guard involvesKorea else { return nil }
+            var result = summary(from: game)
+            result.competition = category
+            return result
+        }
     }
 
     public static func parseStandings(_ data: Data) throws -> [TeamStanding] {
@@ -389,6 +450,8 @@ struct NaverGameResult: Decodable {
 
 struct NaverGame: Decodable {
     let gameId: LenientString
+    /// 대회 분류 ("kbo", "apbc", "kbaseballetc" 등)
+    let categoryId: String?
     let gameDateTime: String?
     let stadium: String?
     let homeTeamCode: LenientString?
