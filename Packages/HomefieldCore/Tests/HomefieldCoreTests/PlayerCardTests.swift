@@ -168,6 +168,8 @@ final class PlayerCardTests: XCTestCase {
 
     func testPackCostsAndOddsText() {
         XCTAssertEqual(CardPackKind.basic.cost, 0)
+        XCTAssertGreaterThan(CardPackKind.standard.cost, CardPackKind.basic.cost)
+        XCTAssertGreaterThan(CardPackKind.premium.cost, CardPackKind.standard.cost)
         XCTAssertGreaterThan(CardPackKind.five.cost, CardPackKind.four.cost)
         XCTAssertGreaterThan(CardPackKind.four.cost, CardPackKind.premium.cost)
         for kind in CardPackKind.allCases {
@@ -213,6 +215,39 @@ final class PlayerCardTests: XCTestCase {
         XCTAssertEqual(collection.wallet.points, 200)
         XCTAssertNotNil(collection.open(.premium, from: pool, on: today, calendar: calendar, using: &generator))
         XCTAssertEqual(collection.wallet.points, 200 - CardPackKind.premium.cost)
+    }
+
+    /// 일반 카드팩: 포인트로 사고, 1~3성 5장이 나온다
+    func testStandardPackGivesFiveCardsOfOneToThreeStars() throws {
+        XCTAssertEqual(CardPackKind.standard.cardCount, 5)
+        XCTAssertEqual(CardPackKind.standard.summary, "1~3성 카드 5장")
+        XCTAssertEqual(Set(CardPackKind.standard.odds.keys), [.one, .two, .three])
+
+        let pool = makePool(count: 100)
+        var generator = SeededGenerator(seed: 21)
+        var collection = CardCollection()
+        let today = Date(timeIntervalSince1970: 1_790_000_000)
+
+        // 포인트가 모자라면 못 산다. 하루 한 번 제한도 없다.
+        XCTAssertFalse(collection.canOpen(.standard, on: today))
+        XCTAssertNil(collection.open(.standard, from: pool, on: today, using: &generator))
+
+        collection.wallet.award(.welcome, key: "install")
+        let cost = CardPackKind.standard.cost
+        for round in 1...3 {
+            let drawn = try XCTUnwrap(collection.open(.standard, from: pool, on: today, using: &generator))
+            XCTAssertEqual(drawn.count, 5)
+            XCTAssertTrue(drawn.allSatisfy { $0.grade <= .three }, "4성·5성은 나오지 않는다")
+            XCTAssertEqual(collection.wallet.points, CardReward.welcome.points - cost * round)
+        }
+
+        // 연속 뽑기: 10개를 한꺼번에 열면 50장
+        let bulk = CardCollection.bulkCount
+        XCTAssertTrue(collection.canOpen(.standard, count: bulk, on: today))
+        let before = collection.wallet.points
+        let drawn = try XCTUnwrap(collection.open(.standard, count: bulk, from: pool, on: today, using: &generator))
+        XCTAssertEqual(drawn.count, 5 * bulk)
+        XCTAssertEqual(collection.wallet.points, before - cost * bulk)
     }
 
     func testWalletGivesEachRewardOnce() {
@@ -729,10 +764,11 @@ final class CardRefundTests: XCTestCase {
             XCTAssertLessThan(low.refundPoints, high.refundPoints, "\(high) 가 더 값지다")
         }
         // 카드팩을 사서 되파는 것으로 포인트가 늘어나면 안 된다
-        let premium = CardPackKind.premium
-        let expected = premium.odds.reduce(0.0) { $0 + $1.value * Double($1.key.refundPoints) }
-            * Double(premium.cardCount)
-        XCTAssertLessThan(expected, Double(premium.cost), "고급 카드팩 값보다 환불이 적어야 한다")
+        for pack in [CardPackKind.standard, .premium] {
+            let expected = pack.odds.reduce(0.0) { $0 + $1.value * Double($1.key.refundPoints) }
+                * Double(pack.cardCount)
+            XCTAssertLessThan(expected, Double(pack.cost), "\(pack.displayName) 값보다 환불이 적어야 한다")
+        }
         XCTAssertLessThan(CardGrade.four.refundPoints, CardPackKind.four.cost)
         XCTAssertLessThan(CardGrade.five.refundPoints, CardPackKind.five.cost)
     }

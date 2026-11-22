@@ -2,8 +2,10 @@ import Foundation
 
 /// 카드팩 종류
 public enum CardPackKind: String, Codable, CaseIterable, Sendable, Identifiable {
-    /// 그 해 선수만, 1~3성
+    /// 그 해 선수만, 1~3성 3장. 하루 한 번 무료
     case basic
+    /// 그 해 선수만, 1~3성 5장. 포인트로 산다
+    case standard
     /// 그 해 선수만, 3~5성
     case premium
     /// 4성 확정
@@ -16,6 +18,7 @@ public enum CardPackKind: String, Codable, CaseIterable, Sendable, Identifiable 
     public var displayName: String {
         switch self {
         case .basic: "기본 카드팩"
+        case .standard: "일반 카드팩"
         case .premium: "고급 카드팩"
         case .four: "4성 카드팩"
         case .five: "5성 카드팩"
@@ -25,6 +28,7 @@ public enum CardPackKind: String, Codable, CaseIterable, Sendable, Identifiable 
     public var summary: String {
         switch self {
         case .basic: "1~3성 카드 3장"
+        case .standard: "1~3성 카드 5장"
         case .premium: "3~5성 카드 3장"
         case .four: "4성 카드 1장 확정"
         case .five: "5성 카드 1장 확정"
@@ -35,14 +39,17 @@ public enum CardPackKind: String, Codable, CaseIterable, Sendable, Identifiable 
     public var cardCount: Int {
         switch self {
         case .basic, .premium: 3
+        case .standard: 5
         case .four, .five: 1
         }
     }
 
     /// 포인트 값. 기본 카드팩은 하루 한 번 무료라서 0.
+    /// 일반 카드팩은 5장을 다 되팔아도 값보다 적게 돌려받도록 정했다 (한 장 평균 환불 8.5P × 5 = 42.5P).
     public var cost: Int {
         switch self {
         case .basic: 0
+        case .standard: 60
         case .premium: 150
         case .four: 400
         case .five: 1000
@@ -52,7 +59,7 @@ public enum CardPackKind: String, Codable, CaseIterable, Sendable, Identifiable 
     /// 등급별 확률 (합 1)
     public var odds: [CardGrade: Double] {
         switch self {
-        case .basic: [.one: 0.60, .two: 0.30, .three: 0.10]
+        case .basic, .standard: [.one: 0.60, .two: 0.30, .three: 0.10]
         case .premium: [.three: 0.80, .four: 0.17, .five: 0.03]
         case .four: [.four: 1]
         case .five: [.five: 1]
