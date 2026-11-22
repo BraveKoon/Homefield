@@ -348,7 +348,7 @@ private struct PackArt: View {
         ZStack {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(kind.topGrade.gradient)
-            Image(systemName: kind == .basic ? "shippingbox.fill" : "sparkles")
+            Image(systemName: kind == .basic || kind == .standard ? "shippingbox.fill" : "sparkles")
                 .font(.title3)
                 .foregroundStyle(kind.topGrade == .five ? .black : .white)
         }
